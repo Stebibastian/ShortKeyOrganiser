@@ -36,7 +36,15 @@ enum Strings {
     static let menuLoginItem = "Beim Anmelden starten"
     static let menuChangeTrigger = "Auslöser-Taste ändern …"
     static let menuManage = "Gesetzte Kürzel verwalten …"
+    static let menuSystemShortcuts = "Alle System-Kurzbefehle anzeigen …"
     static let menuHelp = "Kurzanleitung …"
+
+    // System-Kurzbefehle (Anzeige)
+    static let sysTitle = "Alle Tastenkürzel im System"
+    static let sysSubtitle = "Vorhandene macOS-App-Kurzbefehle (global + pro App) – schreibgeschützt."
+    static let sysEmpty = "Keine eigenen App-Kurzbefehle gefunden."
+    static let refresh = "Aktualisieren"
+    static func sysCount(_ n: Int) -> String { "\(n) Kürzel gefunden" }
 
     // Verwaltung / Zurücksetzen
     static let managerTitle = "Gesetzte Kürzel"

@@ -94,3 +94,26 @@ struct Shortcut {
         "\u{F70C}": "F9", "\u{F70D}": "F10", "\u{F70E}": "F11", "\u{F70F}": "F12",
     ]
 }
+
+extension Shortcut {
+    /// Rekonstruiert ein Shortcut aus einer gespeicherten `NSUserKeyEquivalents`-
+    /// Kodierung (z. B. „@~^$n") – für die Anzeige bestehender Kürzel.
+    /// (In einer Extension, damit der memberwise-Initializer erhalten bleibt.)
+    init?(encoded: String) {
+        var sc = Shortcut(baseKey: "")
+        var rest = Substring(encoded)
+        loop: while let c = rest.first {
+            switch c {
+            case "@": sc.command = true
+            case "~": sc.option = true
+            case "^": sc.control = true
+            case "$": sc.shift = true
+            default: break loop
+            }
+            rest = rest.dropFirst()
+        }
+        sc.baseKey = String(rest)
+        guard !sc.baseKey.isEmpty else { return nil }
+        self = sc
+    }
+}

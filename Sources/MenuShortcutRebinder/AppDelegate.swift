@@ -122,6 +122,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
                                 action: #selector(openSettings), keyEquivalent: ""))
         menu.addItem(NSMenuItem(title: Strings.menuManage,
                                 action: #selector(openManager), keyEquivalent: ""))
+        menu.addItem(NSMenuItem(title: Strings.menuSystemShortcuts,
+                                action: #selector(openSystemShortcuts), keyEquivalent: ""))
         loginItem = NSMenuItem(title: Strings.menuLoginItem,
                                action: #selector(toggleLoginItem), keyEquivalent: "")
         menu.addItem(loginItem)
@@ -162,6 +164,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     @objc private func openManager() {
         ManagerPanel.shared.present()
+    }
+
+    @objc private func openSystemShortcuts() {
+        SystemShortcutsPanel.shared.present()
     }
 
     // MARK: - Login-Eintrag
