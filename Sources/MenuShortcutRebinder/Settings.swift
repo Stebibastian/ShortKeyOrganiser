@@ -36,6 +36,18 @@ enum TriggerKey {
         names[keyCode] ?? "Taste \(keyCode)"
     }
 
+    /// Kompakter Name für knappe Anzeigen (HUD/Hilfe), z. B. „rechte ⌘".
+    static let shortNames: [Int: String] = [
+        59: "linke ⌃",  62: "rechte ⌃",
+        58: "linke ⌥",  61: "rechte ⌥",
+        55: "linke ⌘",  54: "rechte ⌘",
+        56: "linke ⇧",  60: "rechte ⇧",
+    ]
+
+    static func shortName(for keyCode: Int) -> String {
+        shortNames[keyCode] ?? "Taste \(keyCode)"
+    }
+
     static func isValid(_ keyCode: Int) -> Bool {
         names[keyCode] != nil
     }

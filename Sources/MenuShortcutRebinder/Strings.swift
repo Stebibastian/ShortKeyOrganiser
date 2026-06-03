@@ -57,20 +57,20 @@ enum Strings {
     static let settingsDurationLabel = "Haltedauer:"
 
     // Start-Hinweis & Hilfe
-    static let launchedHint = "Aktiv – rechte ⌃ über einem Menüpunkt halten"
+    static func launchedHint(_ trigger: String) -> String {
+        "Aktiv – \(trigger) über einem Menüpunkt halten"
+    }
     static let accessibilityActive = "✓ Bedienungshilfen aktiv"
     static func loginItemFailed(_ reason: String) -> String { "Login-Eintrag fehlgeschlagen: \(reason)" }
     static let helpTitle = "So funktioniert’s"
-    static let helpBody =
+    static func helpBody(trigger: String, seconds: String) -> String {
         "1. In einer beliebigen App ein Menü öffnen.\n"
         + "2. Mit der Maus über den gewünschten Eintrag fahren.\n"
-        + "3. Die rechte ⌃-Taste ~0,6 s halten.\n"
+        + "3. Die \(trigger)-Taste ~\(seconds) s halten.\n"
         + "4. Im Fenster das neue Kürzel drücken, Bereich wählen, „Anpassen“.\n\n"
         + "Bei „nur diese App“ die App danach neu starten, damit das Menü das "
         + "Kürzel zeigt."
-
-    // Trigger-Beschreibung
-    static let triggerRightControl = "Rechte ⌃-Taste (Control)"
+    }
 
     // Fenster „Anpassen?"
     static let panelTitle = "Tastenkürzel anpassen?"

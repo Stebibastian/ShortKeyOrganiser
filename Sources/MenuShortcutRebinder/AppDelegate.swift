@@ -32,7 +32,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
         if trustedAtLaunch && detector.isActive {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
-                HUD.show(Strings.launchedHint)
+                HUD.show(Strings.launchedHint(TriggerKey.shortName(for: Settings.triggerKeyCode)))
             }
         } else {
             startTrustBackupPolling()
@@ -182,9 +182,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     // MARK: - Hilfe
 
     @objc private func showHelp() {
+        let seconds = String(format: "%.1f", Settings.holdDuration)
+            .replacingOccurrences(of: ".", with: ",")
         let alert = NSAlert()
         alert.messageText = Strings.helpTitle
-        alert.informativeText = Strings.helpBody
+        alert.informativeText = Strings.helpBody(
+            trigger: TriggerKey.shortName(for: Settings.triggerKeyCode), seconds: seconds)
         alert.addButton(withTitle: Strings.ok)
         NSApp.activate(ignoringOtherApps: true)
         alert.runModal()
