@@ -160,6 +160,14 @@ Systemeinstellungen → Datenschutz & Sicherheit → „Trotzdem öffnen".) Für
 
 ## Deinstallieren
 
+Ein Zeile (ohne Repo, von überall):
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/Stebibastian/MenuShortcutRebinder/main/web-uninstall.sh | bash
+```
+
+…oder aus dem Projektordner:
+
 ```bash
 ./uninstall.sh
 ```
