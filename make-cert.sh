@@ -50,19 +50,29 @@ fi
 # set-key-partition-list erlaubt Apple-Tools (codesign) den Zugriff dauerhaft.
 echo
 echo "→ Erlaube 'codesign' den Schlüsselzugriff ohne ständige Nachfrage …"
-if [ -t 0 ]; then
-    echo "  Dafür einmal dein macOS-Anmeldepasswort (Eingabe wird nicht angezeigt):"
-    KCPW=""
-    read -r -s KCPW || true
-    echo
-    if [ -n "$KCPW" ] && security set-key-partition-list \
-            -S apple-tool:,apple: -s -k "$KCPW" "$KEYCHAIN" >/dev/null 2>&1; then
-        echo "✓ Erledigt – codesign signiert ab jetzt ohne Nachfrage."
-    else
-        echo "⚠ Nicht gesetzt (leer/falsches Passwort?)."
-        echo "  Alternativ beim ersten Signieren im Schlüsselbund-Dialog 'Immer erlauben' wählen."
-    fi
+if [ -e /dev/tty ]; then
+    ok=0
+    # Direkt vom Terminal lesen (/dev/tty) + mehrere Versuche, damit ein
+    # versehentlich leeres Passwort (z. B. aus einem eingefügten Befehlsblock)
+    # nicht gleich abbricht.
+    for _ in 1 2 3; do
+        printf "  macOS-Anmeldepasswort (Eingabe unsichtbar): " > /dev/tty
+        KCPW=""
+        IFS= read -r -s KCPW < /dev/tty || true
+        printf "\n" > /dev/tty
+        if [ -n "$KCPW" ] && security set-key-partition-list \
+                -S apple-tool:,apple: -s -k "$KCPW" "$KEYCHAIN" >/dev/null 2>&1; then
+            echo "✓ Erledigt – codesign signiert ab jetzt ohne Nachfrage."
+            ok=1
+            break
+        fi
+        echo "  ✗ leer oder falsch – nochmal …"
+    done
     unset KCPW
+    if [ "$ok" -ne 1 ]; then
+        echo "⚠ Nicht gesetzt. Einfachste Alternative: beim nächsten ./install.sh im"
+        echo "  Schlüsselbund-Dialog 'Immer erlauben' wählen (statt 'Erlauben')."
+    fi
 else
-    echo "ℹ Nicht-interaktiv ausgeführt – beim ersten Signieren im Dialog 'Immer erlauben' wählen."
+    echo "ℹ Kein Terminal – beim ersten Signieren im Dialog 'Immer erlauben' wählen."
 fi
