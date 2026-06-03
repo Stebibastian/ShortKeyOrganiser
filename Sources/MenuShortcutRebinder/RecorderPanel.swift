@@ -12,13 +12,25 @@ final class RecorderField: NSView {
     override func mouseDown(with event: NSEvent) { window?.makeFirstResponder(self) }
 
     override func keyDown(with event: NSEvent) {
-        if let shortcut = Shortcut.from(event: event) {
-            current = shortcut
-            onCapture?(shortcut)
-            needsDisplay = true
-        } else {
-            NSSound.beep()
-        }
+        if let shortcut = Shortcut.from(event: event) { apply(shortcut) }
+        else { NSSound.beep() }
+    }
+
+    // ⌘-Kombinationen (z. B. ⌘⇧I) werden von AppKit als Key-Equivalent zugestellt,
+    // NICHT über keyDown – hier abfangen, sonst lassen sie sich nicht aufnehmen.
+    // Reine Tasten ohne Modifier (Return/Escape) liefern kein gültiges Shortcut →
+    // wir geben sie frei, damit die Buttons weiter funktionieren.
+    override func performKeyEquivalent(with event: NSEvent) -> Bool {
+        guard window?.firstResponder === self,
+              let shortcut = Shortcut.from(event: event) else { return false }
+        apply(shortcut)
+        return true   // konsumiert → löst nicht versehentlich ein Menü/einen Button aus
+    }
+
+    private func apply(_ shortcut: Shortcut) {
+        current = shortcut
+        onCapture?(shortcut)
+        needsDisplay = true
     }
 
     override func draw(_ dirtyRect: NSRect) {
