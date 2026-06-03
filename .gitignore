@@ -1,0 +1,7 @@
+# Build-Artefakte
+.build/
+*.app/
+AppSupport/AppIcon.iconset/
+
+# macOS
+.DS_Store

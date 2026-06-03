@@ -1,0 +1,114 @@
+import Foundation
+
+/// Zentrale Sammelstelle für alle benutzersichtbaren Texte.
+///
+/// Dieses Tool hat (noch) keinen mehrsprachigen String-Katalog – es gibt genau
+/// eine Zielsprache (Deutsch). Alle Texte stehen hier an einer Stelle und werden
+/// nirgends inline hardcodiert, damit eine spätere Lokalisierung (z. B. `.xcstrings`
+/// oder `NSLocalizedString`) ohne Suchen-und-Ersetzen möglich ist: Man ersetzt nur
+/// die Rückgabewerte unten durch `String(localized:)`-Aufrufe.
+enum Strings {
+    // Statusleiste
+    static let appTitle = "Menü-Kurzbefehl-Umbieger"
+    static let statusItemTooltip = "Menü-Kurzbefehl anpassen"
+    static func triggerInfo(_ trigger: String) -> String { "Auslöser: \(trigger) lange halten" }
+    static let menuQuit = "Beenden"
+    static let menuDiagnose = "Diagnose & Verbindung …"
+
+    // Diagnose
+    static let diagnoseTitle = "Diagnose"
+    static func diagnoseBody(accessibility: Bool, tapActive: Bool, trigger: String) -> String {
+        let ax = accessibility ? "✓ erteilt" : "✗ fehlt"
+        let tap = tapActive ? "✓ aktiv" : "✗ inaktiv"
+        var text = "Bedienungshilfen: \(ax)\nTasten-Erkennung (Event-Tap): \(tap)\nAuslöser: \(trigger)"
+        if !accessibility || !tapActive {
+            text += "\n\nSo behebst du’s:\n"
+                + "1. „Bedienungshilfen öffnen“ antippen.\n"
+                + "2. MenuShortcutRebinder in der Liste entfernen (–) und mit (+) neu hinzufügen "
+                + "– das ist zuverlässiger als nur den Haken umzulegen.\n"
+                + "3. Hierher zurück, „Erneut verbinden“."
+        }
+        return text
+    }
+    static let diagnoseReconnect = "Erneut verbinden"
+    static let diagnoseReconnected = "✓ Verbunden – Auslöser ist aktiv"
+    static let diagnoseStillInactive = "✗ Noch nicht verbunden – Bedienungshilfen prüfen"
+    static let menuLoginItem = "Beim Anmelden starten"
+    static let menuChangeTrigger = "Auslöser-Taste ändern …"
+    static let menuManage = "Gesetzte Kürzel verwalten …"
+    static let menuHelp = "Kurzanleitung …"
+
+    // Verwaltung / Zurücksetzen
+    static let managerTitle = "Gesetzte Kürzel"
+    static let managerSubtitle = "Nur über dieses Tool gesetzte Kürzel. Eigene/fremde Einträge bleiben unberührt."
+    static let managerEmpty = "Noch keine Kürzel über dieses Tool gesetzt."
+    static let reset = "Zurücksetzen"
+    static let resetAll = "Alle zurücksetzen"
+    static let resetAllConfirm = "Wirklich alle hier gelisteten Kürzel zurücksetzen?"
+    static let closeButton = "Schließen"
+    static let resetDoneRestart = "Zurückgesetzt – betroffene App neu starten, damit es greift."
+
+    // Einstellungsdialog
+    static let settingsTitle = "Auslöser anpassen"
+    static let settingsTriggerLabel = "Auslöser-Taste (gedrückt halten):"
+    static let settingsTriggerHint =
+        "Drück die gewünschte Modifier-Taste (z. B. rechte ⌥). Nur Modifier-Tasten – "
+        + "normale Tasten würden in offenen Menüs Probleme machen."
+    static let settingsDurationLabel = "Haltedauer:"
+
+    // Start-Hinweis & Hilfe
+    static let launchedHint = "Aktiv – rechte ⌃ über einem Menüpunkt halten"
+    static let accessibilityActive = "✓ Bedienungshilfen aktiv"
+    static func loginItemFailed(_ reason: String) -> String { "Login-Eintrag fehlgeschlagen: \(reason)" }
+    static let helpTitle = "So funktioniert’s"
+    static let helpBody =
+        "1. In einer beliebigen App ein Menü öffnen.\n"
+        + "2. Mit der Maus über den gewünschten Eintrag fahren.\n"
+        + "3. Die rechte ⌃-Taste ~0,6 s halten.\n"
+        + "4. Im Fenster das neue Kürzel drücken, Bereich wählen, „Anpassen“.\n\n"
+        + "Bei „nur diese App“ die App danach neu starten, damit das Menü das "
+        + "Kürzel zeigt."
+
+    // Trigger-Beschreibung
+    static let triggerRightControl = "Rechte ⌃-Taste (Control)"
+
+    // Fenster „Anpassen?"
+    static let panelTitle = "Tastenkürzel anpassen?"
+    static func panelTarget(item: String, app: String) -> String {
+        "Menüpunkt „\(item)“ in \(app)"
+    }
+    static let panelTargetUnknownApp = "unbekannte App"
+    static let recorderPlaceholder = "Neues Kürzel drücken …"
+    static let recorderHint = "Halte die gewünschte Kombination (z. B. ⌘⇧F) gedrückt."
+    static let scopeApp = "Nur in dieser App"
+    static func scopeAppNamed(_ app: String) -> String { "Nur in \(app)" }
+    static let scopeGlobal = "In allen Programmen"
+    static let cancel = "Abbrechen"
+    static let save = "Anpassen"
+
+    // Hinweise / Fehler
+    static let noMenuItem = "Kein Menüpunkt unter dem Mauszeiger."
+    static let needShortcut = "Bitte zuerst ein Kürzel drücken."
+    static let appScopeNeedsBundle = "Diese App liefert keine Programm-Kennung – nur „alle Programme“ möglich."
+
+    // Neustart-Nachfrage
+    static let restartTitle = "Kürzel gespeichert"
+    static func restartBodyApp(_ app: String) -> String {
+        "Damit „\(app)“ das neue Kürzel zeigt, muss die App einmal neu gestartet werden."
+    }
+    static let restartBodyGlobal =
+        "Das Kürzel gilt für alle Programme. Bereits laufende Apps übernehmen es erst nach einem Neustart."
+    static let restartNow = "Jetzt neu starten"
+    static let restartLater = "Später"
+    static let ok = "OK"
+
+    // Bedienungshilfen
+    static let axAlertTitle = "Bedienungshilfen-Zugriff nötig"
+    static let axAlertBody =
+        "MenuShortcutRebinder braucht Zugriff auf „Bedienungshilfen“, um den Menüpunkt unter dem "
+        + "Mauszeiger zu lesen und die Auslöser-Taste global zu erkennen.\n\n"
+        + "Systemeinstellungen → Datenschutz & Sicherheit → Bedienungshilfen → MenuShortcutRebinder "
+        + "aktivieren. Falls schon ein Eintrag da ist, der nicht wirkt: mit (–) entfernen und mit (+) "
+        + "neu hinzufügen. Danach im ⌘-Menü „Diagnose & Verbindung“ → „Erneut verbinden“."
+    static let openSettings = "Systemeinstellungen öffnen"
+}
