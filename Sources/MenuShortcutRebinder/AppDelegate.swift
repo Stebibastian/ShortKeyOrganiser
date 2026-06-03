@@ -163,11 +163,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     @objc private func openManager() {
-        ManagerPanel.shared.present()
+        ShortcutsWindow.shared.present(tab: 0)
     }
 
     @objc private func openSystemShortcuts() {
-        SystemShortcutsPanel.shared.present()
+        ShortcutsWindow.shared.present(tab: 1)
     }
 
     // MARK: - Login-Eintrag

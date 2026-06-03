@@ -39,6 +39,11 @@ enum Strings {
     static let menuSystemShortcuts = "Alle System-Kurzbefehle anzeigen …"
     static let menuHelp = "Kurzanleitung …"
 
+    // Tastenkürzel-Fenster mit Tabs
+    static let winTitle = "Tastenkürzel"
+    static let tabTool = "Vom Tool gesetzt"
+    static let tabSystem = "Alle im System"
+
     // System-Kurzbefehle (Anzeige)
     static let sysTitle = "Alle Tastenkürzel im System"
     static let sysSubtitle = "Alle macOS-App-Kurzbefehle (global + pro App) – hier ändern oder löschen."
