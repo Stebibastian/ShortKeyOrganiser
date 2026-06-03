@@ -113,6 +113,7 @@ Oder einfach in den **App-Kurzbefehlen** den Eintrag wieder löschen.
 | `Strings.swift` | Alle benutzersichtbaren Texte an einer Stelle (Lokalisierung) |
 | `Settings.swift` / `SettingsPanel.swift` | Auslöser-Taste & Haltedauer einstellbar |
 | `Registry.swift` / `ManagerPanel.swift` | gesetzte Kürzel merken & zurücksetzen |
+| `install.sh` / `uninstall.sh` | Ein-Befehl-Installation bzw. vollständige Deinstallation |
 
 ## Auf einem anderen Mac installieren
 
@@ -146,6 +147,19 @@ xattr -dr com.apple.quarantine /Pfad/zu/MenuShortcutRebinder.app
 …dann nach `/Applications` ziehen und öffnen. (Oder Rechtsklick → „Öffnen" bzw.
 Systemeinstellungen → Datenschutz & Sicherheit → „Trotzdem öffnen".) Für eine
 **warnungsfreie** Weitergabe an Dritte braucht es Notarisierung — siehe unten.
+
+## Deinstallieren
+
+```bash
+./uninstall.sh
+```
+
+Entfernt App (aus `/Applications` + laufende Instanz), eigene Einstellungen, die
+Rechte (Bedienungshilfen/TCC), den lokalen Signier-Schlüsselbund und Build-Artefakte.
+**Unangetastet** bleiben deine in anderen Apps gesetzten Menü-Kürzel (z. B. eigene
+FileMaker-Kürzel) und der Quellcode. Willst du auch die vom Tool gesetzten Kürzel
+zurücksetzen, mach das **vorher** im App-Menü → *Gesetzte Kürzel verwalten → Alle
+zurücksetzen*.
 
 ## Verteilung / App Store
 
