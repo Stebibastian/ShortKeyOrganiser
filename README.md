@@ -6,6 +6,16 @@ Fenster fragt „Tastenkürzel anpassen?" und bietet die Wahl **nur diese App** 
 
 Genau die „hover + Taste halten"-Mechanik, gebaut auf den nativen macOS-Bordmitteln.
 
+## Schnellinstallation (eine Zeile)
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/Stebibastian/MenuShortcutRebinder/main/bootstrap.sh | bash
+```
+
+Holt den Quellcode, baut ihn lokal (lautlos signiert) und installiert nach
+`/Applications`. Voraussetzung: **Xcode Command Line Tools** (`xcode-select --install`).
+Danach einmal **Bedienungshilfen** freigeben – die App startet sich selbst neu.
+
 ## Bauen & Starten
 
 ```bash
