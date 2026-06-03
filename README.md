@@ -38,7 +38,10 @@ unberührt. Nach dem Zurücksetzen die betroffene App neu starten.
 
 1. Es erscheint ein Hinweis → **Systemeinstellungen → Datenschutz & Sicherheit →
    Bedienungshilfen** → MenuShortcutRebinder aktivieren.
-2. Tool **neu starten** (Menüleisten-Icon ⌘ → Beenden, dann wieder `open`).
+2. Nach dem Aktivieren **startet sich die App automatisch neu** – ein frischer
+   Prozess bekommt den Tastatur-Tap zuverlässig (eine im laufenden Prozess neu
+   erteilte Freigabe greift sonst oft nicht). Falls der Selbst-Neustart mal
+   ausbleibt: ⌘-Menü → Beenden, dann wieder öffnen.
 3. Falls der Auslöser dann immer noch nicht reagiert, zusätzlich unter
    **Eingabeüberwachung** freigeben.
 

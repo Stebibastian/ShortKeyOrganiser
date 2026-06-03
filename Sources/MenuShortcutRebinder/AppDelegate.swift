@@ -9,6 +9,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private let detector = LongPressDetector()
     private var trustTimer: Timer?
     private var didForceRelaunch = false
+    private var trustedAtLaunch = false
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
@@ -19,39 +20,54 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         detector.onTrigger = { [weak self] in self?.handleTrigger() }
 
         promptAccessibility()   // System-Prompt + Eintrag in der Rechte-Liste anlegen
+        trustedAtLaunch = AXIsProcessTrusted()
         detector.start()
 
-        if AXIsProcessTrusted() && detector.isActive {
+        // Auf Änderungen der Bedienungshilfen-Freigabe lauschen und die App dann
+        // automatisch neu starten. Ein frischer Prozess erhält den Tastatur-Tap
+        // zuverlässig – im laufenden Prozess greift eine neue Freigabe oft nicht.
+        DistributedNotificationCenter.default().addObserver(
+            self, selector: #selector(accessibilityChanged),
+            name: NSNotification.Name("com.apple.accessibility.api"), object: nil)
+
+        if trustedAtLaunch && detector.isActive {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
                 HUD.show(Strings.launchedHint)
             }
         } else {
-            // Auf die Rechte-Erteilung warten und dann automatisch verbinden /
-            // notfalls neu starten – ohne dass der Nutzer von Hand neu starten muss.
-            startTrustPolling()
+            startTrustBackupPolling()
             showAccessibilityAlert()
         }
     }
 
-    /// Pollt die Bedienungshilfen-Freigabe und verbindet sich automatisch, sobald
-    /// sie erteilt wird (Voll-Neustart als Fallback).
-    private func startTrustPolling() {
-        trustTimer?.invalidate()
-        let timer = Timer(timeInterval: 1.5, repeats: true) { [weak self] timer in
-            guard let self else { timer.invalidate(); return }
-            guard AXIsProcessTrusted() else { return }   // weiter warten
-            if !self.detector.isActive { self.detector.restart() }
-            timer.invalidate()
-            self.trustTimer = nil
-            if self.detector.isActive {
-                HUD.show(Strings.diagnoseReconnected)
-            } else if !self.didForceRelaunch {
+    /// Wird vom System bei Änderungen der Bedienungshilfen-Einstellungen gepostet.
+    @objc private func accessibilityChanged() {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { [weak self] in
+            guard let self, !self.didForceRelaunch else { return }
+            // Liefen wir ohne Rechte und es gab eine Änderung → sehr wahrscheinlich
+            // wurden gerade wir freigegeben. Oder die Rechte wurden entzogen.
+            if !self.trustedAtLaunch || !AXIsProcessTrusted() {
                 self.didForceRelaunch = true
                 self.relaunchSelf()
             }
         }
-        // .common-Modus: feuert auch, während ein modaler Dialog offen ist.
-        RunLoop.main.add(timer, forMode: .common)
+    }
+
+    /// Backup, falls die System-Notification ausbleibt: pollt die Freigabe und
+    /// startet bei Erteilung neu.
+    private func startTrustBackupPolling() {
+        trustTimer?.invalidate()
+        let timer = Timer(timeInterval: 2.0, repeats: true) { [weak self] timer in
+            guard let self else { timer.invalidate(); return }
+            if self.didForceRelaunch { timer.invalidate(); return }
+            if !self.trustedAtLaunch && AXIsProcessTrusted() {
+                self.didForceRelaunch = true
+                timer.invalidate()
+                self.trustTimer = nil
+                self.relaunchSelf()
+            }
+        }
+        RunLoop.main.add(timer, forMode: .common)   // feuert auch während modaler Dialoge
         trustTimer = timer
     }
 
@@ -196,8 +212,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         case .alertFirstButtonReturn:
             openAccessibilitySettings()
         case .alertSecondButtonReturn:
-            detector.restart()
-            HUD.show(detector.isActive ? Strings.diagnoseReconnected : Strings.diagnoseStillInactive)
+            relaunchSelf()   // frischer Prozess erhält den Tap zuverlässig
         default:
             break
         }
