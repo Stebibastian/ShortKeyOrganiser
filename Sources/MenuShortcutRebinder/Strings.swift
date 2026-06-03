@@ -41,10 +41,20 @@ enum Strings {
 
     // System-Kurzbefehle (Anzeige)
     static let sysTitle = "Alle Tastenkürzel im System"
-    static let sysSubtitle = "Vorhandene macOS-App-Kurzbefehle (global + pro App) – schreibgeschützt."
+    static let sysSubtitle = "Alle macOS-App-Kurzbefehle (global + pro App) – hier ändern oder löschen."
     static let sysEmpty = "Keine eigenen App-Kurzbefehle gefunden."
     static let refresh = "Aktualisieren"
     static func sysCount(_ n: Int) -> String { "\(n) Kürzel gefunden" }
+    static let sysEdit = "Ändern"
+    static let sysDelete = "Löschen"
+    static let sysReadOnly = "– nur lesbar"
+    static let sysDeleteTitle = "Kürzel entfernen?"
+    static func sysDeleteBody(shortcut: String, title: String, domain: String) -> String {
+        "„\(shortcut)“ für „\(title)“ in \(domain) wirklich entfernen?\n\n"
+        + "Das ändert einen echten macOS-App-Kurzbefehl. Die betroffene App muss danach "
+        + "neu gestartet werden."
+    }
+    static let sysDeletedRestart = "Entfernt – betroffene App neu starten, damit es greift."
 
     // Verwaltung / Zurücksetzen
     static let managerTitle = "Gesetzte Kürzel"

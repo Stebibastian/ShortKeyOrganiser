@@ -96,10 +96,19 @@ final class RecorderPanel: NSObject, NSWindowDelegate {
 
     private var target: MenuTarget!
     private var captured: Shortcut?
+    private var lockedScope: Scope?
+    private var recordInRegistry = true
+    private var onSaved: (() -> Void)?
 
-    func present(target: MenuTarget) {
+    func present(target: MenuTarget,
+                 lockScope: Scope? = nil,
+                 recordInRegistry: Bool = true,
+                 onSaved: (() -> Void)? = nil) {
         self.target = target
         self.captured = nil
+        self.lockedScope = lockScope
+        self.recordInRegistry = recordInRegistry
+        self.onSaved = onSaved
 
         let content = NSRect(x: 0, y: 0, width: 440, height: 300)
         let window = NSWindow(contentRect: content,
@@ -146,8 +155,13 @@ final class RecorderPanel: NSObject, NSWindowDelegate {
         root.addSubview(appRadio)
         root.addSubview(globalRadio)
 
-        // Ohne Bundle-ID ist „nur diese App" nicht möglich.
-        if (target.bundleID ?? "").isEmpty {
+        // Bereich festlegen (beim Bearbeiten gesperrt) bzw. wählbar.
+        if let locked = lockScope {
+            appRadio.state = (locked == .app) ? .on : .off
+            globalRadio.state = (locked == .global) ? .on : .off
+            appRadio.isEnabled = false
+            globalRadio.isEnabled = false
+        } else if (target.bundleID ?? "").isEmpty {
             appRadio.isEnabled = false
             globalRadio.state = .on
         } else {
@@ -194,7 +208,7 @@ final class RecorderPanel: NSObject, NSWindowDelegate {
             statusLabel.stringValue = Strings.needShortcut
             return
         }
-        let scope: Scope = (globalRadio.state == .on) ? .global : .app
+        let scope: Scope = lockedScope ?? ((globalRadio.state == .on) ? .global : .app)
         if scope == .app, (target.bundleID ?? "").isEmpty {
             statusLabel.stringValue = Strings.appScopeNeedsBundle
             return
@@ -205,7 +219,7 @@ final class RecorderPanel: NSObject, NSWindowDelegate {
                                  scope: scope,
                                  bundleID: target.bundleID)
         let appName = target.appName ?? Strings.panelTargetUnknownApp
-        if ok {
+        if ok && recordInRegistry {
             Registry.add(ShortcutRecord(scope: scope,
                                         bundleID: target.bundleID,
                                         appName: target.appName,
@@ -215,6 +229,7 @@ final class RecorderPanel: NSObject, NSWindowDelegate {
         }
         close()
         if ok { offerRestart(scope: scope, appName: appName) }
+        if ok { onSaved?() }
     }
 
     private func updateSaveEnabled() {
