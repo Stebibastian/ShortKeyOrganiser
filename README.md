@@ -126,16 +126,13 @@ xcode-select --install
 
 git clone https://github.com/Stebibastian/MenuShortcutRebinder.git
 cd MenuShortcutRebinder
-./make-cert.sh     # legt auf DIESEM Mac ein lokales Signatur-Zertifikat an
-./install.sh       # baut + installiert nach /Applications + startet
+./install.sh       # Signatur einrichten + bauen + installieren + starten
 ```
 
-`make-cert.sh` fragt einmal nach deinem **macOS-Anmeldepasswort**, um `codesign` den
-Zugriff auf den Signier-Schlüssel dauerhaft zu erlauben. Tust du das nicht, fragt der
-Schlüsselbund bei **jedem** Build nach — dann im Dialog **„Immer erlauben"** wählen
-(nicht „Erlauben", das gilt nur einmal).
-
-Danach einmalig **Bedienungshilfen** freigeben (das Tool fragt von selbst). Fertig.
+`install.sh` erledigt alles in einem Rutsch und **lautlos** – es legt einen eigenen
+Signier-Schlüsselbund an, daher **keine Passwort- oder Schlüsselbund-Dialoge**.
+Danach einmal **Bedienungshilfen** freigeben – die App startet sich dann von selbst
+neu. Fertig.
 
 ### Alternative: fertige App herunterladen
 

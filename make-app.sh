@@ -21,14 +21,16 @@ if [ ! -f "AppSupport/AppIcon.icns" ]; then
 fi
 cp "AppSupport/AppIcon.icns" "$APP/Contents/Resources/AppIcon.icns"
 
-# Stabiles Zertifikat bevorzugen (hält die Bedienungshilfen-Freigabe über Rebuilds);
-# sonst ad-hoc.
-CERT_NAME="MenuShortcutRebinder Self-Signed"
+# Lautloses Signieren über den lokalen Signier-Schlüsselbund (siehe make-cert.sh);
+# hält die Bedienungshilfen-Freigabe über Rebuilds stabil. Sonst ad-hoc.
+CERT_NAME="MenuShortcutRebinder Local Signing"
+SIGN_KC="$HOME/Library/Keychains/menushortcut-signing.keychain-db"
+[ -f "$SIGN_KC" ] && security unlock-keychain -p "menushortcut-local" "$SIGN_KC" 2>/dev/null || true
 if security find-identity -p codesigning 2>/dev/null | grep -qF "$CERT_NAME"; then
-    echo "→ Signiere mit '$CERT_NAME' …"
+    echo "→ Signiere lautlos mit lokalem Zertifikat …"
     codesign --force --sign "$CERT_NAME" --identifier com.realview.menushortcutrebinder "$APP"
 else
-    echo "→ Signiere ad-hoc (für dauerhafte Rechte einmal ./make-cert.sh ausführen) …"
+    echo "→ Signiere ad-hoc (für stabile Rechte einmal ./make-cert.sh ausführen) …"
     codesign --force --sign - --identifier com.realview.menushortcutrebinder "$APP"
 fi
 
