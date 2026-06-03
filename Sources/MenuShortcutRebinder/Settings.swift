@@ -5,7 +5,7 @@ enum Settings {
     private static let triggerKeyCodeKey = "triggerKeyCode"
     private static let holdDurationKey = "holdDuration"
 
-    static let defaultTriggerKeyCode = 62   // rechte ⌃ (Control)
+    static let defaultTriggerKeyCode = 54   // rechte ⌘ (Command)
     static let defaultHoldDuration = 0.6
 
     static var triggerKeyCode: Int {

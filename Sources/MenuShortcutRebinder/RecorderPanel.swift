@@ -5,11 +5,35 @@ final class RecorderField: NSView {
     var onCapture: ((Shortcut) -> Void)?
     private(set) var current: Shortcut?
     private var focused = false
+    private var monitor: Any?
 
     override var acceptsFirstResponder: Bool { true }
-    override func becomeFirstResponder() -> Bool { focused = true; needsDisplay = true; return true }
-    override func resignFirstResponder() -> Bool { focused = false; needsDisplay = true; return true }
+    override func becomeFirstResponder() -> Bool {
+        focused = true; needsDisplay = true; installMonitor(); return true
+    }
+    override func resignFirstResponder() -> Bool {
+        focused = false; needsDisplay = true; removeMonitor(); return true
+    }
     override func mouseDown(with event: NSEvent) { window?.makeFirstResponder(self) }
+    deinit { removeMonitor() }
+
+    // Lokaler Event-Monitor: fängt JEDEN Tastendruck ab, solange das Feld den Fokus
+    // hat – auch ⌘-Kombinationen, die das Menü-/Key-Equivalent-System sonst abfängt,
+    // bevor sie keyDown/performKeyEquivalent erreichen.
+    private func installMonitor() {
+        removeMonitor()
+        monitor = NSEvent.addLocalMonitorForEvents(matching: [.keyDown]) { [weak self] event in
+            guard let self, self.window?.firstResponder === self else { return event }
+            if let shortcut = Shortcut.from(event: event) {
+                self.apply(shortcut)
+                return nil   // verschluckt → löst nichts anderes aus
+            }
+            return event
+        }
+    }
+    private func removeMonitor() {
+        if let monitor { NSEvent.removeMonitor(monitor); self.monitor = nil }
+    }
 
     override func keyDown(with event: NSEvent) {
         if let shortcut = Shortcut.from(event: event) { apply(shortcut) }
