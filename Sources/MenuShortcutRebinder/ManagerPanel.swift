@@ -73,10 +73,10 @@ final class ManagerPanel: NSObject {
         root.addSubview(closeButton)
 
         self.window = window
-        reload()
         NSApp.activate(ignoringOtherApps: true)
         window.center()
         window.makeKeyAndOrderFront(nil)
+        reload()   // erst zeigen, dann befüllen
     }
 
     private func reload() {
@@ -92,7 +92,11 @@ final class ManagerPanel: NSObject {
             return
         }
         for (index, record) in records.enumerated() {
-            stack.addArrangedSubview(rowView(index: index, record: record))
+            let row = rowView(index: index, record: record)
+            stack.addArrangedSubview(row)
+            // Breite erst NACH dem Einhängen verankern – sonst haben row und stack
+            // keinen gemeinsamen Vorfahr → Constraint-Ausnahme → Fenster bleibt unsichtbar.
+            row.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true
         }
     }
 
@@ -122,8 +126,7 @@ final class ManagerPanel: NSObject {
         row.addArrangedSubview(description)
         row.addArrangedSubview(button)
         row.translatesAutoresizingMaskIntoConstraints = false
-        row.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true
-        return row
+        return row   // Breite wird in reload() NACH dem Einhängen verankert
     }
 
     // MARK: - Aktionen
