@@ -126,7 +126,23 @@ final class SystemShortcutsPanel: NSObject {
         let row = NSStackView()
         row.orientation = .horizontal
         row.spacing = 8
-        row.edgeInsets = NSEdgeInsets(top: 1, left: 10, bottom: 1, right: 8)
+        row.edgeInsets = NSEdgeInsets(top: 2, left: 8, bottom: 2, right: 8)
+
+        // Aktions-Icons LINKS: 🗑️ Löschen (rot), ✏️ Ändern – dann versetzt der Text.
+        if group.editable {
+            let del = iconButton(symbol: "trash", tint: .systemRed,
+                                 tip: Strings.sysDelete, action: #selector(deleteClicked(_:)), tag: index)
+            let edit = iconButton(symbol: "pencil", tint: .controlAccentColor,
+                                  tip: Strings.sysEdit, action: #selector(editClicked(_:)), tag: index)
+            row.addArrangedSubview(del)
+            row.addArrangedSubview(edit)
+            row.setCustomSpacing(18, after: edit)
+        } else {
+            let spacer = NSView()   // gleiche Breite wie die Icons, damit der Text bündig bleibt
+            spacer.widthAnchor.constraint(equalToConstant: 52).isActive = true
+            row.addArrangedSubview(spacer)
+            row.setCustomSpacing(18, after: spacer)
+        }
 
         let kbd = label(entry.display, .zero)
         kbd.font = .monospacedSystemFont(ofSize: 12, weight: .semibold)
@@ -140,22 +156,25 @@ final class SystemShortcutsPanel: NSObject {
 
         row.addArrangedSubview(kbd)
         row.addArrangedSubview(name)
-
-        if group.editable {
-            let edit = NSButton(title: Strings.sysEdit, target: self, action: #selector(editClicked(_:)))
-            edit.bezelStyle = .rounded
-            edit.controlSize = .small
-            edit.tag = index
-            edit.setContentHuggingPriority(.required, for: .horizontal)
-            let del = NSButton(title: Strings.sysDelete, target: self, action: #selector(deleteClicked(_:)))
-            del.bezelStyle = .rounded
-            del.controlSize = .small
-            del.tag = index
-            del.setContentHuggingPriority(.required, for: .horizontal)
-            row.addArrangedSubview(edit)
-            row.addArrangedSubview(del)
-        }
         return row
+    }
+
+    private func iconButton(symbol: String, tint: NSColor, tip: String,
+                            action: Selector, tag: Int) -> NSButton {
+        let button = NSButton()
+        let config = NSImage.SymbolConfiguration(pointSize: 13, weight: .regular)
+        button.image = NSImage(systemSymbolName: symbol, accessibilityDescription: tip)?
+            .withSymbolConfiguration(config)
+        button.imagePosition = .imageOnly
+        button.isBordered = false
+        button.contentTintColor = tint
+        button.target = self
+        button.action = action
+        button.tag = tag
+        button.toolTip = tip
+        button.setContentHuggingPriority(.required, for: .horizontal)
+        button.widthAnchor.constraint(equalToConstant: 22).isActive = true
+        return button
     }
 
     // MARK: - Aktionen
