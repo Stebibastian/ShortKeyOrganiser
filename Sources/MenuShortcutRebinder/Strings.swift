@@ -31,8 +31,6 @@ enum Strings {
         return text
     }
     static let diagnoseReconnect = "Erneut verbinden"
-    static let diagnoseReconnected = "✓ Verbunden – Auslöser ist aktiv"
-    static let diagnoseStillInactive = "✗ Noch nicht verbunden – Bedienungshilfen prüfen"
     static let menuLoginItem = "Beim Anmelden starten"
     static let menuChangeTrigger = "Auslöser-Taste ändern …"
     static let menuShortcuts = "Tastenkürzel verwalten …"
@@ -44,11 +42,8 @@ enum Strings {
     static let tabSystem = "Alle im System"
 
     // System-Kurzbefehle (Anzeige)
-    static let sysTitle = "Alle Tastenkürzel im System"
-    static let sysSubtitle = "Alle macOS-App-Kurzbefehle (global + pro App) – hier ändern oder löschen."
     static let sysEmpty = "Keine eigenen App-Kurzbefehle gefunden."
     static let refresh = "Aktualisieren"
-    static func sysCount(_ n: Int) -> String { "\(n) Kürzel gefunden" }
     static let sysEdit = "Ändern"
     static let sysDelete = "Löschen"
     static let sysReadOnly = "– nur lesbar"
@@ -63,8 +58,6 @@ enum Strings {
     static let sysDeletedRestart = "Entfernt – betroffene App neu starten, damit es greift."
 
     // Verwaltung / Zurücksetzen
-    static let managerTitle = "Gesetzte Kürzel"
-    static let managerSubtitle = "Nur über dieses Tool gesetzte Kürzel. Eigene/fremde Einträge bleiben unberührt."
     static let managerEmpty = "Noch keine Kürzel über dieses Tool gesetzt."
     static let reset = "Zurücksetzen"
     static let resetAll = "Alle zurücksetzen"
@@ -76,15 +69,15 @@ enum Strings {
     static let settingsTitle = "Auslöser anpassen"
     static let settingsTriggerLabel = "Auslöser-Taste (gedrückt halten):"
     static let settingsTriggerHint =
-        "Drück die gewünschte Modifier-Taste (z. B. rechte ⌥). Nur Modifier-Tasten – "
-        + "normale Tasten würden in offenen Menüs Probleme machen."
+        "Drück die gewünschte Modifier-Taste. Nur Modifier-Tasten – normale Tasten würden "
+        + "in offenen Menüs Probleme machen. Am sichersten: ⌃ oder ⇧ (⌥ und teils ⌘ blenden "
+        + "in Menüs alternative Einträge ein)."
     static let settingsDurationLabel = "Haltedauer:"
 
     // Start-Hinweis & Hilfe
     static func launchedHint(_ trigger: String) -> String {
         "Aktiv – \(trigger) über einem Menüpunkt halten"
     }
-    static let accessibilityActive = "✓ Bedienungshilfen aktiv"
     static func loginItemFailed(_ reason: String) -> String { "Login-Eintrag fehlgeschlagen: \(reason)" }
     static let helpTitle = "So funktioniert’s"
     static func helpBody(trigger: String, seconds: String) -> String {
@@ -114,6 +107,9 @@ enum Strings {
     static let noMenuItem = "Kein Menüpunkt unter dem Mauszeiger."
     static let needShortcut = "Bitte zuerst ein Kürzel drücken."
     static let appScopeNeedsBundle = "Diese App liefert keine Programm-Kennung – nur „alle Programme“ möglich."
+    static func conflictWarning(shortcut: String, other: String) -> String {
+        "Achtung: \(shortcut) ist hier schon für „\(other)“ vergeben – wird ersetzt."
+    }
 
     // Neustart-Nachfrage
     static let restartTitle = "Kürzel gespeichert"

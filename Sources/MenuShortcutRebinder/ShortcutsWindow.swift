@@ -38,11 +38,12 @@ final class ShortcutsWindow: NSObject, NSTabViewDelegate {
 
     private func build() {
         let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 580, height: 520),
-                              styleMask: [.titled, .closable],
+                              styleMask: [.titled, .closable, .resizable],
                               backing: .buffered, defer: false)
         window.title = Strings.winTitle
         window.level = .floating
         window.isReleasedWhenClosed = false
+        window.contentMinSize = NSSize(width: 480, height: 360)
         let root = window.contentView!
 
         tabView = NSTabView(frame: NSRect(x: 16, y: 56, width: 548, height: 452))
@@ -73,12 +74,14 @@ final class ShortcutsWindow: NSObject, NSTabViewDelegate {
         let refresh = NSButton(title: Strings.refresh, target: self, action: #selector(refreshClicked))
         refresh.bezelStyle = .rounded
         refresh.frame = NSRect(x: 372, y: 14, width: 110, height: 32)
+        refresh.autoresizingMask = [.minXMargin]   // an rechter Kante kleben
         root.addSubview(refresh)
 
         let close = NSButton(title: Strings.closeButton, target: self, action: #selector(closeClicked))
         close.bezelStyle = .rounded
         close.keyEquivalent = "\r"
         close.frame = NSRect(x: 486, y: 14, width: 78, height: 32)
+        close.autoresizingMask = [.minXMargin]
         root.addSubview(close)
 
         // Delegate erst JETZT setzen – sonst feuert didSelect bereits beim Hinzufügen

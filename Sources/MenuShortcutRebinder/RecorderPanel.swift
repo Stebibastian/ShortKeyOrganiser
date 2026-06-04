@@ -135,8 +135,8 @@ final class RecorderPanel: NSObject, NSWindowDelegate {
         // Aufnahmefeld
         field = RecorderField(frame: NSRect(x: 20, y: 176, width: 400, height: 48))
         field.onCapture = { [weak self] _ in
-            self?.statusLabel.stringValue = ""
             self?.updateSaveEnabled()
+            self?.checkConflict()
         }
         root.addSubview(field)
 
@@ -198,12 +198,27 @@ final class RecorderPanel: NSObject, NSWindowDelegate {
     // MARK: - Aktionen
 
     @objc private func scopeChanged() {
-        // Auswahl wird beim Sichern aus dem Radio-Status gelesen.
+        checkConflict()
+    }
+
+    /// Warnt, wenn das gewählte Kürzel im Zielbereich schon für einen ANDEREN
+    /// Menüpunkt vergeben ist – macOS würde es sonst lautlos überschreiben.
+    private func checkConflict() {
+        statusLabel.stringValue = ""
+        guard let shortcut = field.current else { return }
+        let scope: Scope = lockedScope ?? ((globalRadio.state == .on) ? .global : .app)
+        if scope == .app, (target.bundleID ?? "").isEmpty { return }
+        let existing = Preferences.current(scope: scope, bundleID: target.bundleID)
+        if let other = existing.first(where: { $0.value == shortcut.encoded && $0.key != target.title })?.key {
+            statusLabel.textColor = .systemOrange
+            statusLabel.stringValue = Strings.conflictWarning(shortcut: shortcut.display, other: other)
+        }
     }
 
     @objc private func cancelClicked() { close() }
 
     @objc private func saveClicked() {
+        statusLabel.textColor = .systemRed
         guard let shortcut = field.current, shortcut.isValid else {
             statusLabel.stringValue = Strings.needShortcut
             return
