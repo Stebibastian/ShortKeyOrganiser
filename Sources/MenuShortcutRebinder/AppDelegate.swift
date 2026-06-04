@@ -44,9 +44,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     @objc private func accessibilityChanged() {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { [weak self] in
             guard let self, !self.didForceRelaunch else { return }
-            // Liefen wir ohne Rechte und es gab eine Änderung → sehr wahrscheinlich
-            // wurden gerade wir freigegeben. Oder die Rechte wurden entzogen.
-            if !self.trustedAtLaunch || !AXIsProcessTrusted() {
+            // NUR neu starten, wenn sich der Vertrauensstatus seit dem Start tatsächlich
+            // GEÄNDERT hat (Rechte gerade erteilt ODER entzogen). Sonst entsteht eine
+            // Endlos-Neustart-Schleife, solange die App nicht freigegeben ist.
+            if AXIsProcessTrusted() != self.trustedAtLaunch {
                 self.didForceRelaunch = true
                 self.relaunchSelf()
             }
@@ -73,9 +74,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     private func relaunchSelf() {
         let path = Bundle.main.bundlePath
+        let pid = ProcessInfo.processInfo.processIdentifier
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/bin/sh")
-        process.arguments = ["-c", "sleep 1; open \"\(path)\""]
+        // Erst warten, bis DIESER Prozess wirklich beendet ist, dann neu öffnen –
+        // sonst zeigt macOS „Programm ist nicht mehr geöffnet".
+        process.arguments = ["-c",
+            "while /bin/kill -0 \(pid) 2>/dev/null; do sleep 0.2; done; /usr/bin/open \"\(path)\""]
         try? process.run()
         NSApp.terminate(nil)
     }
