@@ -21,6 +21,10 @@ if [ ! -f "AppSupport/AppIcon.icns" ]; then
 fi
 cp "AppSupport/AppIcon.icns" "$APP/Contents/Resources/AppIcon.icns"
 
+# Erweiterte Attribute entfernen (iCloud/Finder hängt sie an → codesign lehnt sonst
+# mit „resource fork … not allowed" ab).
+xattr -cr "$APP"
+
 # Lautloses Signieren über den lokalen Signier-Schlüsselbund (siehe make-cert.sh);
 # hält die Bedienungshilfen-Freigabe über Rebuilds stabil. Sonst ad-hoc.
 CERT_NAME="MenuShortcutRebinder Local Signing"
