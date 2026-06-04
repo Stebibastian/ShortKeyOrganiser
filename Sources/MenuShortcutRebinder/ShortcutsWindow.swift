@@ -47,7 +47,6 @@ final class ShortcutsWindow: NSObject, NSTabViewDelegate {
 
         tabView = NSTabView(frame: NSRect(x: 16, y: 56, width: 548, height: 452))
         tabView.autoresizingMask = [.width, .height]
-        tabView.delegate = self
 
         let (toolView, ts) = makeList()
         toolStack = ts
@@ -80,6 +79,10 @@ final class ShortcutsWindow: NSObject, NSTabViewDelegate {
         close.keyEquivalent = "\r"
         close.frame = NSRect(x: 486, y: 14, width: 78, height: 32)
         root.addSubview(close)
+
+        // Delegate erst JETZT setzen – sonst feuert didSelect bereits beim Hinzufügen
+        // der Tabs, bevor resetAllButton existiert (→ nil-Crash).
+        tabView.delegate = self
 
         self.window = window
     }
@@ -294,9 +297,10 @@ final class ShortcutsWindow: NSObject, NSTabViewDelegate {
     }
 
     private func updateBottomBar() {
-        // „Alle zurücksetzen" nur im Tool-Tab anzeigen.
-        let isToolTab = tabView.indexOfTabViewItem(tabView.selectedTabViewItem!) == 0
-        resetAllButton.isHidden = !isToolTab
+        // „Alle zurücksetzen" nur im Tool-Tab anzeigen. Defensiv gegen frühe/leere Aufrufe.
+        guard let resetAllButton = resetAllButton,
+              let selected = tabView?.selectedTabViewItem else { return }
+        resetAllButton.isHidden = tabView.indexOfTabViewItem(selected) != 0
     }
 
     // MARK: - Helfer
