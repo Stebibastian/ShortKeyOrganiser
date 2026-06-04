@@ -56,7 +56,9 @@ enum Strings {
     static func sysDeleteBody(shortcut: String, title: String, domain: String) -> String {
         "„\(shortcut)“ für „\(title)“ in \(domain) wirklich entfernen?\n\n"
         + "Das ändert einen echten macOS-App-Kurzbefehl. Die betroffene App muss danach "
-        + "neu gestartet werden."
+        + "neu gestartet werden.\n\n"
+        + "Hinweis: In den Systemeinstellungen wird die Änderung erst sichtbar, nachdem du "
+        + "sie schließt und neu öffnest (deren Liste aktualisiert sich nicht von selbst)."
     }
     static let sysDeletedRestart = "Entfernt – betroffene App neu starten, damit es greift."
 

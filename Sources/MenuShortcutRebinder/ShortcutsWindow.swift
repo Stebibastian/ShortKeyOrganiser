@@ -48,20 +48,20 @@ final class ShortcutsWindow: NSObject, NSTabViewDelegate {
         tabView = NSTabView(frame: NSRect(x: 16, y: 56, width: 548, height: 452))
         tabView.autoresizingMask = [.width, .height]
 
-        // „Alle im System" zuerst (Standard-Tab), dann „Vom Tool gesetzt".
-        let (sysView, ss) = makeList()
-        sysStack = ss
-        let sysItem = NSTabViewItem(identifier: "system")
-        sysItem.label = Strings.tabSystem
-        sysItem.view = sysView
-        tabView.addTabViewItem(sysItem)
-
+        // „Vom Tool gesetzt" zuerst (Standard-Tab), dann „Alle im System".
         let (toolView, ts) = makeList()
         toolStack = ts
         let toolItem = NSTabViewItem(identifier: "tool")
         toolItem.label = Strings.tabTool
         toolItem.view = toolView
         tabView.addTabViewItem(toolItem)
+
+        let (sysView, ss) = makeList()
+        sysStack = ss
+        let sysItem = NSTabViewItem(identifier: "system")
+        sysItem.label = Strings.tabSystem
+        sysItem.view = sysView
+        tabView.addTabViewItem(sysItem)
 
         root.addSubview(tabView)
 
