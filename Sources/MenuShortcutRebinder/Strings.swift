@@ -35,8 +35,7 @@ enum Strings {
     static let diagnoseStillInactive = "✗ Noch nicht verbunden – Bedienungshilfen prüfen"
     static let menuLoginItem = "Beim Anmelden starten"
     static let menuChangeTrigger = "Auslöser-Taste ändern …"
-    static let menuManage = "Gesetzte Kürzel verwalten …"
-    static let menuSystemShortcuts = "Alle System-Kurzbefehle anzeigen …"
+    static let menuShortcuts = "Tastenkürzel verwalten …"
     static let menuHelp = "Kurzanleitung …"
 
     // Tastenkürzel-Fenster mit Tabs

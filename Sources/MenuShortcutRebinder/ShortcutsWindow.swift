@@ -48,19 +48,20 @@ final class ShortcutsWindow: NSObject, NSTabViewDelegate {
         tabView = NSTabView(frame: NSRect(x: 16, y: 56, width: 548, height: 452))
         tabView.autoresizingMask = [.width, .height]
 
-        let (toolView, ts) = makeList()
-        toolStack = ts
-        let toolItem = NSTabViewItem(identifier: "tool")
-        toolItem.label = Strings.tabTool
-        toolItem.view = toolView
-        tabView.addTabViewItem(toolItem)
-
+        // „Alle im System" zuerst (Standard-Tab), dann „Vom Tool gesetzt".
         let (sysView, ss) = makeList()
         sysStack = ss
         let sysItem = NSTabViewItem(identifier: "system")
         sysItem.label = Strings.tabSystem
         sysItem.view = sysView
         tabView.addTabViewItem(sysItem)
+
+        let (toolView, ts) = makeList()
+        toolStack = ts
+        let toolItem = NSTabViewItem(identifier: "tool")
+        toolItem.label = Strings.tabTool
+        toolItem.view = toolView
+        tabView.addTabViewItem(toolItem)
 
         root.addSubview(tabView)
 
@@ -300,7 +301,7 @@ final class ShortcutsWindow: NSObject, NSTabViewDelegate {
         // „Alle zurücksetzen" nur im Tool-Tab anzeigen. Defensiv gegen frühe/leere Aufrufe.
         guard let resetAllButton = resetAllButton,
               let selected = tabView?.selectedTabViewItem else { return }
-        resetAllButton.isHidden = tabView.indexOfTabViewItem(selected) != 0
+        resetAllButton.isHidden = (selected.identifier as? String) != "tool"
     }
 
     // MARK: - Helfer
