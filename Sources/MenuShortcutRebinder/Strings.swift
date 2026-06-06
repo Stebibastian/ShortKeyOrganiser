@@ -34,12 +34,62 @@ enum Strings {
     static let menuLoginItem = "Beim Anmelden starten"
     static let menuChangeTrigger = "Auslöser-Taste ändern …"
     static let menuShortcuts = "Tastenkürzel verwalten …"
+    static let menuBrowse = "Befehle durchsuchen …"
+    static let menuBrowseSettings = "Durchsuchen-Einstellungen …"
+    static let menuSettings = "Einstellungen …"
+    // Zentrale Einstellungen
+    static let setWinTitle = "Einstellungen"
+    static let setSecRebind = "Tastenkürzel umbelegen"
+    static let setRebindTrigger = "Auslöser (über Menüpunkt halten)"
+    static let setHold = "Haltedauer"
+    static let setSecBrowse = "Befehle durchsuchen"
+    static let setPeekEnable = "Per Mehrfachdruck öffnen"
+    static let setPeekHint = "⌘⌘ halten = kurzer Blick · ⌘⌘⌘ = fix offen"
+    static let setPeekTrigger = "Auslöser-Taste"
+    static let setSecView = "Ansicht"
+    static let setWindowSize = "Fenstergröße"
+    static let setColWidth = "Spaltenbreite"
+    static let setZebra = "Zebra-Streifen (abwechselnde Zeilenfarbe)"
+    static let setSecGeneral = "Allgemein"
+    static let setLogin = "Beim Anmelden starten"
+    // Durchsuchen-Einstellungen (Peek + Fenstergröße)
+    static let bsTitle = "Befehle durchsuchen - Einstellungen"
+    static let bsModifierLabel = "Auslöser-Taste (zweimal drücken, beim zweiten Mal halten):"
+    static let bsHoldLabel = "Haltedauer nach dem Doppeldruck"
+    static let bsSizeLabel = "Fenstergröße (Anteil am Bildschirm)"
+    static let bsModCommand = "Command ⌘"
+    static let bsModOption = "Option ⌥"
+    static let bsModControl = "Control ⌃"
+    static let bsEnableLabel = "Per Doppeldruck öffnen"
+    static let bsZebraLabel = "Zebra-Streifen (abwechselnde Zeilenfarbe)"
+    static let bsPeekHint = "Zweimal drücken + halten = kurzer Blick (Loslassen schließt). Dreimal drücken = fix offen (bleibt offen). Im Blick die Lupe anklicken hält ebenfalls offen."
+    static let bsClose = "Fertig"
     static let menuHelp = "Kurzanleitung …"
 
     // Tastenkürzel-Fenster mit Tabs
     static let winTitle = "Tastenkürzel"
     static let tabTool = "Vom Tool gesetzt"
     static let tabSystem = "Alle im System"
+
+    // Befehle durchsuchen (Suche im Stil der macOS-Hilfe-Suche)
+    static let browseTitle = "Befehle durchsuchen"
+    static let browseSearchPlaceholder = "Befehl suchen … (Schlagwort eintippen)"
+    static let browseAppLabel = "App:"
+    static let browseLoading = "Befehle werden gelesen …"
+    static let browseEmpty = "Keine Menübefehle gefunden. Ist die App offen und eine native Mac-App?"
+    static let browseNoMatch = "Kein Treffer."
+    static let browseNoAccess = "Bedienungshilfen-Recht fehlt - bitte im ⌘-Menü unter Diagnose & Verbindung prüfen."
+    static let browseCustomTip = "Von Dir gesetzt"
+    static let browseDeleteTip = "Eigenes Kürzel entfernen (Standard wiederherstellen)"
+    static let browseEditTip = "Tastenkürzel anpassen"
+    static let browsePerformTip = "Befehl ausführen"
+    static let browseFavorites = "★ Favoriten"
+    static let browseFavTip = "Als Favorit markieren"
+    static let browseHideTip = "Befehl ausblenden"
+    static let browseUnhideTip = "Wieder einblenden"
+    static let browseShowHidden = "Ausgeblendete anzeigen"
+    static func browseCount(hits: Int, total: Int) -> String { "\(hits) von \(total) Befehlen" }
+    static func browseCapped(_ cap: Int) -> String { " (erste \(cap) gezeigt)" }
 
     // System-Kurzbefehle (Anzeige)
     static let sysEmpty = "Keine eigenen App-Kurzbefehle gefunden."
@@ -114,13 +164,21 @@ enum Strings {
     // Neustart-Nachfrage
     static let restartTitle = "Kürzel gespeichert"
     static func restartBodyApp(_ app: String) -> String {
-        "Damit „\(app)“ das neue Kürzel zeigt, muss die App einmal neu gestartet werden."
+        "Damit „\(app)“ das neue Kürzel zeigt, muss die App einmal neu gestartet werden. "
+        + "In den Systemeinstellungen → Tastatur erscheint es erst nach Schliessen und Neuöffnen."
     }
     static let restartBodyGlobal =
-        "Das Kürzel gilt für alle Programme. Bereits laufende Apps übernehmen es erst nach einem Neustart."
+        "Das Kürzel gilt für alle Programme. Bereits laufende Apps übernehmen es erst nach einem Neustart. "
+        + "In den Systemeinstellungen → Tastatur erscheint es erst nach Schliessen und Neuöffnen."
     static let restartNow = "Jetzt neu starten"
     static let restartLater = "Später"
     static let ok = "OK"
+    static let resetRestartTitle = "Kürzel entfernt"
+    static func resetRestartBodyApp(_ app: String) -> String {
+        "Damit „\(app)“ wieder sein Standard-Kürzel zeigt, muss die App einmal neu gestartet werden."
+    }
+    static let resetRestartBodyGlobal =
+        "Das Kürzel wurde entfernt. Bereits laufende Programme zeigen den Standard erst nach einem Neustart."
 
     // Bedienungshilfen
     static let axAlertTitle = "Bedienungshilfen-Zugriff nötig"

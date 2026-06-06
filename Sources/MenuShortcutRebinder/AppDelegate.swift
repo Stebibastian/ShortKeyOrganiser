@@ -4,24 +4,48 @@ import ServiceManagement
 
 final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var statusItem: NSStatusItem!
-    private var loginItem: NSMenuItem!
     private var triggerInfoItem: NSMenuItem!
     private let detector = LongPressDetector()
+    private let peekDetector = PeekTriggerDetector()
     private var trustTimer: Timer?
     private var didForceRelaunch = false
     private var trustedAtLaunch = false
+    private var lastFrontApp: NSRunningApplication?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
         setupStatusItem()
 
+        // Zuletzt aktive Fremd-App merken – das ist die App, deren Befehle „Befehle
+        // durchsuchen" beim Öffnen anzeigt (die eigene App wird ignoriert).
+        lastFrontApp = NSWorkspace.shared.frontmostApplication
+        NSWorkspace.shared.notificationCenter.addObserver(
+            forName: NSWorkspace.didActivateApplicationNotification, object: nil, queue: .main
+        ) { [weak self] note in
+            guard let self else { return }
+            if let app = note.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication,
+               app.processIdentifier != ProcessInfo.processInfo.processIdentifier {
+                self.lastFrontApp = app
+            }
+        }
+
         detector.triggerKeyCode = Int64(Settings.triggerKeyCode)
         detector.holdDuration = Settings.holdDuration
         detector.onTrigger = { [weak self] in self?.handleTrigger() }
 
+        configurePeek()
+        peekDetector.onPeek = { [weak self] in
+            BrowseWindow.shared.presentPeek(initialApp: self?.lastFrontApp)
+        }
+        peekDetector.onRelease = { BrowseWindow.shared.peekReleased() }
+        peekDetector.onFixOpen = { [weak self] in
+            BrowseWindow.shared.present(initialApp: self?.lastFrontApp)
+        }
+
         promptAccessibility()   // System-Prompt + Eintrag in der Rechte-Liste anlegen
         trustedAtLaunch = AXIsProcessTrusted()
         detector.start()
+        if Settings.peekEnabled { peekDetector.start() }
 
         // Auf Änderungen der Bedienungshilfen-Freigabe lauschen und die App dann
         // automatisch neu starten. Ein frischer Prozess erhält den Tastatur-Tap
@@ -123,13 +147,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
         menu.addItem(.separator())
 
-        menu.addItem(NSMenuItem(title: Strings.menuChangeTrigger,
-                                action: #selector(openSettings), keyEquivalent: ""))
+        menu.addItem(NSMenuItem(title: Strings.menuBrowse,
+                                action: #selector(openBrowse), keyEquivalent: ""))
         menu.addItem(NSMenuItem(title: Strings.menuShortcuts,
                                 action: #selector(openShortcuts), keyEquivalent: ""))
-        loginItem = NSMenuItem(title: Strings.menuLoginItem,
-                               action: #selector(toggleLoginItem), keyEquivalent: "")
-        menu.addItem(loginItem)
+        menu.addItem(.separator())
+        menu.addItem(NSMenuItem(title: Strings.menuSettings,
+                                action: #selector(openSettings), keyEquivalent: ","))
         menu.addItem(NSMenuItem(title: Strings.menuDiagnose,
                                 action: #selector(diagnose), keyEquivalent: ""))
         menu.addItem(NSMenuItem(title: Strings.menuHelp,
@@ -145,7 +169,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     /// Vor dem Öffnen Login-Haken und Auslöser-Anzeige aktualisieren.
     func menuWillOpen(_ menu: NSMenu) {
-        loginItem.state = (SMAppService.mainApp.status == .enabled) ? .on : .off
         triggerInfoItem.title = triggerInfoText()
     }
 
@@ -156,32 +179,39 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     // MARK: - Einstellungen
 
     @objc private func openSettings() {
-        SettingsPanel.shared.present(currentKeyCode: Settings.triggerKeyCode,
-                                     currentHold: Settings.holdDuration) { [weak self] keyCode, hold in
-            self?.detector.triggerKeyCode = Int64(keyCode)
-            self?.detector.holdDuration = hold
-            self?.triggerInfoItem.title = self?.triggerInfoText() ?? ""
-            HUD.show(Strings.triggerInfo(TriggerKey.name(for: keyCode)))
+        SettingsWindow.shared.onChange = { [weak self] in
+            guard let self else { return }
+            self.detector.triggerKeyCode = Int64(Settings.triggerKeyCode)
+            self.detector.holdDuration = Settings.holdDuration
+            self.triggerInfoItem.title = self.triggerInfoText()
+            self.configurePeek()
+            self.peekDetector.stop()
+            if Settings.peekEnabled { self.peekDetector.start() }
+            BrowseWindow.shared.applySettings()
         }
+        SettingsWindow.shared.onToggleLogin = { [weak self] on in self?.setLogin(on) }
+        SettingsWindow.shared.loginEnabled = { SMAppService.mainApp.status == .enabled }
+        SettingsWindow.shared.present()
+    }
+
+    private func setLogin(_ on: Bool) {
+        do {
+            if on { try SMAppService.mainApp.register() }
+            else { try SMAppService.mainApp.unregister() }
+        } catch { HUD.show(Strings.loginItemFailed(error.localizedDescription)) }
     }
 
     @objc private func openShortcuts() {
         ShortcutsWindow.shared.present()
     }
 
-    // MARK: - Login-Eintrag
+    @objc private func openBrowse() {
+        BrowseWindow.shared.present(initialApp: lastFrontApp)
+    }
 
-    @objc private func toggleLoginItem() {
-        do {
-            if SMAppService.mainApp.status == .enabled {
-                try SMAppService.mainApp.unregister()
-            } else {
-                try SMAppService.mainApp.register()
-            }
-        } catch {
-            HUD.show(Strings.loginItemFailed(error.localizedDescription))
-        }
-        loginItem.state = (SMAppService.mainApp.status == .enabled) ? .on : .off
+    private func configurePeek() {
+        peekDetector.modifierIndex = Settings.peekModifierIndex
+        peekDetector.holdDuration = Settings.peekHoldDuration
     }
 
     // MARK: - Hilfe

@@ -104,6 +104,7 @@ final class RecorderPanel: NSObject, NSWindowDelegate {
                  lockScope: Scope? = nil,
                  recordInRegistry: Bool = true,
                  onSaved: (() -> Void)? = nil) {
+        close()   // ein evtl. schon offenes Anpassen-Fenster zuerst schließen → nie mehrere gleichzeitig
         self.target = target
         self.captured = nil
         self.lockedScope = lockScope

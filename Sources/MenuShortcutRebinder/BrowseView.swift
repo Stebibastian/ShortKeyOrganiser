@@ -1,0 +1,411 @@
+import SwiftUI
+import AppKit
+import ApplicationServices
+
+/// Eine laufende App zur Auswahl im Popup.
+struct AppChoice: Identifiable {
+    let id: Int          // = pid
+    let name: String
+    let pid: pid_t
+    let bundleID: String?
+    let icon: NSImage?
+}
+
+/// Zustand der „Befehle durchsuchen"-Ansicht.
+final class BrowseModel: ObservableObject {
+    @Published var apps: [AppChoice] = []
+    @Published var selectedPid: pid_t = 0
+    @Published var items: [BrowseItem] = []
+    @Published var query: String = "" { didSet { selectedID = filteredItems.first?.id } }
+    @Published var selectedID: UUID?
+    @Published var loading = false
+    @Published var trusted = true
+    @Published var customAppTitles: Set<String> = []
+    @Published var customGlobalTitles: Set<String> = []
+    @Published var heldMods: Set<Character> = []
+    @Published var columnWidth: Double = Settings.browseColumnWidth
+    @Published var zebra: Bool = Settings.browseZebra
+    @Published var searchActive: Bool = false
+    @Published var favorites: Set<String> = BrowsePrefs.favorites
+    @Published var hidden: Set<String> = BrowsePrefs.hidden
+    @Published var collapsed: Set<String> = []
+    @Published var showHidden: Bool = false
+
+    var onEdit: ((BrowseItem, AppChoice) -> Void)?
+    var onDelete: ((BrowseItem, AppChoice) -> Void)?
+    var onPerform: ((BrowseItem, AppChoice) -> Void)?
+    var onActivateSearch: (() -> Void)?
+
+    private var scanToken = 0
+
+    var currentApp: AppChoice? { apps.first { $0.pid == selectedPid } }
+
+    func refreshApps(preferredPid: pid_t?) {
+        let running = NSWorkspace.shared.runningApplications
+            .filter { $0.activationPolicy == .regular
+                && $0.bundleIdentifier != Bundle.main.bundleIdentifier }
+            .sorted { ($0.localizedName ?? "").localizedCaseInsensitiveCompare($1.localizedName ?? "")
+                == .orderedAscending }
+        apps = running.map {
+            AppChoice(id: Int($0.processIdentifier),
+                      name: $0.localizedName ?? $0.bundleIdentifier ?? "?",
+                      pid: $0.processIdentifier, bundleID: $0.bundleIdentifier, icon: $0.icon)
+        }
+        if let preferredPid, apps.contains(where: { $0.pid == preferredPid }) {
+            selectedPid = preferredPid
+        } else if !apps.contains(where: { $0.pid == selectedPid }) {
+            selectedPid = apps.first?.pid ?? 0
+        }
+    }
+
+    func loadItems() {
+        trusted = AXIsProcessTrusted()
+        guard let app = currentApp else { items = []; return }
+        scanToken += 1
+        let token = scanToken
+        loading = true
+        let pid = app.pid
+        let bundleID = app.bundleID
+        DispatchQueue.global(qos: .userInitiated).async {
+            let scanned = FullMenuScanner.scan(pid: pid)
+            DispatchQueue.main.async {
+                guard token == self.scanToken else { return }
+                self.items = scanned
+                self.customAppTitles = Set(Preferences.current(scope: .app, bundleID: bundleID).keys)
+                self.customGlobalTitles = Set(Preferences.current(scope: .global, bundleID: nil).keys)
+                self.loading = false
+            }
+        }
+    }
+
+    func isCustom(_ item: BrowseItem) -> Bool {
+        customAppTitles.contains(item.title) || customGlobalTitles.contains(item.title)
+    }
+
+    // MARK: Favoriten / Ausblenden / Einklappen
+    func itemKey(_ item: BrowseItem) -> String { (currentApp?.bundleID ?? "") + "|" + item.pathDisplay }
+    func isFavorite(_ item: BrowseItem) -> Bool { favorites.contains(itemKey(item)) }
+    func isHidden(_ item: BrowseItem) -> Bool { hidden.contains(itemKey(item)) }
+    func toggleFavorite(_ item: BrowseItem) {
+        let k = itemKey(item)
+        if favorites.contains(k) { favorites.remove(k) } else { favorites.insert(k) }
+        BrowsePrefs.favorites = favorites
+    }
+    func toggleHidden(_ item: BrowseItem) {
+        let k = itemKey(item)
+        if hidden.contains(k) { hidden.remove(k) } else { hidden.insert(k) }
+        BrowsePrefs.hidden = hidden
+    }
+    func isCollapsed(_ cat: String) -> Bool { collapsed.contains(cat) }
+    func toggleCollapsed(_ cat: String) {
+        if collapsed.contains(cat) { collapsed.remove(cat) } else { collapsed.insert(cat) }
+    }
+
+    var filteredItems: [BrowseItem] {
+        let base = showHidden ? items : items.filter { !isHidden($0) }
+        let q = query.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        guard !q.isEmpty else { return base }
+        let tokens = q.split(separator: " ").map(String.init)
+        return base.filter { item in
+            let hay = (item.pathDisplay + " " + item.shortcut).lowercased()
+            return tokens.allSatisfy { hay.contains($0) }
+        }
+    }
+
+    func edit(_ item: BrowseItem) { if let app = currentApp { onEdit?(item, app) } }
+    func requestDelete(_ item: BrowseItem) { if let app = currentApp { onDelete?(item, app) } }
+    func perform(_ item: BrowseItem) { if let app = currentApp { onPerform?(item, app) } }
+    func activateSearch() { onActivateSearch?(); searchActive = true }
+
+    func moveSelection(_ delta: Int) {
+        let list = filteredItems
+        guard !list.isEmpty else { selectedID = nil; return }
+        let cur = list.firstIndex { $0.id == selectedID } ?? 0
+        selectedID = list[min(list.count - 1, max(0, cur + delta))].id
+    }
+    func performSelected() {
+        guard let id = selectedID, let item = filteredItems.first(where: { $0.id == id }),
+              let app = currentApp else { return }
+        onPerform?(item, app)
+    }
+
+    func setColumnWidth(_ w: Double) {
+        let clamped = min(520, max(160, w))
+        columnWidth = clamped
+        Settings.browseColumnWidth = clamped
+    }
+}
+
+/// Tastenkürzel mit farbigen Modifier-Glyphen (⌘ blau, ⇧ grün, ⌥ orange, ⌃ pink).
+struct KeyCapView: View {
+    let shortcut: String
+    private static let modColor: [Character: Color] = ["⌃": .pink, "⌥": .orange, "⇧": .green, "⌘": .blue]
+    var body: some View {
+        let (mods, base) = Self.split(shortcut)
+        HStack(spacing: 2) {
+            ForEach(Array(mods.enumerated()), id: \.offset) { _, m in
+                Text(String(m)).foregroundStyle(Self.modColor[m] ?? .secondary)
+            }
+            if !base.isEmpty { Text(base).foregroundStyle(.primary) }
+        }
+        .font(.system(size: 13, weight: .semibold, design: .rounded))
+    }
+    static func split(_ s: String) -> ([Character], String) {
+        let modSet: Set<Character> = ["⌃", "⌥", "⇧", "⌘"]
+        var mods: [Character] = []
+        var rest = Substring(s)
+        while let f = rest.first, modSet.contains(f) { mods.append(f); rest = rest.dropFirst() }
+        return (mods, String(rest))
+    }
+}
+
+/// Eine Befehlszeile. Klick = ausführen; rechts (Hover) Favorit ★, Ausblenden 👁,
+/// Anpassen ✏️, Löschen 🗑️ (bei selbst gesetzten).
+struct BrowseRowView: View {
+    let item: BrowseItem
+    let isCustom: Bool
+    let isFavorite: Bool
+    let isHidden: Bool
+    let emphasized: Bool
+    let dimmed: Bool
+    let zebra: Bool
+    let onPerform: () -> Void
+    let onEdit: () -> Void
+    let onDelete: () -> Void
+    let onToggleFavorite: () -> Void
+    let onToggleHidden: () -> Void
+    @State private var hover = false
+
+    private var fill: Color {
+        if emphasized { return Color.accentColor.opacity(0.30) }
+        if hover { return Color.accentColor.opacity(0.12) }
+        if zebra { return Color.secondary.opacity(0.08) }
+        return .clear
+    }
+
+    private var titleText: Text {
+        let prefix = item.subPath.isEmpty ? "" : item.subPath.joined(separator: " ▸ ") + " ▸ "
+        return Text(prefix).foregroundColor(.secondary)
+             + Text(item.title).foregroundColor(item.enabled ? .primary : .secondary)
+    }
+
+    var body: some View {
+        HStack(spacing: 5) {
+            if isFavorite {
+                Image(systemName: "star.fill").foregroundStyle(.yellow).font(.system(size: 8)).frame(width: 8)
+            } else {
+                Circle().fill(isCustom ? Color.accentColor : Color.clear).frame(width: 6, height: 6)
+            }
+
+            Button(action: onPerform) {
+                HStack(spacing: 8) {
+                    titleText.lineLimit(1).truncationMode(.middle)
+                        .fontWeight(isCustom ? .semibold : .regular)
+                    Spacer(minLength: 6)
+                    if !item.shortcut.isEmpty { KeyCapView(shortcut: item.shortcut) }
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .help(Strings.browsePerformTip)
+
+            if hover {
+                iconBtn(isFavorite ? "star.fill" : "star", .yellow, Strings.browseFavTip, onToggleFavorite)
+                iconBtn(isHidden ? "eye" : "eye.slash", .secondary,
+                        isHidden ? Strings.browseUnhideTip : Strings.browseHideTip, onToggleHidden)
+                iconBtn("pencil", .secondary, Strings.browseEditTip, onEdit)
+                if isCustom { iconBtn("trash", .red, Strings.browseDeleteTip, onDelete) }
+            }
+        }
+        .padding(.vertical, 3).padding(.horizontal, 7)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(RoundedRectangle(cornerRadius: 5).fill(fill))
+        .contentShape(Rectangle())
+        .opacity((dimmed || isHidden) ? 0.45 : 1)
+        .font(.system(size: 13))
+        .help(item.pathDisplay)
+        .onHover { hover = $0 }
+    }
+
+    private func iconBtn(_ symbol: String, _ color: Color, _ tip: String,
+                         _ action: @escaping () -> Void) -> some View {
+        Button(action: action) { Image(systemName: symbol) }
+            .buttonStyle(.plain).foregroundStyle(color).help(tip)
+    }
+}
+
+struct BrowseView: View {
+    @ObservedObject var model: BrowseModel
+    @FocusState private var searchFocused: Bool
+
+    private var filtered: [BrowseItem] { model.filteredItems }
+
+    /// Favoriten zuoberst als eigene Gruppe, dann die Menü-Kategorien.
+    private var grouped: [(String, [BrowseItem])] {
+        let f = filtered
+        var result: [(String, [BrowseItem])] = []
+        let favs = f.filter { model.isFavorite($0) }
+        if !favs.isEmpty { result.append((Strings.browseFavorites, favs)) }
+        var order: [String] = []
+        var dict: [String: [BrowseItem]] = [:]
+        for it in f where !model.isFavorite(it) {
+            let cat = it.menuPath.first ?? "—"
+            if dict[cat] == nil { order.append(cat) }
+            dict[cat, default: []].append(it)
+        }
+        result += order.map { ($0, dict[$0]!) }
+        return result
+    }
+
+    var body: some View {
+        VStack(spacing: 0) {
+            header
+            Divider()
+            content
+        }
+        .frame(minWidth: 520, minHeight: 360)
+    }
+
+    private var header: some View {
+        HStack(spacing: 10) {
+            if let icon = model.currentApp?.icon {
+                Image(nsImage: icon).resizable().frame(width: 20, height: 20)
+            }
+            Picker("", selection: $model.selectedPid) {
+                ForEach(model.apps) { app in Text(app.name).tag(app.pid) }
+            }
+            .labelsHidden()
+            .frame(maxWidth: 220)
+            .onChange(of: model.selectedPid) { _ in
+                model.query = ""; model.searchActive = false; model.loadItems()
+            }
+
+            if model.searchActive {
+                searchField
+            } else {
+                Button { model.activateSearch() } label: { Image(systemName: "magnifyingglass") }
+                    .buttonStyle(.plain)
+                    .help(Strings.browseSearchPlaceholder)
+            }
+
+            Spacer()
+
+            Button { model.showHidden.toggle() } label: {
+                Image(systemName: model.showHidden ? "eye" : "eye.slash")
+            }
+            .controlSize(.small).help(Strings.browseShowHidden)
+
+            HStack(spacing: 0) {
+                Button { model.setColumnWidth(model.columnWidth - 30) } label: { Image(systemName: "minus") }
+                    .help("Schmälere Spalten")
+                Button { model.setColumnWidth(model.columnWidth + 30) } label: { Image(systemName: "plus") }
+                    .help("Breitere Spalten")
+            }
+            .controlSize(.small)
+        }
+        .frame(height: 34)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 8)
+    }
+
+    private var searchField: some View {
+        HStack(spacing: 6) {
+            Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
+            TextField(Strings.browseSearchPlaceholder, text: $model.query)
+                .textFieldStyle(.plain)
+                .focused($searchFocused)
+            Button { model.query = ""; model.searchActive = false } label: {
+                Image(systemName: "xmark.circle.fill")
+            }
+            .buttonStyle(.plain).foregroundStyle(.secondary)
+        }
+        .padding(6)
+        .frame(maxWidth: 300)
+        .background(RoundedRectangle(cornerRadius: 7).fill(Color(nsColor: .textBackgroundColor)))
+        .overlay(RoundedRectangle(cornerRadius: 7).stroke(Color.secondary.opacity(0.25)))
+        .onAppear { DispatchQueue.main.async { searchFocused = true } }
+    }
+
+    @ViewBuilder private var content: some View {
+        if !model.trusted {
+            info(Strings.browseNoAccess)
+        } else if model.loading {
+            ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
+        } else if filtered.isEmpty {
+            info(model.items.isEmpty ? Strings.browseEmpty : Strings.browseNoMatch)
+        } else {
+            GeometryReader { geo in
+                let cols = max(1, Int(geo.size.width / CGFloat(model.columnWidth)))
+                ScrollView { columnsLayout(cols).padding(12) }
+            }
+        }
+    }
+
+    private func columnsLayout(_ n: Int) -> some View {
+        var buckets = Array(repeating: [(String, [BrowseItem])](), count: n)
+        var heights = Array(repeating: 0, count: n)
+        for group in grouped {
+            let idx = heights.enumerated().min(by: { $0.element < $1.element })?.offset ?? 0
+            buckets[idx].append(group)
+            heights[idx] += (model.isCollapsed(group.0) ? 1 : group.1.count) + 3
+        }
+        return HStack(alignment: .top, spacing: 0) {
+            ForEach(0..<n, id: \.self) { i in
+                VStack(alignment: .leading, spacing: 14) {
+                    ForEach(buckets[i], id: \.0) { (cat, items) in
+                        categoryBlock(cat, items)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 9)
+                if i < n - 1 { Divider() }
+            }
+        }
+    }
+
+    private func categoryBlock(_ cat: String, _ items: [BrowseItem]) -> some View {
+        VStack(alignment: .leading, spacing: 1) {
+            Button { model.toggleCollapsed(cat) } label: {
+                HStack(spacing: 4) {
+                    Image(systemName: model.isCollapsed(cat) ? "chevron.right" : "chevron.down")
+                        .font(.system(size: 9, weight: .bold))
+                    Text(cat).font(.system(size: 12, weight: .bold))
+                    Spacer()
+                }
+                .foregroundStyle(.secondary)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .padding(.bottom, 3)
+
+            if !model.isCollapsed(cat) {
+                ForEach(Array(items.enumerated()), id: \.element.id) { idx, item in
+                    let held = model.heldMods
+                    let modMatch = !held.isEmpty && !item.baseKey.isEmpty && item.modifiers == held
+                    let selMatch = !model.query.isEmpty && item.id == model.selectedID
+                    let dim = !held.isEmpty && !modMatch
+                    BrowseRowView(item: item,
+                                  isCustom: model.isCustom(item),
+                                  isFavorite: model.isFavorite(item),
+                                  isHidden: model.isHidden(item),
+                                  emphasized: modMatch || selMatch,
+                                  dimmed: dim,
+                                  zebra: model.zebra && idx % 2 == 1,
+                                  onPerform: { model.perform(item) },
+                                  onEdit: { model.edit(item) },
+                                  onDelete: { model.requestDelete(item) },
+                                  onToggleFavorite: { model.toggleFavorite(item) },
+                                  onToggleHidden: { model.toggleHidden(item) })
+                }
+            }
+        }
+    }
+
+    private func info(_ text: String) -> some View {
+        Text(text)
+            .foregroundStyle(.secondary)
+            .multilineTextAlignment(.center)
+            .padding()
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+}

@@ -17,6 +17,59 @@ enum Settings {
         get { UserDefaults.standard.object(forKey: holdDurationKey) as? Double ?? defaultHoldDuration }
         set { UserDefaults.standard.set(newValue, forKey: holdDurationKey) }
     }
+
+    private static let browseScreenPercentKey = "browseScreenPercent"
+    static let defaultBrowsePercent = 0.8
+    /// Anteil des Bildschirms (0.5-1.0), den das „Befehle durchsuchen"-Fenster einnimmt.
+    static var browseScreenPercent: Double {
+        get {
+            let v = UserDefaults.standard.object(forKey: browseScreenPercentKey) as? Double ?? defaultBrowsePercent
+            return min(1.0, max(0.5, v))
+        }
+        set { UserDefaults.standard.set(min(1.0, max(0.5, newValue)), forKey: browseScreenPercentKey) }
+    }
+
+    private static let browseColumnWidthKey = "browseColumnWidth"
+    static let defaultBrowseColumnWidth = 250.0
+    /// Gewünschte Spaltenbreite (160-520 pt) der „Befehle durchsuchen"-Ansicht; bestimmt die Spaltenzahl.
+    static var browseColumnWidth: Double {
+        get {
+            let v = UserDefaults.standard.object(forKey: browseColumnWidthKey) as? Double ?? defaultBrowseColumnWidth
+            return min(520, max(160, v))
+        }
+        set { UserDefaults.standard.set(min(520, max(160, newValue)), forKey: browseColumnWidthKey) }
+    }
+
+    // Peek-Auslöser für „Befehle durchsuchen": Modifier zweimal drücken + halten.
+    private static let peekModifierKey = "peekModifierIndex"
+    static let defaultPeekModifier = 0   // 0=⌘, 1=⌥, 2=⌃
+    static var peekModifierIndex: Int {
+        get { UserDefaults.standard.object(forKey: peekModifierKey) as? Int ?? defaultPeekModifier }
+        set { UserDefaults.standard.set(newValue, forKey: peekModifierKey) }
+    }
+
+    private static let peekHoldKey = "peekHoldDuration"
+    static let defaultPeekHold = 0.15
+    /// Sekunden, die der zweite Druck gehalten werden muss (0.05-1.0).
+    static var peekHoldDuration: Double {
+        get {
+            let v = UserDefaults.standard.object(forKey: peekHoldKey) as? Double ?? defaultPeekHold
+            return min(1.0, max(0.05, v))
+        }
+        set { UserDefaults.standard.set(min(1.0, max(0.05, newValue)), forKey: peekHoldKey) }
+    }
+
+    private static let peekEnabledKey = "peekEnabled"
+    static var peekEnabled: Bool {
+        get { UserDefaults.standard.object(forKey: peekEnabledKey) as? Bool ?? true }
+        set { UserDefaults.standard.set(newValue, forKey: peekEnabledKey) }
+    }
+
+    private static let browseZebraKey = "browseZebra"
+    static var browseZebra: Bool {
+        get { UserDefaults.standard.object(forKey: browseZebraKey) as? Bool ?? false }
+        set { UserDefaults.standard.set(newValue, forKey: browseZebraKey) }
+    }
 }
 
 /// Bekannte Modifier-Tasten, die als Auslöser taugen.
