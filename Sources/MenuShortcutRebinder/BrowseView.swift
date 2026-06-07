@@ -241,10 +241,11 @@ struct BrowseRowView: View {
             Button(action: onPerform) {
                 HStack(spacing: 8) {
                     if keyLeft {
-                        Group {
+                        HStack(spacing: 0) {
+                            Spacer(minLength: 0)
                             if !item.shortcut.isEmpty { KeyCapView(shortcut: item.shortcut, fontSize: fontSize) }
                         }
-                        .frame(width: fontSize * 5.5, alignment: .trailing)
+                        .frame(width: fontSize * 5.5)   // feste Kürzel-Spalte (auch leer) → Namen fluchten
                         titleText.lineLimit(1).truncationMode(.middle)
                             .fontWeight(isCustom ? .semibold : .regular)
                         Spacer(minLength: 0)
@@ -651,7 +652,7 @@ struct BrowseView: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
                 ForEach(Array(subItems.enumerated()), id: \.element.id) { idx, item in
-                    row(item, idx).padding(.leading, sub.isEmpty ? 0 : 11)
+                    row(item, idx).padding(.leading, 10)   // alle Einträge gleich eingerückt; Überschriften sitzen weiter links
                 }
             }
         }
