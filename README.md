@@ -19,20 +19,24 @@ Runs as a menu-bar agent (no Dock icon). Built in Swift/AppKit + SwiftUI on nati
 
 ## Install
 
-Currently you build it locally (signed with a local certificate, so it just runs - no Gatekeeper prompt):
+**Recommended - download the notarised release** (no build, no warnings):
+
+1. Download **`ShortKeyOrganiser.zip`** from the [latest release](https://github.com/Stebibastian/ShortKeyOrganiser/releases/latest).
+2. Unzip, drag **ShortKeyOrganiser.app** into `/Applications`, open it.
+3. Grant **Accessibility** on first launch - the app relaunches itself.
+
+It's signed with a Developer ID certificate and notarised by Apple, so it runs on any Mac with **no Gatekeeper warning**.
+
+### Build from source instead
 
 ```bash
-# once: Xcode Command Line Tools, if not already installed
-xcode-select --install
-
+xcode-select --install   # once, if not already installed
 git clone https://github.com/Stebibastian/ShortKeyOrganiser.git
 cd ShortKeyOrganiser
-./install.sh        # set up signing + build + install to /Applications + launch
+./install.sh             # set up local signing + build + install + launch
 ```
 
-`install.sh` does everything silently (it creates its own signing keychain, so no password or keychain dialogs). Then grant **Accessibility** once - the app relaunches itself afterwards.
-
-> A signed & **notarised** release (download, drag to Applications, done - no warnings) is in progress; see *Distribution* below.
+`install.sh` does everything silently (its own signing keychain, no dialogs). To build a fresh notarised release zip yourself: `./make-release.sh`.
 
 ### First launch: grant permission
 
@@ -90,7 +94,7 @@ defaults delete com.example.app NSUserKeyEquivalents   # reset
 
 **The Mac App Store is not possible** for this tool: the App Store requires the App Sandbox, and this app needs exactly what the sandbox forbids - a global keyboard tap, Accessibility access to other apps, and writing other apps' preferences (`NSUserKeyEquivalents`). That's why comparable tools (KeyClu, BetterTouchTool, Karabiner, Rectangle) are all **outside** the App Store too.
 
-The right path is **Developer ID + notarisation**: Apple Developer Program → "Developer ID Application" certificate → `codesign` → `xcrun notarytool submit` → `xcrun stapler staple`. The result is a signed, notarised `.app`/`.dmg` that runs on any Mac with no Gatekeeper warning. This is the planned release format.
+The right path is **Developer ID + notarisation**: "Developer ID Application" certificate → `codesign --options runtime` → `xcrun notarytool submit` → `xcrun stapler staple`. That's exactly what [`make-release.sh`](make-release.sh) does, and how the GitHub releases here are built - a signed, notarised `.app` that runs on any Mac with no Gatekeeper warning.
 
 ## Uninstall
 
