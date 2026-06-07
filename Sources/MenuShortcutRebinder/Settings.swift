@@ -20,13 +20,30 @@ enum Settings {
 
     private static let browseScreenPercentKey = "browseScreenPercent"
     static let defaultBrowsePercent = 0.8
-    /// Anteil des Bildschirms (0.5-1.0), den das „Befehle durchsuchen"-Fenster einnimmt.
+    /// Breiten-Anteil am Bildschirm (0.4-1.0) für das ShortKeyOrganiser-Fenster.
     static var browseScreenPercent: Double {
         get {
             let v = UserDefaults.standard.object(forKey: browseScreenPercentKey) as? Double ?? defaultBrowsePercent
-            return min(1.0, max(0.5, v))
+            return min(1.0, max(0.4, v))
         }
-        set { UserDefaults.standard.set(min(1.0, max(0.5, newValue)), forKey: browseScreenPercentKey) }
+        set { UserDefaults.standard.set(min(1.0, max(0.4, newValue)), forKey: browseScreenPercentKey) }
+    }
+
+    private static let browseHeightPercentKey = "browseHeightPercent"
+    /// Höhen-Anteil am Bildschirm (0.4-1.0); nur relevant, wenn Breite/Höhe entkoppelt sind.
+    static var browseHeightPercent: Double {
+        get {
+            let v = UserDefaults.standard.object(forKey: browseHeightPercentKey) as? Double ?? defaultBrowsePercent
+            return min(1.0, max(0.4, v))
+        }
+        set { UserDefaults.standard.set(min(1.0, max(0.4, newValue)), forKey: browseHeightPercentKey) }
+    }
+
+    private static let browseSizeLinkedKey = "browseSizeLinked"
+    /// true = ein Regler steuert Breite und Höhe gemeinsam; false = getrennt einstellbar.
+    static var browseSizeLinked: Bool {
+        get { UserDefaults.standard.object(forKey: browseSizeLinkedKey) as? Bool ?? true }
+        set { UserDefaults.standard.set(newValue, forKey: browseSizeLinkedKey) }
     }
 
     private static let browseColumnWidthKey = "browseColumnWidth"

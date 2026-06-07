@@ -1,7 +1,7 @@
 import SwiftUI
 import AppKit
 
-/// Zentrales Einstellungs-Fenster im macOS-Stil: Seitenleiste links, Inhalt rechts.
+/// Zentrales Einstellungs-Fenster: feste Seitenleiste links (kein Ein-/Ausblenden), Inhalt rechts.
 struct SettingsView: View {
     @State var rebindKeyCode: Int
     @State var rebindHoldMs: Double
@@ -9,6 +9,8 @@ struct SettingsView: View {
     @State var peekModifierIndex: Int
     @State var peekHoldMs: Double
     @State var screenPercent: Double
+    @State var heightPercent: Double
+    @State var sizeLinked: Bool
     @State var columnWidth: Double
     @State var zebra: Bool
     @State var transparency: Double
@@ -22,25 +24,23 @@ struct SettingsView: View {
     let onDiagnose: () -> Void
     let onHelp: () -> Void
 
-    @State private var selection: Section? = .rebind
+    @State private var selection: Section = .keyboard
 
     enum Section: String, CaseIterable, Identifiable {
-        case rebind, browse, view, tools
+        case keyboard, view, tools
         var id: String { rawValue }
         var title: String {
             switch self {
-            case .rebind: return Strings.setSecRebind
-            case .browse: return Strings.setSecBrowse
-            case .view:   return Strings.setSecView
-            case .tools:  return Strings.setSecTools
+            case .keyboard: return Strings.setSecKeyboard
+            case .view:     return Strings.setSecView
+            case .tools:    return Strings.setSecTools
             }
         }
         var icon: String {
             switch self {
-            case .rebind: return "pencil"
-            case .browse: return "magnifyingglass"
-            case .view:   return "rectangle.split.3x1"
-            case .tools:  return "wrench.and.screwdriver"
+            case .keyboard: return "command"
+            case .view:     return "rectangle.split.3x1"
+            case .tools:    return "wrench.and.screwdriver"
             }
         }
     }
@@ -53,63 +53,96 @@ struct SettingsView: View {
     ]
 
     var body: some View {
-        NavigationSplitView {
-            List(Section.allCases, selection: $selection) { sec in
-                Label(sec.title, systemImage: sec.icon).tag(sec)
-            }
-            .navigationSplitViewColumnWidth(200)
-        } detail: {
+        HStack(spacing: 0) {
+            sidebar
+            Divider()
             ScrollView {
                 detail.padding(28).frame(maxWidth: .infinity, alignment: .leading)
             }
         }
-        .frame(minWidth: 640, minHeight: 460)
+        .frame(width: 760, height: 560)
+    }
+
+    // Feste Seitenleiste (immer sichtbar, eigener Auswahl-Stil).
+    private var sidebar: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            ForEach(Section.allCases) { sec in
+                Button { selection = sec } label: {
+                    HStack(spacing: 8) {
+                        Image(systemName: sec.icon).frame(width: 20)
+                        Text(sec.title)
+                        Spacer()
+                    }
+                    .padding(.horizontal, 10).padding(.vertical, 7)
+                    .background(RoundedRectangle(cornerRadius: 6)
+                        .fill(selection == sec ? Color.accentColor : Color.clear))
+                    .foregroundStyle(selection == sec ? Color.white : Color.primary)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+            }
+            Spacer()
+        }
+        .padding(8)
+        .frame(width: 210)
+        .frame(maxHeight: .infinity)
+        .background(Color(nsColor: .windowBackgroundColor))
     }
 
     @ViewBuilder private var detail: some View {
-        switch selection ?? .rebind {
-        case .rebind: rebindSection
-        case .browse: browseSection
-        case .view:   viewSection
-        case .tools:  toolsSection
+        switch selection {
+        case .keyboard: keyboardSection
+        case .view:     viewSection
+        case .tools:    toolsSection
         }
     }
 
-    private var rebindSection: some View {
-        section(Strings.setSecRebind) {
-            row(Strings.setRebindTrigger) {
-                Picker("", selection: $rebindKeyCode) {
-                    ForEach(triggerKeys, id: \.0) { Text($0.1).tag($0.0) }
+    // MARK: Tastenkürzel (zwei klar getrennte Funktionen)
+
+    private var keyboardSection: some View {
+        VStack(alignment: .leading, spacing: 22) {
+            Text(Strings.setSecKeyboard).font(.title2.bold())
+
+            featureBlock(Strings.setFeatureOverlay, Strings.setFeatureOverlayDesc) {
+                Toggle(Strings.setPeekEnable, isOn: $peekEnabled)
+                    .toggleStyle(.switch).onChange(of: peekEnabled) { _ in commit() }
+                row(Strings.setPeekTrigger) {
+                    Picker("", selection: $peekModifierIndex) {
+                        Text(Strings.bsModCommand).tag(0)
+                        Text(Strings.bsModOption).tag(1)
+                        Text(Strings.bsModControl).tag(2)
+                    }
+                    .labelsHidden().frame(width: 150)
+                    .onChange(of: peekModifierIndex) { _ in commit() }.disabled(!peekEnabled)
                 }
-                .labelsHidden().frame(width: 210)
-                .onChange(of: rebindKeyCode) { _ in commit() }
+                slider(Strings.setHold, $peekHoldMs, 50...500, 10, "ms", disabled: !peekEnabled)
             }
-            slider(Strings.setHold, $rebindHoldMs, 300...1500, 50, "ms")
+
+            featureBlock(Strings.setFeatureRebind, Strings.setFeatureRebindDesc) {
+                row(Strings.setRebindTrigger) {
+                    Picker("", selection: $rebindKeyCode) {
+                        ForEach(triggerKeys, id: \.0) { Text($0.1).tag($0.0) }
+                    }
+                    .labelsHidden().frame(width: 210)
+                    .onChange(of: rebindKeyCode) { _ in commit() }
+                }
+                slider(Strings.setHold, $rebindHoldMs, 300...1500, 50, "ms")
+            }
         }
     }
 
-    private var browseSection: some View {
-        section(Strings.setSecBrowse) {
-            Toggle(Strings.setPeekEnable, isOn: $peekEnabled)
-                .toggleStyle(.switch).onChange(of: peekEnabled) { _ in commit() }
-            row(Strings.setPeekTrigger) {
-                Picker("", selection: $peekModifierIndex) {
-                    Text(Strings.bsModCommand).tag(0)
-                    Text(Strings.bsModOption).tag(1)
-                    Text(Strings.bsModControl).tag(2)
-                }
-                .labelsHidden().frame(width: 150)
-                .onChange(of: peekModifierIndex) { _ in commit() }
-                .disabled(!peekEnabled)
-            }
-            slider(Strings.setHold, $peekHoldMs, 50...500, 10, "ms", disabled: !peekEnabled)
-            Text(Strings.setPeekHint).font(.callout).foregroundStyle(.secondary)
-        }
-    }
+    // MARK: Ansicht
 
     private var viewSection: some View {
         section(Strings.setSecView) {
-            slider(Strings.setWindowSize, $screenPercent, 0.5...1.0, 0.05, "%", scale: 100)
+            Toggle(Strings.setSizeLinked, isOn: $sizeLinked)
+                .toggleStyle(.switch).onChange(of: sizeLinked) { _ in commit() }
+            if sizeLinked {
+                slider(Strings.setWindowSize, $screenPercent, 0.4...1.0, 0.05, "%", scale: 100)
+            } else {
+                slider(Strings.setWidth, $screenPercent, 0.4...1.0, 0.05, "%", scale: 100)
+                slider(Strings.setHeight, $heightPercent, 0.4...1.0, 0.05, "%", scale: 100)
+            }
             slider(Strings.setColWidth, $columnWidth, 160...520, 10, "pt")
             row(Strings.setBackground) {
                 Picker("", selection: $backgroundStyle) {
@@ -129,6 +162,8 @@ struct SettingsView: View {
                 .toggleStyle(.switch).onChange(of: zebra) { _ in commit() }
         }
     }
+
+    // MARK: Verwaltung & Hilfe
 
     private var toolsSection: some View {
         section(Strings.setSecTools) {
@@ -150,12 +185,24 @@ struct SettingsView: View {
         }
     }
 
-    private func row<C: View>(_ label: String, @ViewBuilder _ control: () -> C) -> some View {
-        HStack {
-            Text(label)
-            Spacer()
-            control()
+    /// Funktionsblock mit Titel + Erklärung (für die zwei Tastenkürzel-Funktionen).
+    private func featureBlock<C: View>(_ title: String, _ desc: String,
+                                       @ViewBuilder _ content: () -> C) -> some View {
+        GroupBox {
+            VStack(alignment: .leading, spacing: 14) {
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(title).font(.headline)
+                    Text(desc).font(.callout).foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                VStack(alignment: .leading, spacing: 14) { content() }
+            }
+            .padding(8).frame(maxWidth: .infinity, alignment: .leading)
         }
+    }
+
+    private func row<C: View>(_ label: String, @ViewBuilder _ control: () -> C) -> some View {
+        HStack { Text(label); Spacer(); control() }
     }
 
     private func slider(_ label: String, _ value: Binding<Double>, _ range: ClosedRange<Double>,
@@ -175,7 +222,10 @@ struct SettingsView: View {
         Settings.peekEnabled = peekEnabled
         Settings.peekModifierIndex = peekModifierIndex
         Settings.peekHoldDuration = peekHoldMs / 1000.0
+        if sizeLinked { heightPercent = screenPercent }
         Settings.browseScreenPercent = screenPercent
+        Settings.browseHeightPercent = heightPercent
+        Settings.browseSizeLinked = sizeLinked
         Settings.browseColumnWidth = columnWidth
         Settings.browseZebra = zebra
         Settings.browseTransparency = transparency
@@ -204,6 +254,8 @@ final class SettingsWindow: NSObject {
             peekModifierIndex: Settings.peekModifierIndex,
             peekHoldMs: Settings.peekHoldDuration * 1000,
             screenPercent: Settings.browseScreenPercent,
+            heightPercent: Settings.browseHeightPercent,
+            sizeLinked: Settings.browseSizeLinked,
             columnWidth: Settings.browseColumnWidth,
             zebra: Settings.browseZebra,
             transparency: Settings.browseTransparency,
@@ -215,8 +267,8 @@ final class SettingsWindow: NSObject {
             onManage: { [weak self] in self?.onManage?() },
             onDiagnose: { [weak self] in self?.onDiagnose?() },
             onHelp: { [weak self] in self?.onHelp?() })
-        let win = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 680, height: 480),
-                           styleMask: [.titled, .closable, .resizable], backing: .buffered, defer: false)
+        let win = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 760, height: 560),
+                           styleMask: [.titled, .closable], backing: .buffered, defer: false)
         win.title = Strings.setWinTitle
         win.level = .floating
         win.isReleasedWhenClosed = false

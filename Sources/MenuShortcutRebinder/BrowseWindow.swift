@@ -90,9 +90,11 @@ final class BrowseWindow: NSObject, NSWindowDelegate {
     private func applyWindowSize() {
         guard let window, let screen = NSScreen.main else { return }
         let vf = screen.visibleFrame
-        let pct = CGFloat(Settings.browseScreenPercent)
-        window.setContentSize(NSSize(width: (vf.width * pct).rounded(),
-                                     height: (vf.height * pct).rounded()))
+        let wPct = CGFloat(Settings.browseScreenPercent)
+        let hPct = CGFloat(Settings.browseSizeLinked ? Settings.browseScreenPercent
+                                                      : Settings.browseHeightPercent)
+        window.setContentSize(NSSize(width: (vf.width * wPct).rounded(),
+                                     height: (vf.height * hPct).rounded()))
         window.setFrameOrigin(NSPoint(x: vf.minX + (vf.width - window.frame.width) / 2,
                                       y: vf.minY + (vf.height - window.frame.height) / 2))
     }
