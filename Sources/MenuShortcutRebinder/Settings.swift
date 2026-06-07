@@ -129,6 +129,13 @@ enum Settings {
         }
     }
 
+    private static let onboardingDoneKey = "onboardingDone"
+    /// Wurde das Einführungs-Tutorial schon abgeschlossen/übersprungen?
+    static var onboardingDone: Bool {
+        get { UserDefaults.standard.bool(forKey: onboardingDoneKey) }
+        set { UserDefaults.standard.set(newValue, forKey: onboardingDoneKey) }
+    }
+
     private static let browseTransparencyKey = "browseTransparency"
     /// Transparenz des Durchsuchen-Fensters (0 = undurchsichtig, höher = mehr Blur/Durchblick).
     static var browseTransparency: Double {

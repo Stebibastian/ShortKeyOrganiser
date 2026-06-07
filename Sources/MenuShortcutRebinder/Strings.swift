@@ -189,4 +189,26 @@ enum Strings {
     static var browseCustomTip: String { s("Von Dir gesetzt", "Set by you") }
     static func browseCount(hits: Int, total: Int) -> String { s("\(hits) von \(total) Befehlen", "\(hits) of \(total) commands") }
     static func browseCapped(_ cap: Int) -> String { s(" (erste \(cap) gezeigt)", " (first \(cap) shown)") }
+
+    // Onboarding / Tutorial
+    static var menuTutorial: String { s("Einführung …", "Tutorial …") }
+    static var obIntroTitle: String { s("Willkommen bei ShortKeyOrganiser", "Welcome to ShortKeyOrganiser") }
+    static var obIntroDesc: String { s("Drei kurze Gesten – probier sie gleich selbst aus. Überspringen geht jederzeit.", "Three quick gestures – try them yourself right now. You can skip anytime.") }
+    static var obStart: String { s("Los geht’s", "Get started") }
+    static var obSkip: String { s("Überspringen", "Skip") }
+    static var obStepLabel: String { s("Probier es jetzt:", "Try it now:") }
+    static var obTripleTitle: String { s("Befehls-Overlay öffnen", "Open the command overlay") }
+    static var obTripleDesc: String { s("Drück die Command-Taste ⌘ dreimal kurz hintereinander.", "Press the Command key ⌘ three times in a row.") }
+    static var obPeekTitle: String { s("Kurzer Blick (Peek)", "Quick peek") }
+    static var obPeekDesc: String { s("Drück ⌘ zweimal und halt beim zweiten Mal gedrückt.", "Press ⌘ twice and hold on the second press.") }
+    static var obRebindTitle: String { s("Kürzel umbelegen", "Rebind a shortcut") }
+    static func obRebindDesc(_ t: String) -> String { s("Öffne irgendwo ein Menü, fahr über einen Eintrag und halt \(t) gedrückt.", "Open any menu, hover an item and hold \(t).") }
+    static var obSuccess: String { s("Geschafft!", "Nice!") }
+    static var obDoneTitle: String { s("Alles klar!", "All set!") }
+    static var obDoneDesc: String { s("Du kennst jetzt alle drei Gesten. Viel Spass mit ShortKeyOrganiser!", "You now know all three gestures. Enjoy ShortKeyOrganiser!") }
+    static var obClose: String { s("Fertig", "Done") }
+
+    // PDF-Export
+    static var browsePdfTip: String { s("Als PDF exportieren", "Export as PDF") }
+    static func pdfHeading(_ app: String) -> String { s("\(app) – Tastenkürzel", "\(app) – Keyboard Shortcuts") }
 }

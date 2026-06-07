@@ -1,5 +1,7 @@
 # ShortKeyOrganiser
 
+[![Download the latest release](https://img.shields.io/github/v/release/Stebibastian/ShortKeyOrganiser?label=Download&color=orange&style=for-the-badge)](https://github.com/Stebibastian/ShortKeyOrganiser/releases/latest/download/ShortKeyOrganiser.zip)
+
 A macOS menu-bar app that does two things for **any** app's menu commands:
 
 1. **Command overlay** - a fast, searchable, KeyClu-style overview of every keyboard shortcut in the front app. Tap the trigger twice and hold for a quick peek; tap three times to keep it open and search. Commands are grouped by menu, modifiers are colour-coded, and while you hold a modifier the matching commands light up.

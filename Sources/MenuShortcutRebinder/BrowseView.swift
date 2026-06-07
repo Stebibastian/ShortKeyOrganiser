@@ -1,6 +1,7 @@
 import SwiftUI
 import AppKit
 import ApplicationServices
+import UniformTypeIdentifiers
 
 /// Eine laufende App zur Auswahl im Popup.
 struct AppChoice: Identifiable {
@@ -266,6 +267,36 @@ struct VisualEffectBlur: NSViewRepresentable {
     func updateNSView(_ nsView: NSVisualEffectView, context: Context) {}
 }
 
+/// Druckbare Cheatsheet-Darstellung (für den PDF-Export): Titel + Kategorien + Kürzel.
+struct CheatsheetView: View {
+    let appName: String
+    let groups: [(String, [BrowseItem])]
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text(Strings.pdfHeading(appName)).font(.system(size: 22, weight: .bold))
+            ForEach(Array(groups.enumerated()), id: \.offset) { _, group in
+                let items = group.1.filter { !$0.shortcut.isEmpty }
+                if !items.isEmpty {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(group.0).font(.system(size: 14, weight: .bold))
+                        ForEach(items) { item in
+                            HStack(alignment: .firstTextBaseline) {
+                                Text(item.title).font(.system(size: 12))
+                                Spacer(minLength: 24)
+                                Text(item.shortcut).font(.system(size: 12, weight: .semibold))
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        .padding(36)
+        .frame(width: 560, alignment: .leading)
+        .background(Color.white)
+        .foregroundColor(.black)
+    }
+}
+
 struct BrowseView: View {
     @ObservedObject var model: BrowseModel
     @FocusState private var searchFocused: Bool
@@ -291,6 +322,26 @@ struct BrowseView: View {
         }
         result += order.map { ($0, dict[$0]!) }
         return result
+    }
+
+    /// Exportiert die aktuelle Befehlsübersicht (mit Kürzeln) als PDF-Cheatsheet.
+    @MainActor private func exportPDF() {
+        let app = model.currentApp?.name ?? "App"
+        let renderer = ImageRenderer(content: CheatsheetView(appName: app, groups: grouped))
+        renderer.scale = 2
+        let panel = NSSavePanel()
+        panel.nameFieldStringValue = "\(app) Shortcuts.pdf"
+        panel.allowedContentTypes = [.pdf]
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        renderer.render { size, renderInContext in
+            var box = CGRect(origin: .zero, size: size)
+            guard let consumer = CGDataConsumer(url: url as CFURL),
+                  let ctx = CGContext(consumer: consumer, mediaBox: &box, nil) else { return }
+            ctx.beginPDFPage(nil)
+            renderInContext(ctx)
+            ctx.endPDFPage()
+            ctx.closePDF()
+        }
     }
 
     var body: some View {
@@ -347,6 +398,7 @@ struct BrowseView: View {
 
             Divider().frame(height: 18)
 
+            navIcon("square.and.arrow.up", active: false, tip: Strings.browsePdfTip) { exportPDF() }
             navIcon("list.bullet", active: false, tip: Strings.browseManageTip) { model.manage() }
             navIcon("gearshape", active: false, tip: Strings.browseSettingsTip) { model.openSettings() }
 

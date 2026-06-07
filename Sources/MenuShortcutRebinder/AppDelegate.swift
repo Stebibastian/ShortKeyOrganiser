@@ -36,11 +36,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
         configurePeek()
         peekDetector.onPeek = { [weak self] in
-            BrowseWindow.shared.presentPeek(initialApp: self?.lastFrontApp)
+            if OnboardingWindow.shared.isActive { OnboardingWindow.shared.register(trigger: 2) }
+            else { BrowseWindow.shared.presentPeek(initialApp: self?.lastFrontApp) }
         }
         peekDetector.onRelease = { BrowseWindow.shared.peekReleased() }
         peekDetector.onFixOpen = { [weak self] in
-            BrowseWindow.shared.present(initialApp: self?.lastFrontApp)
+            if OnboardingWindow.shared.isActive { OnboardingWindow.shared.register(trigger: 1) }
+            else { BrowseWindow.shared.present(initialApp: self?.lastFrontApp) }
         }
         configureSettingsWindow()
         autoCheckForUpdates()
@@ -58,8 +60,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             name: NSNotification.Name("com.apple.accessibility.api"), object: nil)
 
         if trustedAtLaunch && detector.isActive {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
-                HUD.show(Strings.launchedHint(TriggerKey.shortName(for: Settings.triggerKeyCode)))
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                if Settings.onboardingDone {
+                    HUD.show(Strings.launchedHint(TriggerKey.shortName(for: Settings.triggerKeyCode)))
+                } else {
+                    OnboardingWindow.shared.present()   // erster Start: Einführung zeigen
+                }
             }
         } else {
             // Der System-Dialog (aus promptAccessibility) genügt – kein zweites App-Fenster.
@@ -115,7 +121,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     // MARK: - Auslöser
 
     private func handleTrigger() {
-        guard let target = MenuInspector.itemUnderCursor() else {
+        let underCursor = MenuInspector.itemUnderCursor()
+        if OnboardingWindow.shared.isActive {
+            if underCursor != nil { OnboardingWindow.shared.register(trigger: 3) }
+            return
+        }
+        guard let target = underCursor else {
             HUD.show(Strings.noMenuItem)
             return
         }
@@ -145,6 +156,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
         menu.addItem(NSMenuItem(title: Strings.menuBrowse,
                                 action: #selector(openBrowse), keyEquivalent: ""))
+        menu.addItem(NSMenuItem(title: Strings.menuTutorial,
+                                action: #selector(openTutorial), keyEquivalent: ""))
         menu.addItem(NSMenuItem(title: Strings.menuSettings,
                                 action: #selector(openSettings), keyEquivalent: ","))
         menu.addItem(NSMenuItem(title: Strings.menuCheckUpdate,
@@ -200,6 +213,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     @objc private func openBrowse() {
         BrowseWindow.shared.present(initialApp: lastFrontApp)
+    }
+
+    @objc private func openTutorial() {
+        OnboardingWindow.shared.present()
     }
 
     private func configurePeek() {
