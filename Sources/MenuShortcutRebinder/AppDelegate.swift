@@ -251,11 +251,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     /// Lädt + installiert die neueste notarisierte Version (web-install.sh) und startet neu.
+    /// Das Skript wird LOSGELÖST gestartet (nohup + &, eigene Session), damit es den
+    /// Selbst-Neustart (pkill) der App überlebt; Ausgabe nach /tmp/sko-update.log.
     private func runUpdate() {
+        HUD.show(Strings.updateInstalling)
         let task = Process()
         task.executableURL = URL(fileURLWithPath: "/bin/bash")
-        task.arguments = ["-c", UpdateChecker.installCommand]
-        try? task.run()   // web-install.sh beendet die laufende App und startet die neue Version
+        task.arguments = ["-c",
+            "nohup /bin/bash -c '\(UpdateChecker.installCommand)' >/tmp/sko-update.log 2>&1 &"]
+        do {
+            try task.run()
+        } catch {
+            HUD.show(Strings.updateFailBody)
+        }
     }
 
     private func infoAlert(_ title: String, _ body: String) {
