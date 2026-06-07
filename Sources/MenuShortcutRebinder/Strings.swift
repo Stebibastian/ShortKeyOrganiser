@@ -83,6 +83,16 @@ enum Strings {
     static let bsPeekHint = "Zweimal drücken + halten = kurzer Blick (Loslassen schließt). Dreimal drücken = fix offen (bleibt offen). Im Blick die Lupe anklicken hält ebenfalls offen."
     static let bsClose = "Fertig"
     static let menuHelp = "Kurzanleitung …"
+    static let menuCheckUpdate = "Nach Updates suchen …"
+    static func updateTitle(_ v: String) -> String { "Version \(v) ist verfügbar" }
+    static let updateBody = "Eine neuere Version von ShortKeyOrganiser ist verfügbar. Jetzt laden und installieren?"
+    static let updateInstall = "Jetzt aktualisieren"
+    static let updatePage = "Release-Seite öffnen"
+    static let updateLater = "Später"
+    static let updateNoneTitle = "ShortKeyOrganiser ist aktuell"
+    static func updateNoneBody(_ v: String) -> String { "Du hast bereits die neueste Version (\(v))." }
+    static let updateFailTitle = "Update-Prüfung fehlgeschlagen"
+    static let updateFailBody = "Die neueste Version konnte nicht abgerufen werden. Bitte später erneut versuchen."
 
     // Tastenkürzel-Fenster mit Tabs
     static let winTitle = "Tastenkürzel"

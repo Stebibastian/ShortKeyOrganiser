@@ -24,6 +24,7 @@ struct SettingsView: View {
     let onManage: () -> Void
     let onDiagnose: () -> Void
     let onHelp: () -> Void
+    let onCheckUpdate: () -> Void
     let onLiveView: () -> Void   // leichte Live-Aktualisierung der Ansicht (ohne Detektor-Neustart)
 
     @State private var selection: Section = .keyboard
@@ -169,6 +170,7 @@ struct SettingsView: View {
             Button(Strings.menuShortcuts) { onManage() }
             Button(Strings.menuDiagnose) { onDiagnose() }
             Button(Strings.menuHelp) { onHelp() }
+            Button(Strings.menuCheckUpdate) { onCheckUpdate() }
             Divider().padding(.vertical, 6)
             row(Strings.setLogin) {
                 Toggle("", isOn: $launchAtLogin).labelsHidden().toggleStyle(.switch)
@@ -255,6 +257,7 @@ final class SettingsWindow: NSObject {
     var onManage: (() -> Void)?
     var onDiagnose: (() -> Void)?
     var onHelp: (() -> Void)?
+    var onCheckUpdate: (() -> Void)?
     var onLiveView: (() -> Void)?
     var loginEnabled: () -> Bool = { false }
 
@@ -281,6 +284,7 @@ final class SettingsWindow: NSObject {
             onManage: { [weak self] in self?.onManage?() },
             onDiagnose: { [weak self] in self?.onDiagnose?() },
             onHelp: { [weak self] in self?.onHelp?() },
+            onCheckUpdate: { [weak self] in self?.onCheckUpdate?() },
             onLiveView: { [weak self] in self?.onLiveView?() })
         let win = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 760, height: 560),
                            styleMask: [.titled, .closable], backing: .buffered, defer: false)

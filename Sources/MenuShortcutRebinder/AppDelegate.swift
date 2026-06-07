@@ -41,6 +41,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             BrowseWindow.shared.present(initialApp: self?.lastFrontApp)
         }
         configureSettingsWindow()
+        autoCheckForUpdates()
 
         promptAccessibility()   // System-Prompt + Eintrag in der Rechte-Liste anlegen
         trustedAtLaunch = AXIsProcessTrusted()
@@ -171,6 +172,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         SettingsWindow.shared.onManage = { ShortcutsWindow.shared.present() }
         SettingsWindow.shared.onDiagnose = { [weak self] in self?.diagnose() }
         SettingsWindow.shared.onHelp = { [weak self] in self?.showHelp() }
+        SettingsWindow.shared.onCheckUpdate = { [weak self] in self?.checkForUpdates() }
         SettingsWindow.shared.onLiveView = { BrowseWindow.shared.applySettings() }
         SettingsWindow.shared.loginEnabled = { SMAppService.mainApp.status == .enabled }
     }
@@ -195,6 +197,67 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private func configurePeek() {
         peekDetector.modifierIndex = Settings.peekModifierIndex
         peekDetector.holdDuration = Settings.peekHoldDuration
+    }
+
+    // MARK: - Updates
+
+    /// Beim Start max. 1×/Tag still prüfen; nur bei verfügbarem Update melden.
+    private func autoCheckForUpdates() {
+        let last = UserDefaults.standard.double(forKey: "lastUpdateCheck")
+        let now = Date().timeIntervalSince1970
+        guard now - last > 86_400 else { return }
+        UserDefaults.standard.set(now, forKey: "lastUpdateCheck")
+        UpdateChecker.check { [weak self] result in
+            if case .success(let info?) = result { self?.showUpdateAlert(info) }
+        }
+    }
+
+    /// Manuelle Prüfung (aus den Einstellungen): meldet auch „bereits aktuell" bzw. Fehler.
+    @objc private func checkForUpdates() {
+        UpdateChecker.check { [weak self] result in
+            switch result {
+            case .success(let info?):
+                self?.showUpdateAlert(info)
+            case .success(nil):
+                self?.infoAlert(Strings.updateNoneTitle,
+                                Strings.updateNoneBody(UpdateChecker.currentVersion))
+            case .failure:
+                self?.infoAlert(Strings.updateFailTitle, Strings.updateFailBody)
+            }
+        }
+    }
+
+    private func showUpdateAlert(_ info: UpdateInfo) {
+        let alert = NSAlert()
+        alert.messageText = Strings.updateTitle(info.version)
+        alert.informativeText = info.notes.isEmpty ? Strings.updateBody : info.notes
+        alert.addButton(withTitle: Strings.updateInstall)
+        alert.addButton(withTitle: Strings.updatePage)
+        alert.addButton(withTitle: Strings.updateLater)
+        NSApp.activate(ignoringOtherApps: true)
+        switch alert.runModal() {
+        case .alertFirstButtonReturn: runUpdate()
+        case .alertSecondButtonReturn:
+            if let url = URL(string: info.pageURL) { NSWorkspace.shared.open(url) }
+        default: break
+        }
+    }
+
+    /// Lädt + installiert die neueste notarisierte Version (web-install.sh) und startet neu.
+    private func runUpdate() {
+        let task = Process()
+        task.executableURL = URL(fileURLWithPath: "/bin/bash")
+        task.arguments = ["-c", UpdateChecker.installCommand]
+        try? task.run()   // web-install.sh beendet die laufende App und startet die neue Version
+    }
+
+    private func infoAlert(_ title: String, _ body: String) {
+        let a = NSAlert()
+        a.messageText = title
+        a.informativeText = body
+        a.addButton(withTitle: Strings.ok)
+        NSApp.activate(ignoringOtherApps: true)
+        a.runModal()
     }
 
     // MARK: - Hilfe
