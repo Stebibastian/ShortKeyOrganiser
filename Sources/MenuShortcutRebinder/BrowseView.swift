@@ -311,7 +311,7 @@ struct BrowseView: View {
 
     private var header: some View {
         HStack(spacing: 6) {
-            Spacer().frame(width: 62)   // Platz für die Fenster-Ampeln (randloser Titel)
+            Spacer().frame(width: 50)   // Platz für die Fenster-Ampeln (randloser Titel)
             appChooser
 
             if model.searchActive {
