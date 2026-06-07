@@ -600,23 +600,35 @@ struct BrowseView: View {
         let groups = grouped
         guard groups.count > 1 else { return [groups] }
         if !model.compactSections { return groups.map { [$0] } }   // alte Anordnung: jede Sektion eine eigene Spalte
+        // Spaltenweise bis zur Fensterhöhe füllen, dann die nächste Spalte beginnen – so wird bei
+        // langen Listen horizontal weitergeblättert statt eine Spalte über den Fensterrand zu schieben.
         let rowH = model.fontSize + 7
-        let totalRows = groups.reduce(0) { $0 + sectionRows($1) }
-        let maxCols = max(1, Int(size.width / model.columnWidth))
-        let availRows = max(8, Int(size.height / rowH))
-        let neededCols = max(1, Int((Double(totalRows) / Double(availRows)).rounded(.up)))
-        let count = max(1, min(maxCols, neededCols))
-        guard count > 1 else { return [groups] }
-        let target = max(1, totalRows / count)
+        let availRows = max(10, Int(size.height / rowH))
+        // Überlange Sektionen vorab in mehrere Teile splitten, damit keine höher als das Fenster ist.
+        // (Submenü-Überschriften erscheinen im Folgeteil automatisch wieder, da pro Spalte neu gruppiert.)
+        var blocks: [(String, [BrowseItem])] = []
+        for g in groups where !g.1.isEmpty {
+            if sectionRows(g) <= availRows {
+                blocks.append(g)
+            } else {
+                let perCol = max(1, availRows - 2)   // minus Kategorie-Überschrift
+                var i = 0
+                while i < g.1.count {
+                    blocks.append((g.0, Array(g.1[i..<min(i + perCol, g.1.count)])))
+                    i += perCol
+                }
+            }
+        }
+        // Blöcke spaltenweise bis zur Fensterhöhe füllen, dann nächste Spalte.
         var cols: [[(String, [BrowseItem])]] = []
         var cur: [(String, [BrowseItem])] = []
         var curH = 0
-        for g in groups {
-            let h = sectionRows(g)
-            if curH > 0, curH + h > target, cols.count < count - 1 {
+        for b in blocks {
+            let h = sectionRows(b)
+            if curH > 0, curH + h > availRows {
                 cols.append(cur); cur = []; curH = 0
             }
-            cur.append(g); curH += h
+            cur.append(b); curH += h
         }
         if !cur.isEmpty { cols.append(cur) }
         return cols
