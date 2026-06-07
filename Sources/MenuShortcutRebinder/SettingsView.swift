@@ -62,11 +62,9 @@ struct SettingsView: View {
         VStack(spacing: 0) {
             tabBar
             Divider()
-            ScrollView {
-                detail.padding(26).frame(maxWidth: .infinity, alignment: .leading)
-            }
+            detail.padding(26).frame(maxWidth: .infinity, alignment: .leading)
         }
-        .frame(width: 620, height: selection == .about ? 470 : 560)
+        .frame(width: 620)   // Höhe richtet sich nach dem Inhalt (Fenster passt sich je Tab an)
     }
 
     // Tab-Leiste oben (Icon + Titel je Bereich), Stil wie die macOS-Einstellungen.
