@@ -38,6 +38,7 @@ final class BrowseModel: ObservableObject {
     @Published var backgroundStyle: Int = Settings.browseBackgroundStyle
     @Published var opaqueRows: Bool = Settings.browseOpaqueRows
     @Published var fontSize: Double = Settings.browseFontSize
+    @Published var keyLeft: Bool = Settings.browseKeyLeft
 
     var onEdit: ((BrowseItem, AppChoice) -> Void)?
     var onDelete: ((BrowseItem, AppChoice) -> Void)?
@@ -206,6 +207,7 @@ struct BrowseRowView: View {
     let zebra: Bool
     let solidBackground: Bool   // deckender Zeilen-Hintergrund (Lesbarkeit bei Transparenz)
     let fontSize: Double
+    let keyLeft: Bool   // true = Kürzel links (rechtsbündig) + Name rechts (linksbündig)
     let onPerform: () -> Void
     let onEdit: () -> Void
     let onDelete: () -> Void
@@ -237,10 +239,20 @@ struct BrowseRowView: View {
 
             Button(action: onPerform) {
                 HStack(spacing: 8) {
-                    titleText.lineLimit(1).truncationMode(.middle)
-                        .fontWeight(isCustom ? .semibold : .regular)
-                    Spacer(minLength: 6)
-                    if !item.shortcut.isEmpty { KeyCapView(shortcut: item.shortcut, fontSize: fontSize) }
+                    if keyLeft {
+                        Group {
+                            if !item.shortcut.isEmpty { KeyCapView(shortcut: item.shortcut, fontSize: fontSize) }
+                        }
+                        .frame(width: fontSize * 5.5, alignment: .trailing)
+                        titleText.lineLimit(1).truncationMode(.middle)
+                            .fontWeight(isCustom ? .semibold : .regular)
+                        Spacer(minLength: 0)
+                    } else {
+                        titleText.lineLimit(1).truncationMode(.middle)
+                            .fontWeight(isCustom ? .semibold : .regular)
+                        Spacer(minLength: 6)
+                        if !item.shortcut.isEmpty { KeyCapView(shortcut: item.shortcut, fontSize: fontSize) }
+                    }
                 }
                 .contentShape(Rectangle())
             }
@@ -688,6 +700,7 @@ struct BrowseView: View {
                              zebra: model.zebra && idx % 2 == 1,
                              solidBackground: model.backgroundStyle == 1 && model.opaqueRows,
                              fontSize: model.fontSize,
+                             keyLeft: model.keyLeft,
                              onPerform: { model.perform(item) },
                              onEdit: { model.edit(item) },
                              onDelete: { model.requestDelete(item) },

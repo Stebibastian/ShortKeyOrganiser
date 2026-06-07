@@ -14,6 +14,7 @@ struct SettingsView: View {
     @State var columnWidth: Double
     @State var fontSize: Double
     @State var zebra: Bool
+    @State var keyLeft: Bool
     @State var transparency: Double
     @State var backgroundStyle: Int
     @State var opaqueRows: Bool
@@ -158,6 +159,7 @@ struct SettingsView: View {
                 toggleRow(Strings.setOpaqueRows, $opaqueRows)
             }
             toggleRow(Strings.setZebra, $zebra)
+            toggleRow(Strings.setKeyLeft, $keyLeft)
         }
     }
 
@@ -280,6 +282,7 @@ struct SettingsView: View {
         Settings.browseColumnWidth = columnWidth
         Settings.browseFontSize = fontSize
         Settings.browseZebra = zebra
+        Settings.browseKeyLeft = keyLeft
         Settings.browseTransparency = transparency
         Settings.browseBackgroundStyle = backgroundStyle
         Settings.browseOpaqueRows = opaqueRows
@@ -315,6 +318,7 @@ final class SettingsWindow: NSObject {
             columnWidth: Settings.browseColumnWidth,
             fontSize: Settings.browseFontSize,
             zebra: Settings.browseZebra,
+            keyLeft: Settings.browseKeyLeft,
             transparency: Settings.browseTransparency,
             backgroundStyle: Settings.browseBackgroundStyle,
             opaqueRows: Settings.browseOpaqueRows,

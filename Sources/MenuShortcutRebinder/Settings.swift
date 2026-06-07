@@ -155,6 +155,13 @@ enum Settings {
         set { UserDefaults.standard.set(newValue, forKey: browseBackgroundStyleKey) }
     }
 
+    private static let browseKeyLeftKey = "browseKeyLeft"
+    /// Tastenkürzel links (rechtsbündig) + Name rechts (linksbündig), statt Name links + Kürzel rechts.
+    static var browseKeyLeft: Bool {
+        get { UserDefaults.standard.bool(forKey: browseKeyLeftKey) }   // Standard: aus
+        set { UserDefaults.standard.set(newValue, forKey: browseKeyLeftKey) }
+    }
+
     private static let browseOpaqueRowsKey = "browseOpaqueRows"
     /// Im Transparent-Modus: Befehlszeilen mit deckendem Hintergrund (bessere Lesbarkeit).
     static var browseOpaqueRows: Bool {
