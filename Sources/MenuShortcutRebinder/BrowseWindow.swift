@@ -72,6 +72,7 @@ final class BrowseWindow: NSObject, NSWindowDelegate {
         model.hidden = BrowsePrefs.hidden
         model.collapsed = []
         model.showHidden = false
+        model.showFavorites = true
         model.refreshApps(preferredPid: initialApp?.processIdentifier)
         model.loadItems()
         applyWindowSize()

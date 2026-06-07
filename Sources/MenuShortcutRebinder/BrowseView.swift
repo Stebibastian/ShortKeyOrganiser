@@ -30,6 +30,7 @@ final class BrowseModel: ObservableObject {
     @Published var hidden: Set<String> = BrowsePrefs.hidden
     @Published var collapsed: Set<String> = []
     @Published var showHidden: Bool = false
+    @Published var showFavorites: Bool = true
 
     var onEdit: ((BrowseItem, AppChoice) -> Void)?
     var onDelete: ((BrowseItem, AppChoice) -> Void)?
@@ -244,11 +245,14 @@ struct BrowseView: View {
     private var grouped: [(String, [BrowseItem])] {
         let f = filtered
         var result: [(String, [BrowseItem])] = []
-        let favs = f.filter { model.isFavorite($0) }
-        if !favs.isEmpty { result.append((Strings.browseFavorites, favs)) }
+        if model.showFavorites {
+            let favs = f.filter { model.isFavorite($0) }
+            if !favs.isEmpty { result.append((Strings.browseFavorites, favs)) }
+        }
+        // Favoriten bleiben zusätzlich in ihrer normalen Kategorie.
         var order: [String] = []
         var dict: [String: [BrowseItem]] = [:]
-        for it in f where !model.isFavorite(it) {
+        for it in f {
             let cat = it.menuPath.first ?? "—"
             if dict[cat] == nil { order.append(cat) }
             dict[cat, default: []].append(it)
@@ -267,7 +271,7 @@ struct BrowseView: View {
     }
 
     private var header: some View {
-        HStack(spacing: 10) {
+        HStack(spacing: 8) {
             if let icon = model.currentApp?.icon {
                 Image(nsImage: icon).resizable().frame(width: 20, height: 20)
             }
@@ -275,37 +279,51 @@ struct BrowseView: View {
                 ForEach(model.apps) { app in Text(app.name).tag(app.pid) }
             }
             .labelsHidden()
-            .frame(maxWidth: 220)
+            .frame(maxWidth: 200)
             .onChange(of: model.selectedPid) { _ in
                 model.query = ""; model.searchActive = false; model.loadItems()
+            }
+
+            Spacer()
+
+            navIcon("star", active: model.showFavorites, tip: Strings.browseShowFavorites) {
+                model.showFavorites.toggle()
+            }
+            navIcon(model.showHidden ? "eye" : "eye.slash", active: model.showHidden,
+                    tip: Strings.browseShowHidden) { model.showHidden.toggle() }
+            navIcon("minus", active: false, tip: "Schmälere Spalten") {
+                model.setColumnWidth(model.columnWidth - 30)
+            }
+            navIcon("plus", active: false, tip: "Breitere Spalten") {
+                model.setColumnWidth(model.columnWidth + 30)
             }
 
             if model.searchActive {
                 searchField
             } else {
-                Button { model.activateSearch() } label: { Image(systemName: "magnifyingglass") }
-                    .buttonStyle(.plain)
-                    .help(Strings.browseSearchPlaceholder)
+                navIcon("magnifyingglass", active: false, tip: Strings.browseSearchPlaceholder) {
+                    model.activateSearch()
+                }
             }
-
-            Spacer()
-
-            Button { model.showHidden.toggle() } label: {
-                Image(systemName: model.showHidden ? "eye" : "eye.slash")
-            }
-            .controlSize(.small).help(Strings.browseShowHidden)
-
-            HStack(spacing: 0) {
-                Button { model.setColumnWidth(model.columnWidth - 30) } label: { Image(systemName: "minus") }
-                    .help("Schmälere Spalten")
-                Button { model.setColumnWidth(model.columnWidth + 30) } label: { Image(systemName: "plus") }
-                    .help("Breitere Spalten")
-            }
-            .controlSize(.small)
         }
         .frame(height: 34)
-        .padding(.horizontal, 10)
+        .padding(.horizontal, 12)
         .padding(.vertical, 8)
+    }
+
+    /// Einheitlicher Leisten-Knopf (gleiche Größe), aktiver Zustand farbig hinterlegt.
+    private func navIcon(_ symbol: String, active: Bool, tip: String,
+                         _ action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: symbol)
+                .font(.system(size: 13))
+                .frame(width: 26, height: 24)
+                .background(RoundedRectangle(cornerRadius: 6)
+                    .fill(active ? Color.accentColor.opacity(0.18) : Color.clear))
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(active ? Color.accentColor : .secondary)
+        .help(tip)
     }
 
     private var searchField: some View {

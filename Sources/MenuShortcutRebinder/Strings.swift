@@ -88,6 +88,7 @@ enum Strings {
     static let browseHideTip = "Befehl ausblenden"
     static let browseUnhideTip = "Wieder einblenden"
     static let browseShowHidden = "Ausgeblendete anzeigen"
+    static let browseShowFavorites = "Favoriten-Gruppe anzeigen"
     static func browseCount(hits: Int, total: Int) -> String { "\(hits) von \(total) Befehlen" }
     static func browseCapped(_ cap: Int) -> String { " (erste \(cap) gezeigt)" }
 
