@@ -33,6 +33,8 @@ final class BrowseModel: ObservableObject {
     @Published var showFavorites: Bool = true
     @Published var showDisabled: Bool = true
     @Published var highlightEnabled: Bool = Settings.browseHighlight
+    @Published var backgroundStyle: Int = Settings.browseBackgroundStyle
+    @Published var opaqueRows: Bool = Settings.browseOpaqueRows
 
     var onEdit: ((BrowseItem, AppChoice) -> Void)?
     var onDelete: ((BrowseItem, AppChoice) -> Void)?
@@ -181,6 +183,7 @@ struct BrowseRowView: View {
     let keyHighlight: Bool   // Modifier-Treffer → gelb
     let selected: Bool       // Tastatur-Auswahl bei Suche → Akzent
     let zebra: Bool
+    let solidBackground: Bool   // deckender Zeilen-Hintergrund (Lesbarkeit bei Transparenz)
     let onPerform: () -> Void
     let onEdit: () -> Void
     let onDelete: () -> Void
@@ -192,6 +195,7 @@ struct BrowseRowView: View {
         if keyHighlight { return Color.yellow.opacity(0.35) }
         if selected { return Color.accentColor.opacity(0.30) }
         if hover { return Color.accentColor.opacity(0.12) }
+        if solidBackground { return Color(nsColor: .windowBackgroundColor) }
         if zebra { return Color.secondary.opacity(0.08) }
         return .clear
     }
@@ -247,6 +251,18 @@ struct BrowseRowView: View {
     }
 }
 
+/// Nativer macOS-Blur (Milchglas) als Fensterhintergrund (Modus „Milchglas").
+struct VisualEffectBlur: NSViewRepresentable {
+    func makeNSView(context: Context) -> NSVisualEffectView {
+        let v = NSVisualEffectView()
+        v.material = .underWindowBackground
+        v.blendingMode = .behindWindow
+        v.state = .active
+        return v
+    }
+    func updateNSView(_ nsView: NSVisualEffectView, context: Context) {}
+}
+
 struct BrowseView: View {
     @ObservedObject var model: BrowseModel
     @FocusState private var searchFocused: Bool
@@ -280,6 +296,16 @@ struct BrowseView: View {
             content
         }
         .frame(minWidth: 520, minHeight: 360)
+        .background(backdrop)
+    }
+
+    /// Hintergrund je nach Modus: Milchglas-Blur; sonst durchscheinen lassen (Fensterfarbe).
+    @ViewBuilder private var backdrop: some View {
+        if model.backgroundStyle == 2 {
+            VisualEffectBlur().ignoresSafeArea()
+        } else {
+            Color.clear
+        }
     }
 
     private var header: some View {
@@ -334,6 +360,7 @@ struct BrowseView: View {
         .frame(height: 34)
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
+        .background(Color(nsColor: .windowBackgroundColor))   // obere Leiste immer deckend
     }
 
     /// Einheitlicher Leisten-Knopf (gut klickbare Fläche), aktiver Zustand farbig hinterlegt.
@@ -454,6 +481,7 @@ struct BrowseView: View {
                              keyHighlight: keyHighlight,
                              selected: selected,
                              zebra: model.zebra && idx % 2 == 1,
+                             solidBackground: model.backgroundStyle == 1 && model.opaqueRows,
                              onPerform: { model.perform(item) },
                              onEdit: { model.edit(item) },
                              onDelete: { model.requestDelete(item) },

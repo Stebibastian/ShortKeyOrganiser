@@ -78,7 +78,9 @@ final class BrowseWindow: NSObject, NSWindowDelegate {
         model.showFavorites = true
         model.showDisabled = true
         model.highlightEnabled = Settings.browseHighlight
-        applyTransparency()
+        model.backgroundStyle = Settings.browseBackgroundStyle
+        model.opaqueRows = Settings.browseOpaqueRows
+        applyBackground()
         model.refreshApps(preferredPid: initialApp?.processIdentifier)
         model.loadItems()
         applyWindowSize()
@@ -107,7 +109,7 @@ final class BrowseWindow: NSObject, NSWindowDelegate {
         win.contentView = NSHostingView(rootView: BrowseView(model: model))
         win.delegate = self
         self.window = win
-        applyTransparency()
+        applyBackground()
 
         // Auto-Follow: wechselt die vorderste App, folgt das offene Fenster automatisch
         // (die eigene App wird ignoriert, damit Klicks ins Fenster nichts umschalten).
@@ -263,14 +265,28 @@ final class BrowseWindow: NSObject, NSWindowDelegate {
     func applySettings() {
         model.zebra = Settings.browseZebra
         model.columnWidth = Settings.browseColumnWidth
-        applyTransparency()
+        model.backgroundStyle = Settings.browseBackgroundStyle
+        model.opaqueRows = Settings.browseOpaqueRows
+        applyBackground()
         if window?.isVisible == true { applyWindowSize() }
     }
 
-    /// Echte Fenster-Transparenz (inkl. Titelleiste) über die Hintergrundfarbe des Fensters.
-    /// 0 % = undurchsichtig, höher = mehr Durchblick (Untergrenze, damit nichts ganz verschwindet).
-    private func applyTransparency() {
-        let alpha = max(0.15, 1.0 - Settings.browseTransparency)
-        window?.backgroundColor = NSColor.windowBackgroundColor.withAlphaComponent(alpha)
+    /// Fenster-Hintergrund je nach Modus.
+    /// 0 = undurchsichtig, 1 = echte Transparenz (Fensterfarbe mit Alpha, inkl. Titelleiste),
+    /// 2 = Milchglas (Blur kommt aus der BrowseView, Fenster selbst klar).
+    private func applyBackground() {
+        guard let window else { return }
+        switch Settings.browseBackgroundStyle {
+        case 1:
+            window.isOpaque = false
+            window.backgroundColor = NSColor.windowBackgroundColor
+                .withAlphaComponent(max(0.15, 1.0 - Settings.browseTransparency))
+        case 2:
+            window.isOpaque = false
+            window.backgroundColor = .clear
+        default:
+            window.isOpaque = true
+            window.backgroundColor = .windowBackgroundColor
+        }
     }
 }

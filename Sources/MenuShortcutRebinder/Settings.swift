@@ -86,6 +86,20 @@ enum Settings {
         }
         set { UserDefaults.standard.set(min(0.30, max(0.0, newValue)), forKey: browseTransparencyKey) }
     }
+
+    private static let browseBackgroundStyleKey = "browseBackgroundStyle"
+    /// 0 = undurchsichtig, 1 = transparent (mit browseTransparency), 2 = Milchglas (Blur).
+    static var browseBackgroundStyle: Int {
+        get { UserDefaults.standard.object(forKey: browseBackgroundStyleKey) as? Int ?? 1 }
+        set { UserDefaults.standard.set(newValue, forKey: browseBackgroundStyleKey) }
+    }
+
+    private static let browseOpaqueRowsKey = "browseOpaqueRows"
+    /// Im Transparent-Modus: Befehlszeilen mit deckendem Hintergrund (bessere Lesbarkeit).
+    static var browseOpaqueRows: Bool {
+        get { UserDefaults.standard.object(forKey: browseOpaqueRowsKey) as? Bool ?? false }
+        set { UserDefaults.standard.set(newValue, forKey: browseOpaqueRowsKey) }
+    }
 }
 
 /// Bekannte Modifier-Tasten, die als Auslöser taugen.

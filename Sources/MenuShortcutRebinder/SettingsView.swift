@@ -12,6 +12,8 @@ struct SettingsView: View {
     @State var columnWidth: Double
     @State var zebra: Bool
     @State var transparency: Double
+    @State var backgroundStyle: Int
+    @State var opaqueRows: Bool
     @State var launchAtLogin: Bool
 
     let onChange: () -> Void
@@ -109,7 +111,20 @@ struct SettingsView: View {
         section(Strings.setSecView) {
             slider(Strings.setWindowSize, $screenPercent, 0.5...1.0, 0.05, "%", scale: 100)
             slider(Strings.setColWidth, $columnWidth, 160...520, 10, "pt")
-            slider(Strings.setTransparency, $transparency, 0...0.30, 0.01, "%", scale: 100)
+            row(Strings.setBackground) {
+                Picker("", selection: $backgroundStyle) {
+                    Text(Strings.setBgOpaque).tag(0)
+                    Text(Strings.setBgTransparent).tag(1)
+                    Text(Strings.setBgBlur).tag(2)
+                }
+                .labelsHidden().frame(width: 180)
+                .onChange(of: backgroundStyle) { _ in commit() }
+            }
+            if backgroundStyle == 1 {
+                slider(Strings.setTransparency, $transparency, 0...0.30, 0.01, "%", scale: 100)
+                Toggle(Strings.setOpaqueRows, isOn: $opaqueRows)
+                    .toggleStyle(.switch).onChange(of: opaqueRows) { _ in commit() }
+            }
             Toggle(Strings.setZebra, isOn: $zebra)
                 .toggleStyle(.switch).onChange(of: zebra) { _ in commit() }
         }
@@ -164,6 +179,8 @@ struct SettingsView: View {
         Settings.browseColumnWidth = columnWidth
         Settings.browseZebra = zebra
         Settings.browseTransparency = transparency
+        Settings.browseBackgroundStyle = backgroundStyle
+        Settings.browseOpaqueRows = opaqueRows
         onChange()
     }
 }
@@ -190,6 +207,8 @@ final class SettingsWindow: NSObject {
             columnWidth: Settings.browseColumnWidth,
             zebra: Settings.browseZebra,
             transparency: Settings.browseTransparency,
+            backgroundStyle: Settings.browseBackgroundStyle,
+            opaqueRows: Settings.browseOpaqueRows,
             launchAtLogin: loginEnabled(),
             onChange: { [weak self] in self?.onChange?() },
             onToggleLogin: { [weak self] on in self?.onToggleLogin?(on) },
