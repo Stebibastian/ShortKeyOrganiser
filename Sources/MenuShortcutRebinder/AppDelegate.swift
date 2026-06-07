@@ -45,6 +45,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             else { BrowseWindow.shared.present(initialApp: self?.lastFrontApp) }
         }
         configureSettingsWindow()
+        if offerMoveToApplications() { return }   // verschiebt nach /Applications + startet neu → Rest überspringen
         autoCheckForUpdates()
 
         promptAccessibility()   // System-Prompt + Eintrag in der Rechte-Liste anlegen
@@ -227,6 +228,46 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     // MARK: - Updates
 
     /// Beim Start max. 1×/Tag still prüfen; nur bei verfügbarem Update melden.
+    /// Bietet beim Start an, die App nach /Applications zu verschieben, falls sie woanders läuft
+    /// (z. B. aus dem Download-Ordner). Gibt true zurück, wenn verschoben wird (App beendet sich dann).
+    @discardableResult
+    private func offerMoveToApplications() -> Bool {
+        let path = Bundle.main.bundlePath
+        guard !path.hasPrefix("/Applications/"), !Settings.moveDeclined else { return false }
+        // Aus Build-/Projektordnern heraus nicht nerven (lokale Dev-Builds).
+        if path.contains("/.build/") || path.contains("/DerivedData/") { return false }
+
+        let folder = (path as NSString).deletingLastPathComponent
+        let alert = NSAlert()
+        alert.messageText = Strings.moveTitle
+        alert.informativeText = Strings.moveBody((folder as NSString).lastPathComponent)
+        alert.addButton(withTitle: Strings.moveNow)
+        alert.addButton(withTitle: Strings.moveLater)
+        NSApp.activate(ignoringOtherApps: true)
+        if alert.runModal() == .alertFirstButtonReturn {
+            moveToApplications()
+            return true
+        }
+        Settings.moveDeclined = true   // „Nicht jetzt" → nicht erneut fragen
+        return false
+    }
+
+    private func moveToApplications() {
+        let src = Bundle.main.bundlePath
+        let dest = "/Applications/" + (src as NSString).lastPathComponent
+        // Detached: 1 s warten (App beendet sich), Ziel ersetzen, verschieben, von /Applications öffnen.
+        let inner = "sleep 1; rm -rf '\(dest)'; mv '\(src)' '\(dest)' && open '\(dest)'"
+        let task = Process()
+        task.executableURL = URL(fileURLWithPath: "/bin/bash")
+        task.arguments = ["-c", "nohup bash -c \"\(inner)\" >/tmp/sko-move.log 2>&1 &"]
+        do {
+            try task.run()
+            NSApp.terminate(nil)   // beenden, damit mv + open der neuen Instanz greifen
+        } catch {
+            HUD.show(Strings.moveFailed)
+        }
+    }
+
     private func autoCheckForUpdates() {
         let last = UserDefaults.standard.double(forKey: "lastUpdateCheck")
         let now = Date().timeIntervalSince1970

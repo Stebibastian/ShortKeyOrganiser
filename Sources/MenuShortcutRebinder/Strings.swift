@@ -185,6 +185,13 @@ enum Strings {
 
     static var openSettings: String { s("Systemeinstellungen öffnen", "Open System Settings") }
 
+    // Nach /Applications verschieben
+    static var moveTitle: String { s("In den Programme-Ordner verschieben?", "Move to Applications?", fr: "Déplacer vers Applications ?", es: "¿Mover a Aplicaciones?", it: "Spostare in Applicazioni?") }
+    static func moveBody(_ folder: String) -> String { s("ShortKeyOrganiser läuft gerade aus dem Ordner \(folder). Für automatische Updates und einen festen Platz verschiebst du es am besten in den Programme-Ordner.", "ShortKeyOrganiser is running from the \(folder) folder. For automatic updates and a stable location, it is best to move it to the Applications folder.", fr: "ShortKeyOrganiser fonctionne depuis le dossier \(folder). Pour les mises à jour automatiques et un emplacement stable, mieux vaut le déplacer dans le dossier Applications.", es: "ShortKeyOrganiser se está ejecutando desde la carpeta \(folder). Para actualizaciones automáticas y una ubicación estable, conviene moverlo a la carpeta Aplicaciones.", it: "ShortKeyOrganiser è in esecuzione dalla cartella \(folder). Per gli aggiornamenti automatici e una posizione stabile, è meglio spostarlo nella cartella Applicazioni.") }
+    static var moveNow: String { s("Verschieben", "Move", fr: "Déplacer", es: "Mover", it: "Sposta") }
+    static var moveLater: String { s("Nicht jetzt", "Not now", fr: "Pas maintenant", es: "Ahora no", it: "Non ora") }
+    static var moveFailed: String { s("Verschieben fehlgeschlagen.", "Move failed.", fr: "Échec du déplacement.", es: "Error al mover.", it: "Spostamento non riuscito.") }
+
     // Tastenkürzel-Verwaltung (ShortcutsWindow) + weitere Browse-Texte
     static var refresh: String { s("Aktualisieren", "Refresh", fr: "Actualiser", es: "Actualizar", it: "Aggiorna") }
     static var sysEdit: String { s("Ändern", "Change", fr: "Modifier", es: "Cambiar", it: "Modifica") }

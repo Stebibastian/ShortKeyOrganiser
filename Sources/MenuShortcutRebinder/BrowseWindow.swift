@@ -134,6 +134,7 @@ final class BrowseWindow: NSObject, NSWindowDelegate {
             self.model.query = ""          // App gewechselt → Suche zurücksetzen
             self.model.searchActive = false
             self.model.refreshApps(preferredPid: app.processIdentifier)
+            self.model.loadItems()         // Items der neu aktivierten App laden (sonst bleibt die Liste alt)
         }
 
         // Live-Highlight: gehaltene Modifier beobachten, solange das Fenster offen ist.

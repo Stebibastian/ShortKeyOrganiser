@@ -131,6 +131,13 @@ enum Settings {
         return "en"
     }
 
+    private static let moveDeclinedKey = "moveDeclined"
+    /// Hat der Nutzer das Verschieben nach /Applications einmal abgelehnt? Dann nicht erneut fragen.
+    static var moveDeclined: Bool {
+        get { UserDefaults.standard.bool(forKey: moveDeclinedKey) }
+        set { UserDefaults.standard.set(newValue, forKey: moveDeclinedKey) }
+    }
+
     private static let onboardingDoneKey = "onboardingDone"
     /// Wurde das Einführungs-Tutorial schon abgeschlossen/übersprungen?
     static var onboardingDone: Bool {
