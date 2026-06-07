@@ -21,5 +21,9 @@ rm -rf "/Applications/ShortKeyOrganiser.app"
 mv "$TMP/ShortKeyOrganiser.app" "/Applications/ShortKeyOrganiser.app"
 
 echo "→ Launching …"
-open "/Applications/ShortKeyOrganiser.app"
+sleep 0.5
+# retry: right after a kill+replace, Launch Services can briefly miss the app
+open "/Applications/ShortKeyOrganiser.app" 2>/dev/null \
+  || { sleep 2; open "/Applications/ShortKeyOrganiser.app" 2>/dev/null; } \
+  || { sleep 3; open "/Applications/ShortKeyOrganiser.app"; }
 echo "✓ Installed. On first launch, grant Accessibility - the app then relaunches itself."
