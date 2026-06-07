@@ -104,8 +104,7 @@ struct SettingsView: View {
             Text(Strings.setSecKeyboard).font(.title2.bold())
 
             featureBlock(Strings.setFeatureOverlay, Strings.setFeatureOverlayDesc) {
-                Toggle(Strings.setPeekEnable, isOn: $peekEnabled)
-                    .toggleStyle(.switch).onChange(of: peekEnabled) { _ in commit() }
+                toggleRow(Strings.setPeekEnable, $peekEnabled)
                 row(Strings.setPeekTrigger) {
                     Picker("", selection: $peekModifierIndex) {
                         Text(Strings.bsModCommand).tag(0)
@@ -135,8 +134,7 @@ struct SettingsView: View {
 
     private var viewSection: some View {
         section(Strings.setSecView) {
-            Toggle(Strings.setSizeLinked, isOn: $sizeLinked)
-                .toggleStyle(.switch).onChange(of: sizeLinked) { _ in commit() }
+            toggleRow(Strings.setSizeLinked, $sizeLinked)
             if sizeLinked {
                 slider(Strings.setWindowSize, $screenPercent, 0.4...1.0, 0.05, "%", scale: 100)
             } else {
@@ -155,11 +153,9 @@ struct SettingsView: View {
             }
             if backgroundStyle == 1 {
                 slider(Strings.setTransparency, $transparency, 0...0.30, 0.01, "%", scale: 100)
-                Toggle(Strings.setOpaqueRows, isOn: $opaqueRows)
-                    .toggleStyle(.switch).onChange(of: opaqueRows) { _ in commit() }
+                toggleRow(Strings.setOpaqueRows, $opaqueRows)
             }
-            Toggle(Strings.setZebra, isOn: $zebra)
-                .toggleStyle(.switch).onChange(of: zebra) { _ in commit() }
+            toggleRow(Strings.setZebra, $zebra)
         }
     }
 
@@ -171,8 +167,10 @@ struct SettingsView: View {
             Button(Strings.menuDiagnose) { onDiagnose() }
             Button(Strings.menuHelp) { onHelp() }
             Divider().padding(.vertical, 6)
-            Toggle(Strings.setLogin, isOn: $launchAtLogin)
-                .toggleStyle(.switch).onChange(of: launchAtLogin) { onToggleLogin($0) }
+            row(Strings.setLogin) {
+                Toggle("", isOn: $launchAtLogin).labelsHidden().toggleStyle(.switch)
+                    .onChange(of: launchAtLogin) { onToggleLogin($0) }
+            }
         }
     }
 
@@ -202,7 +200,15 @@ struct SettingsView: View {
     }
 
     private func row<C: View>(_ label: String, @ViewBuilder _ control: () -> C) -> some View {
-        HStack { Text(label); Spacer(); control() }
+        HStack { Text(label); Spacer(minLength: 16); control() }
+    }
+
+    /// Schalter-Zeile: Label links, Switch rechtsbündig (einheitlich mit den Auswahlmenüs).
+    private func toggleRow(_ label: String, _ value: Binding<Bool>) -> some View {
+        row(label) {
+            Toggle("", isOn: value).labelsHidden().toggleStyle(.switch)
+                .onChange(of: value.wrappedValue) { _ in commit() }
+        }
     }
 
     private func slider(_ label: String, _ value: Binding<Double>, _ range: ClosedRange<Double>,

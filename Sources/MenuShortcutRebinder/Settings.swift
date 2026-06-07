@@ -105,9 +105,9 @@ enum Settings {
     }
 
     private static let browseBackgroundStyleKey = "browseBackgroundStyle"
-    /// 0 = undurchsichtig, 1 = transparent (mit browseTransparency), 2 = Milchglas (Blur).
+    /// 0 = undurchsichtig, 1 = transparent (mit browseTransparency), 2 = Milchglas (Blur). Standard: Milchglas.
     static var browseBackgroundStyle: Int {
-        get { UserDefaults.standard.object(forKey: browseBackgroundStyleKey) as? Int ?? 1 }
+        get { UserDefaults.standard.object(forKey: browseBackgroundStyleKey) as? Int ?? 2 }
         set { UserDefaults.standard.set(newValue, forKey: browseBackgroundStyleKey) }
     }
 
