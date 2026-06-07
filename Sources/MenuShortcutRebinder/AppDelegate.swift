@@ -208,7 +208,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         guard now - last > 86_400 else { return }
         UserDefaults.standard.set(now, forKey: "lastUpdateCheck")
         UpdateChecker.check { [weak self] result in
-            if case .success(let info?) = result { self?.showUpdateAlert(info) }
+            guard case .success(let info?) = result else { return }
+            if Settings.autoUpdate {
+                HUD.show(Strings.updateInstalling)
+                self?.runUpdate()                 // im Hintergrund laden + installieren + neu starten
+            } else {
+                self?.showUpdateAlert(info)
+            }
         }
     }
 

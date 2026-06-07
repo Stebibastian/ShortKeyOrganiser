@@ -85,6 +85,8 @@ enum Strings {
     static let menuHelp = "Kurzanleitung …"
     static let menuCheckUpdate = "Nach Updates suchen …"
     static func setVersion(_ v: String) -> String { "ShortKeyOrganiser \(v)" }
+    static let setAutoUpdate = "Updates automatisch installieren"
+    static let updateInstalling = "Update wird installiert …"
     static func updateTitle(_ v: String) -> String { "Version \(v) ist verfügbar" }
     static let updateBody = "Eine neuere Version von ShortKeyOrganiser ist verfügbar. Jetzt laden und installieren?"
     static let updateInstall = "Jetzt aktualisieren"

@@ -18,6 +18,7 @@ struct SettingsView: View {
     @State var backgroundStyle: Int
     @State var opaqueRows: Bool
     @State var launchAtLogin: Bool
+    @State var autoUpdate: Bool
 
     let onChange: () -> Void
     let onToggleLogin: (Bool) -> Void
@@ -171,6 +172,7 @@ struct SettingsView: View {
             Button(Strings.menuDiagnose) { onDiagnose() }
             Button(Strings.menuHelp) { onHelp() }
             Button(Strings.menuCheckUpdate) { onCheckUpdate() }
+            toggleRow(Strings.setAutoUpdate, $autoUpdate)
             Divider().padding(.vertical, 6)
             row(Strings.setLogin) {
                 Toggle("", isOn: $launchAtLogin).labelsHidden().toggleStyle(.switch)
@@ -247,6 +249,7 @@ struct SettingsView: View {
         Settings.browseTransparency = transparency
         Settings.browseBackgroundStyle = backgroundStyle
         Settings.browseOpaqueRows = opaqueRows
+        Settings.autoUpdate = autoUpdate
         if live { onLiveView() } else { onChange() }
     }
 }
@@ -281,6 +284,7 @@ final class SettingsWindow: NSObject {
             backgroundStyle: Settings.browseBackgroundStyle,
             opaqueRows: Settings.browseOpaqueRows,
             launchAtLogin: loginEnabled(),
+            autoUpdate: Settings.autoUpdate,
             onChange: { [weak self] in self?.onChange?() },
             onToggleLogin: { [weak self] on in self?.onToggleLogin?(on) },
             onManage: { [weak self] in self?.onManage?() },

@@ -104,6 +104,13 @@ enum Settings {
         set { UserDefaults.standard.set(min(18, max(11, newValue)), forKey: browseFontSizeKey) }
     }
 
+    private static let autoUpdateKey = "autoUpdate"
+    /// Neue Versionen automatisch im Hintergrund installieren (statt nur zu melden).
+    static var autoUpdate: Bool {
+        get { UserDefaults.standard.bool(forKey: autoUpdateKey) }   // Standard: aus
+        set { UserDefaults.standard.set(newValue, forKey: autoUpdateKey) }
+    }
+
     private static let browseTransparencyKey = "browseTransparency"
     /// Transparenz des Durchsuchen-Fensters (0 = undurchsichtig, höher = mehr Blur/Durchblick).
     static var browseTransparency: Double {
