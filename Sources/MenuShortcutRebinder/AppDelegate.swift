@@ -242,7 +242,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private func showUpdateAlert(_ info: UpdateInfo) {
         let alert = NSAlert()
         alert.messageText = Strings.updateTitle(info.version)
-        alert.informativeText = info.notes.isEmpty ? Strings.updateBody : info.notes
+        let host = NSHostingView(rootView: UpdateView(notes: info.notes))
+        host.frame.size = host.fittingSize
+        alert.accessoryView = host
         alert.addButton(withTitle: Strings.updateInstall)
         alert.addButton(withTitle: Strings.updatePage)
         alert.addButton(withTitle: Strings.updateLater)
@@ -287,8 +289,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             .replacingOccurrences(of: ".", with: ",")
         let alert = NSAlert()
         alert.messageText = Strings.helpTitle
-        alert.informativeText = Strings.helpBody(
-            trigger: TriggerKey.shortName(for: Settings.triggerKeyCode), seconds: seconds)
+        let host = NSHostingView(rootView: HelpView(
+            trigger: TriggerKey.shortName(for: Settings.triggerKeyCode), seconds: seconds))
+        host.frame.size = host.fittingSize
+        alert.accessoryView = host
         alert.addButton(withTitle: Strings.ok)
         NSApp.activate(ignoringOtherApps: true)
         alert.runModal()

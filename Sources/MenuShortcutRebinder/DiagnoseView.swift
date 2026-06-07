@@ -46,3 +46,69 @@ struct DiagnoseView: View {
         .padding(.vertical, 9)
     }
 }
+
+/// Kurzanleitung als nummerierte Schritte (für den Hilfe-Dialog, Stil wie die Diagnose).
+struct HelpView: View {
+    let trigger: String
+    let seconds: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            stepRow(1, Strings.help1)
+            stepRow(2, Strings.help2)
+            stepRow(3, Strings.help3(trigger: trigger, seconds: seconds))
+            stepRow(4, Strings.help4)
+            Divider()
+            Text(Strings.helpNote).font(.callout).foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .font(.system(size: 13))
+        .frame(width: 380)
+        .padding(.horizontal, 2)
+    }
+
+    private func stepRow(_ n: Int, _ text: String) -> some View {
+        HStack(alignment: .top, spacing: 10) {
+            Text("\(n)")
+                .font(.system(size: 12, weight: .bold))
+                .frame(width: 22, height: 22)
+                .background(Circle().fill(Color.accentColor.opacity(0.18)))
+                .foregroundStyle(Color.accentColor)
+            Text(text).fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 0)
+        }
+    }
+}
+
+/// Update-Hinweis mit sauber gerenderten Release-Notes (Markdown formatiert, ohne Install-/Signatur-Zeilen).
+struct UpdateView: View {
+    let notes: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            if lines.isEmpty {
+                Text(Strings.updateBody).fixedSize(horizontal: false, vertical: true)
+            } else {
+                Text(Strings.updateAvailableLabel)
+                    .font(.subheadline.weight(.semibold)).foregroundStyle(.secondary)
+                ForEach(lines, id: \.self) { line in
+                    Text(.init(line)).fixedSize(horizontal: false, vertical: true)
+                }
+            }
+        }
+        .font(.system(size: 13))
+        .frame(width: 420)
+        .padding(.horizontal, 2)
+    }
+
+    /// Release-Notes ohne Installations-/Signatur-Zeilen; Markdown-Bullets „- " werden zu „• ".
+    private var lines: [String] {
+        notes.split(separator: "\n").map(String.init).compactMap { raw in
+            let t = raw.trimmingCharacters(in: .whitespaces)
+            let l = t.lowercased()
+            if t.isEmpty || l.contains("install") || l.contains("curl ")
+                || l.contains("notarized") || l.contains("signed with") { return nil }
+            return t.hasPrefix("- ") ? "• " + t.dropFirst(2) : t
+        }
+    }
+}

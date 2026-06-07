@@ -136,10 +136,12 @@ enum Strings {
     static func launchedHint(_ t: String) -> String { s("Aktiv – \(t) über einem Menüpunkt halten", "Active - hold \(t) over a menu item") }
     static func loginItemFailed(_ r: String) -> String { s("Login-Eintrag fehlgeschlagen: \(r)", "Login item failed: \(r)") }
     static var helpTitle: String { s("So funktioniert’s", "How it works") }
-    static func helpBody(trigger: String, seconds: String) -> String {
-        s("1. In einer beliebigen App ein Menü öffnen.\n2. Mit der Maus über den gewünschten Eintrag fahren.\n3. Die \(trigger)-Taste ~\(seconds) s halten.\n4. Im Fenster das neue Kürzel drücken, Bereich wählen, Anpassen.\n\nBei „nur diese App“ die App danach neu starten, damit das Menü das Kürzel zeigt.",
-          "1. Open a menu in any app.\n2. Hover the item you want.\n3. Hold the \(trigger) key for ~\(seconds) s.\n4. In the window press the new shortcut, pick the scope, Apply.\n\nFor \"this app only\" restart the app afterwards so its menu shows the shortcut.")
-    }
+    static var help1: String { s("In einer beliebigen App ein Menü öffnen.", "Open a menu in any app.") }
+    static var help2: String { s("Mit der Maus über den gewünschten Eintrag fahren.", "Hover the item you want.") }
+    static func help3(trigger: String, seconds: String) -> String { s("Die \(trigger)-Taste ~\(seconds) s halten.", "Hold the \(trigger) key for ~\(seconds) s.") }
+    static var help4: String { s("Im Fenster das neue Kürzel drücken, Bereich wählen, Anpassen.", "Press the new shortcut, pick the scope, Apply.") }
+    static var helpNote: String { s("Bei „nur diese App“ die betroffene App danach neu starten, damit das Menü das Kürzel zeigt.", "For this-app-only, restart that app afterwards so its menu shows the shortcut.") }
+    static var updateAvailableLabel: String { s("Was ist neu:", "What’s new:") }
 
     // Umbelegen-Fenster
     static var panelTitle: String { s("Tastenkürzel anpassen?", "Rebind shortcut?") }
