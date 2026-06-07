@@ -1,196 +1,101 @@
-# Menü-Kurzbefehl-Umbieger
+# ShortKeyOrganiser
 
-Über einen **Menüpunkt hovern**, die **rechte ⌃-Taste lange halten** (~0,6 s) → ein
-Fenster fragt „Tastenkürzel anpassen?" und bietet die Wahl **nur diese App** oder
-**alle Programme**. Bestätigen → das Kürzel wird gesetzt.
+A macOS menu-bar app that does two things for **any** app's menu commands:
 
-Genau die „hover + Taste halten"-Mechanik, gebaut auf den nativen macOS-Bordmitteln.
+1. **Command overlay** - a fast, searchable, KeyClu-style overview of every keyboard shortcut in the front app. Tap the trigger twice and hold for a quick peek; tap three times to keep it open and search. Commands are grouped by menu, modifiers are colour-coded, and while you hold a modifier the matching commands light up.
+2. **Rebind menu shortcuts** - hover a menu item, hold the trigger, and set your own shortcut for it (per app or globally) - written straight into the native `NSUserKeyEquivalents`, the same mechanism as *System Settings → Keyboard → Keyboard Shortcuts → App Shortcuts*.
 
-## Schnellinstallation (eine Zeile)
+Runs as a menu-bar agent (no Dock icon). Built in Swift/AppKit + SwiftUI on native macOS APIs.
 
-```bash
-curl -fsSL https://raw.githubusercontent.com/Stebibastian/MenuShortcutRebinder/main/bootstrap.sh | bash
-```
+## Features
 
-Holt den Quellcode, baut ihn lokal (lautlos signiert) und installiert nach
-`/Applications`. Voraussetzung: **Xcode Command Line Tools** (`xcode-select --install`).
-Danach einmal **Bedienungshilfen** freigeben – die App startet sich selbst neu.
+- **Searchable overlay** of the front app's commands, grouped by menu, with colour-coded modifiers (⌘ blue, ⇧ green, ⌥ orange, ⌃ pink).
+- **Live key highlight:** hold ⌘ (or any modifier) and the commands you could trigger light up in yellow.
+- **Run a command** by clicking its row; **rebind** or **reset** a shortcut inline.
+- **Peek & pin triggers:** double-tap-and-hold = peek, triple-tap = stay open. Modifier and timings are configurable.
+- **Favourites, hide, collapsible columns** - a collapsed column shrinks to a slim lane with a rotated title.
+- **Background style:** opaque, see-through (adjustable), or frosted glass.
+- **Central settings** with a sidebar: Shortcuts, View, Management & Help.
 
-## Bauen & Starten
+## Install
 
-```bash
-./install.sh            # baut + installiert nach /Applications + startet
-```
-
-oder ohne Installation:
+Currently you build it locally (signed with a local certificate, so it just runs - no Gatekeeper prompt):
 
 ```bash
-./make-app.sh           # baut MenuShortcutRebinder.app (mit Icon, signiert ad-hoc)
-open MenuShortcutRebinder.app
-```
-
-Zum Entwickeln ohne Bundle: `swift run`. Das Icon allein neu bauen: `./make-icon.sh`.
-
-Die App läuft als **Menüleisten-Agent** mit ⌘-Icon. Über das Menü:
-**Auslöser-Taste ändern**, **Gesetzte Kürzel verwalten** (zurücksetzen),
-**Diagnose & Verbindung**, **Beim Anmelden starten** (Schalter), **Kurzanleitung**,
-**Beenden**. Kein Dock-Icon (per `LSUIElement`); wer eins will, entfernt `LSUIElement`
-aus [`AppSupport/Info.plist`](AppSupport/Info.plist).
-
-### Kürzel zurücksetzen
-
-⌘-Menü → **Gesetzte Kürzel verwalten …** listet alle über dieses Tool gesetzten
-Kürzel; einzeln **Zurücksetzen** oder **Alle zurücksetzen**. Es werden nur die
-eigenen Einträge angezeigt/entfernt – fremde (z. B. selbst angelegte) bleiben
-unberührt. Nach dem Zurücksetzen die betroffene App neu starten.
-
-### Beim ersten Start: Rechte erteilen
-
-1. Es erscheint ein Hinweis → **Systemeinstellungen → Datenschutz & Sicherheit →
-   Bedienungshilfen** → MenuShortcutRebinder aktivieren.
-2. Nach dem Aktivieren **startet sich die App automatisch neu** – ein frischer
-   Prozess bekommt den Tastatur-Tap zuverlässig (eine im laufenden Prozess neu
-   erteilte Freigabe greift sonst oft nicht). Falls der Selbst-Neustart mal
-   ausbleibt: ⌘-Menü → Beenden, dann wieder öffnen.
-3. Falls der Auslöser dann immer noch nicht reagiert, zusätzlich unter
-   **Eingabeüberwachung** freigeben.
-
-Das Tool läuft als Menüleisten-Agent (kein Dock-Icon). Beenden über das ⌘-Icon.
-
-## Bedienung
-
-1. Beliebige App, Menü öffnen (z. B. **Bearbeiten**).
-2. Mit der Maus über den gewünschten Eintrag fahren (z. B. **Suchen**).
-3. **Rechte ⌃** ~0,6 s halten → Menü schließt sich, Fenster erscheint.
-4. Gewünschtes Kürzel drücken (z. B. ⌘⇧F), Bereich wählen, **Anpassen**.
-5. Bei „nur diese App": auf Wunsch die App neu starten, damit das Menü das neue
-   Kürzel zeigt.
-
-### Warum rechte ⌃ als Auslöser?
-
-- Modifier lösen in offenen Menüs **keine Tipp-Auswahl** aus (eine Buchstabentaste
-  würde im Menü herumspringen).
-- Anders als ⌥/⌘ blendet ⌃ **keine alternativen Menüeinträge** ein – der Punkt unter
-  dem Cursor bleibt also der, den du meinst.
-
-**Auslöser & Haltedauer ändern:** ⌘-Menü → **Auslöser-Taste ändern …** → im Dialog
-die gewünschte Modifier-Taste drücken (L/R von ⌃ ⌥ ⌘ ⇧) und die Haltedauer per
-Regler setzen. Wird sofort übernommen und dauerhaft gespeichert (UserDefaults).
-
-## Wie es speichert
-
-Geschrieben wird die native Voreinstellung **`NSUserKeyEquivalents`** – exakt der
-Mechanismus von *Systemeinstellungen → Tastatur → Tastaturkurzbefehle →
-App-Kurzbefehle*. Deine Änderung taucht also dort auf und ist voll kompatibel
-(auch mit Tools wie CustomShortcuts).
-
-Prüfen / rückgängig machen:
-
-```bash
-defaults read com.example.app NSUserKeyEquivalents     # pro App
-defaults read -g NSUserKeyEquivalents                  # alle Programme
-defaults delete com.example.app NSUserKeyEquivalents   # zurücksetzen
-```
-
-Oder einfach in den **App-Kurzbefehlen** den Eintrag wieder löschen.
-
-## Grenzen & Stolperfallen
-
-- **Nur echte Menübefehle.** Es funktioniert für Einträge, die als Menüpunkt unter
-  dem Cursor liegen. Der Titel wird direkt ausgelesen → kein fehleranfälliges
-  Abtippen wie bei den System-App-Kurzbefehlen.
-- **Neustart nötig.** Apps lesen `NSUserKeyEquivalents` beim Aufbau des Menüs – das
-  Kürzel erscheint i. d. R. erst nach App-Neustart.
-- **Electron-Apps** (Claude, VS Code, Slack …): Die App-Menüs sind native `NSMenu`
-  und übernehmen `NSUserKeyEquivalents` meist – manche Electron-Apps bauen ihr Menü
-  aber selbst und überschreiben es. Klassische AppKit-Apps (Finder, Mail, Vorschau,
-  Safari, Pages …) funktionieren zuverlässig.
-- **Globaler Bereich:** höhere Konfliktgefahr mit bestehenden Kürzeln.
-- **Konflikte:** Zwei Menüpunkte können sich dasselbe Kürzel nicht teilen.
-- **Sondertasten** (F-Tasten, Pfeile, Return …) sind best-effort kodiert; die
-  häufigen Fälle ⌘/⌥/⌃/⇧ + Buchstabe/Ziffer sind solide.
-
-## Aufbau
-
-| Datei | Aufgabe |
-|---|---|
-| `LongPressDetector.swift` | Globaler Event-Tap, erkennt langes Halten der Auslöser-Taste |
-| `MenuInspector.swift` | Liest per Accessibility den Menüpunkt unter dem Cursor, schließt Menüs |
-| `RecorderPanel.swift` | Fenster „Anpassen?" mit Kürzel-Aufnahme + Bereichswahl |
-| `Shortcut.swift` | Kodierung in das `NSUserKeyEquivalents`-Format (`@~^$` + Taste) |
-| `Preferences.swift` | Schreibt/liest `NSUserKeyEquivalents` (pro App / global) |
-| `AppDelegate.swift` | Menüleisten-Icon, Rechte-Anfrage, Ablaufsteuerung |
-| `Strings.swift` | Alle benutzersichtbaren Texte an einer Stelle (Lokalisierung) |
-| `Settings.swift` / `SettingsPanel.swift` | Auslöser-Taste & Haltedauer einstellbar |
-| `Registry.swift` / `ManagerPanel.swift` | gesetzte Kürzel merken & zurücksetzen |
-| `install.sh` / `uninstall.sh` | Ein-Befehl-Installation bzw. vollständige Deinstallation |
-
-## Auf einem anderen Mac installieren
-
-### Empfohlen: aus dem Quellcode bauen (keine Gatekeeper-Warnung)
-
-Weil dabei lokal gebaut **und** lokal signiert wird, läuft die App sofort.
-
-```bash
-# Einmalig: Xcode Command Line Tools (falls noch nicht vorhanden)
+# once: Xcode Command Line Tools, if not already installed
 xcode-select --install
 
-git clone https://github.com/Stebibastian/MenuShortcutRebinder.git
-cd MenuShortcutRebinder
-./install.sh       # Signatur einrichten + bauen + installieren + starten
+git clone https://github.com/Stebibastian/ShortKeyOrganiser.git
+cd ShortKeyOrganiser
+./install.sh        # set up signing + build + install to /Applications + launch
 ```
 
-`install.sh` erledigt alles in einem Rutsch und **lautlos** – es legt einen eigenen
-Signier-Schlüsselbund an, daher **keine Passwort- oder Schlüsselbund-Dialoge**.
-Danach einmal **Bedienungshilfen** freigeben – die App startet sich dann von selbst
-neu. Fertig.
+`install.sh` does everything silently (it creates its own signing keychain, so no password or keychain dialogs). Then grant **Accessibility** once - the app relaunches itself afterwards.
 
-### Alternative: fertige App herunterladen
+> A signed & **notarised** release (download, drag to Applications, done - no warnings) is in progress; see *Distribution* below.
 
-Falls du die gebaute `MenuShortcutRebinder.app` direkt weitergibst (z. B. als ZIP):
-Sie ist nur **selbstsigniert**, daher meldet sich Gatekeeper. Auf dem Zielmac:
+### First launch: grant permission
+
+1. A prompt appears → **System Settings → Privacy & Security → Accessibility** → enable **ShortKeyOrganiser**.
+2. After enabling, the app **relaunches itself** so a fresh process picks up the keyboard tap reliably. If it doesn't relaunch: ⌘ menu → Quit, then open again.
+3. If the trigger still doesn't react, also enable it under **Input Monitoring**.
+
+## Usage
+
+**Overlay:** press the trigger key **twice and hold** on the second press → the overlay appears with every shortcut of the front app. Press **three times** to keep it open and searchable (Esc closes it). While the overlay is up, hold a modifier to highlight matching commands; type a ⌘-shortcut to run it directly; click a row to run it.
+
+**Rebind a shortcut:**
+
+1. Open any app's menu (e.g. **Edit**).
+2. Hover the item you want (e.g. **Find**).
+3. Hold the trigger key (~0.6 s) → the menu closes and a window appears.
+4. Press the new shortcut (e.g. ⌘⇧F), pick scope (this app / all apps), confirm.
+5. For "this app only", relaunch the app so its menu shows the new shortcut.
+
+Trigger keys and hold times are configurable in **Settings → Shortcuts**. Modifiers are used as triggers on purpose: a letter key would trigger type-select in open menus, and ⌃/⇧ (unlike ⌥/⌘) don't reveal alternate menu items.
+
+## How it stores shortcuts
+
+It writes the native **`NSUserKeyEquivalents`** preference - exactly what *System Settings → Keyboard → Keyboard Shortcuts → App Shortcuts* uses, so your change shows up there and is fully compatible.
 
 ```bash
-xattr -dr com.apple.quarantine /Pfad/zu/MenuShortcutRebinder.app
+defaults read com.example.app NSUserKeyEquivalents     # per app
+defaults read -g NSUserKeyEquivalents                  # all apps
+defaults delete com.example.app NSUserKeyEquivalents   # reset
 ```
 
-…dann nach `/Applications` ziehen und öffnen. (Oder Rechtsklick → „Öffnen" bzw.
-Systemeinstellungen → Datenschutz & Sicherheit → „Trotzdem öffnen".) Für eine
-**warnungsfreie** Weitergabe an Dritte braucht es Notarisierung — siehe unten.
+## Limits & gotchas
 
-## Deinstallieren
+- **Real menu commands only** - it reads the menu item under the cursor (title read directly, no error-prone retyping).
+- **Relaunch needed** - apps read `NSUserKeyEquivalents` when they build their menus, so a new shortcut usually shows after an app restart.
+- **Electron apps** (Claude, VS Code, Slack …): native `NSMenu` usually honours `NSUserKeyEquivalents`, but some build their menus themselves and override it. Classic AppKit apps (Finder, Mail, Preview, Safari, Pages …) work reliably.
+- **Conflicts:** two menu items can't share the same shortcut; the global scope has a higher conflict risk.
+- **Special keys** (F-keys, arrows, Return …) are best-effort; the common ⌘/⌥/⌃/⇧ + letter/digit cases are solid.
 
-Ein Zeile (ohne Repo, von überall):
+## Architecture
 
-```bash
-curl -fsSL https://raw.githubusercontent.com/Stebibastian/MenuShortcutRebinder/main/web-uninstall.sh | bash
-```
+| File | Role |
+|---|---|
+| `FullMenuScanner.swift` | Reads the front app's full menu bar via Accessibility |
+| `BrowseView.swift` / `BrowseWindow.swift` | The searchable overlay (SwiftUI) + its window/host, follows the front app |
+| `PeekTriggerDetector.swift` / `LongPressDetector.swift` | Global event taps for the peek/pin and hover-rebind triggers |
+| `RecorderPanel.swift` | "Rebind?" window with shortcut capture + scope picker |
+| `Shortcut.swift` / `Preferences.swift` | Encode & read `NSUserKeyEquivalents` (per app / global) |
+| `SettingsView.swift` / `Settings.swift` | Central settings window + stored preferences |
+| `Strings.swift` | All user-facing text in one place (localisation) |
+| `AppDelegate.swift` | Menu-bar icon, permission flow, wiring |
+| `install.sh` / `make-app.sh` / `uninstall.sh` | Build, install, uninstall |
 
-…oder aus dem Projektordner:
+## Distribution
+
+**The Mac App Store is not possible** for this tool: the App Store requires the App Sandbox, and this app needs exactly what the sandbox forbids - a global keyboard tap, Accessibility access to other apps, and writing other apps' preferences (`NSUserKeyEquivalents`). That's why comparable tools (KeyClu, BetterTouchTool, Karabiner, Rectangle) are all **outside** the App Store too.
+
+The right path is **Developer ID + notarisation**: Apple Developer Program → "Developer ID Application" certificate → `codesign` → `xcrun notarytool submit` → `xcrun stapler staple`. The result is a signed, notarised `.app`/`.dmg` that runs on any Mac with no Gatekeeper warning. This is the planned release format.
+
+## Uninstall
 
 ```bash
 ./uninstall.sh
 ```
 
-Entfernt App (aus `/Applications` + laufende Instanz), eigene Einstellungen, die
-Rechte (Bedienungshilfen/TCC), den lokalen Signier-Schlüsselbund und Build-Artefakte.
-**Unangetastet** bleiben deine in anderen Apps gesetzten Menü-Kürzel (z. B. eigene
-FileMaker-Kürzel) und der Quellcode. Willst du auch die vom Tool gesetzten Kürzel
-zurücksetzen, mach das **vorher** im App-Menü → *Gesetzte Kürzel verwalten → Alle
-zurücksetzen*.
-
-## Verteilung / App Store
-
-**Mac App Store ist für dieses Tool nicht möglich.** Der App Store verlangt die
-*App-Sandbox*, und dieses Tool braucht genau die Dinge, die die Sandbox verbietet:
-globaler Tastatur-Tap, Bedienungshilfen-Zugriff auf fremde Apps und das Schreiben
-fremder App-Voreinstellungen (`NSUserKeyEquivalents`). Deshalb sind auch alle
-vergleichbaren Tools (CustomShortcuts, BetterTouchTool, Karabiner, Keyboard Maestro)
-**außerhalb** des App Stores.
-
-Der reguläre Weg für so ein Tool ist **Entwickler-ID + Notarisierung**:
-Apple-Developer-Programm (99 $/Jahr) → „Developer ID Application"-Zertifikat →
-`codesign` damit → `xcrun notarytool submit` → `xcrun stapler staple`. Ergebnis ist
-eine signierte, notarisierte `.app`/`.dmg`, die auf jedem Mac ohne Gatekeeper-Warnung
-läuft. Aktuell signieren wir mit einem **selbstsignierten** Zertifikat – läuft auf
-deinem Mac, auf fremden Macs gäbe es eine Gatekeeper-Warnung.
+Removes the app, its preferences, the Accessibility (TCC) grant, the local signing keychain and build artefacts. Your menu shortcuts set in other apps are left untouched. To also reset the shortcuts this tool set, do that first in Settings → Management & Help → Manage shortcuts → Reset all.
