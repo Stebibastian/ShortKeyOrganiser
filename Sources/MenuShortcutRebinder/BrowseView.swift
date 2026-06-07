@@ -352,14 +352,17 @@ struct BrowseView: View {
         } else if filtered.isEmpty {
             info(model.items.isEmpty ? Strings.browseEmpty : Strings.browseNoMatch)
         } else {
-            ScrollView([.horizontal, .vertical]) {
-                HStack(alignment: .top, spacing: 0) {
-                    ForEach(Array(grouped.enumerated()), id: \.element.0) { idx, group in
-                        if idx > 0 { Divider() }
-                        column(group.0, group.1)
+            GeometryReader { geo in
+                ScrollView([.horizontal, .vertical]) {
+                    HStack(alignment: .top, spacing: 0) {
+                        ForEach(Array(grouped.enumerated()), id: \.element.0) { idx, group in
+                            if idx > 0 { Divider() }
+                            column(group.0, group.1)
+                        }
                     }
+                    .padding(12)
+                    .frame(minWidth: geo.size.width, alignment: .topLeading)   // immer linksbündig
                 }
-                .padding(12)
             }
         }
     }
@@ -392,21 +395,25 @@ struct BrowseView: View {
         .padding(.horizontal, 9)
     }
 
-    /// Eingeklappte Spalte: schmal, Titel senkrecht (Buchstaben untereinander).
+    /// Eingeklappte Spalte: schmal; der Titel als Ganzes um 90° gedreht (von oben nach unten).
     private func collapsedColumn(_ cat: String) -> some View {
         Button { model.toggleCollapsed(cat) } label: {
-            VStack(spacing: 1) {
-                Image(systemName: "chevron.right").font(.system(size: 9, weight: .bold)).padding(.bottom, 3)
-                ForEach(Array(cat.enumerated()), id: \.offset) { _, ch in
-                    Text(String(ch)).font(.system(size: 11, weight: .bold))
-                }
+            VStack(spacing: 8) {
+                Image(systemName: "chevron.right").font(.system(size: 9, weight: .bold))
+                Text(cat)
+                    .font(.system(size: 12, weight: .bold))
+                    .lineLimit(1)
+                    .fixedSize()
+                    .rotationEffect(.degrees(90))
+                    .frame(width: 16, height: 140)
+                    .clipped()
             }
+            .frame(width: 28)
             .foregroundStyle(.secondary)
-            .frame(width: 18)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .padding(.horizontal, 6).padding(.top, 2)
+        .padding(.top, 4)
     }
 
     private func row(_ item: BrowseItem, _ idx: Int) -> some View {
