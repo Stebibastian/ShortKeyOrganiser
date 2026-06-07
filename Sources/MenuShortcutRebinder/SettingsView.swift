@@ -12,6 +12,7 @@ struct SettingsView: View {
     @State var heightPercent: Double
     @State var sizeLinked: Bool
     @State var columnWidth: Double
+    @State var fontSize: Double
     @State var zebra: Bool
     @State var transparency: Double
     @State var backgroundStyle: Int
@@ -143,6 +144,7 @@ struct SettingsView: View {
                 slider(Strings.setHeight, $heightPercent, 0.4...1.0, 0.05, "%", scale: 100, live: true)
             }
             slider(Strings.setColWidth, $columnWidth, 160...520, 10, "pt", live: true)
+            slider(Strings.setFontSize, $fontSize, 11...18, 1, "pt", live: true)
             row(Strings.setBackground) {
                 Picker("", selection: $backgroundStyle) {
                     Text(Strings.setBgOpaque).tag(0)
@@ -236,6 +238,7 @@ struct SettingsView: View {
         Settings.browseHeightPercent = heightPercent
         Settings.browseSizeLinked = sizeLinked
         Settings.browseColumnWidth = columnWidth
+        Settings.browseFontSize = fontSize
         Settings.browseZebra = zebra
         Settings.browseTransparency = transparency
         Settings.browseBackgroundStyle = backgroundStyle
@@ -267,6 +270,7 @@ final class SettingsWindow: NSObject {
             heightPercent: Settings.browseHeightPercent,
             sizeLinked: Settings.browseSizeLinked,
             columnWidth: Settings.browseColumnWidth,
+            fontSize: Settings.browseFontSize,
             zebra: Settings.browseZebra,
             transparency: Settings.browseTransparency,
             backgroundStyle: Settings.browseBackgroundStyle,

@@ -35,6 +35,7 @@ final class BrowseModel: ObservableObject {
     @Published var highlightEnabled: Bool = Settings.browseHighlight
     @Published var backgroundStyle: Int = Settings.browseBackgroundStyle
     @Published var opaqueRows: Bool = Settings.browseOpaqueRows
+    @Published var fontSize: Double = Settings.browseFontSize
 
     var onEdit: ((BrowseItem, AppChoice) -> Void)?
     var onDelete: ((BrowseItem, AppChoice) -> Void)?
@@ -153,6 +154,7 @@ final class BrowseModel: ObservableObject {
 /// Tastenkürzel mit farbigen Modifier-Glyphen (⌘ blau, ⇧ grün, ⌥ orange, ⌃ pink).
 struct KeyCapView: View {
     let shortcut: String
+    var fontSize: Double = 13
     private static let modColor: [Character: Color] = ["⌃": .pink, "⌥": .orange, "⇧": .green, "⌘": .blue]
     var body: some View {
         let (mods, base) = Self.split(shortcut)
@@ -162,7 +164,7 @@ struct KeyCapView: View {
             }
             if !base.isEmpty { Text(base).foregroundStyle(.primary) }
         }
-        .font(.system(size: 13, weight: .semibold, design: .rounded))
+        .font(.system(size: fontSize, weight: .semibold, design: .rounded))
     }
     static func split(_ s: String) -> ([Character], String) {
         let modSet: Set<Character> = ["⌃", "⌥", "⇧", "⌘"]
@@ -184,6 +186,7 @@ struct BrowseRowView: View {
     let selected: Bool       // Tastatur-Auswahl bei Suche → Akzent
     let zebra: Bool
     let solidBackground: Bool   // deckender Zeilen-Hintergrund (Lesbarkeit bei Transparenz)
+    let fontSize: Double
     let onPerform: () -> Void
     let onEdit: () -> Void
     let onDelete: () -> Void
@@ -219,7 +222,7 @@ struct BrowseRowView: View {
                     titleText.lineLimit(1).truncationMode(.middle)
                         .fontWeight(isCustom ? .semibold : .regular)
                     Spacer(minLength: 6)
-                    if !item.shortcut.isEmpty { KeyCapView(shortcut: item.shortcut) }
+                    if !item.shortcut.isEmpty { KeyCapView(shortcut: item.shortcut, fontSize: fontSize) }
                 }
                 .contentShape(Rectangle())
             }
@@ -239,7 +242,7 @@ struct BrowseRowView: View {
         .background(RoundedRectangle(cornerRadius: 5).fill(fill))
         .contentShape(Rectangle())
         .opacity(isHidden ? 0.45 : 1)
-        .font(.system(size: 13))
+        .font(.system(size: fontSize))
         .help(item.pathDisplay)
         .onHover { hover = $0 }
     }
@@ -524,6 +527,7 @@ struct BrowseView: View {
                              selected: selected,
                              zebra: model.zebra && idx % 2 == 1,
                              solidBackground: model.backgroundStyle == 1 && model.opaqueRows,
+                             fontSize: model.fontSize,
                              onPerform: { model.perform(item) },
                              onEdit: { model.edit(item) },
                              onDelete: { model.requestDelete(item) },

@@ -94,6 +94,16 @@ enum Settings {
         set { UserDefaults.standard.set(newValue, forKey: browseHighlightKey) }
     }
 
+    private static let browseFontSizeKey = "browseFontSize"
+    /// Schriftgrösse der Befehlszeilen (11-18 pt).
+    static var browseFontSize: Double {
+        get {
+            let v = UserDefaults.standard.object(forKey: browseFontSizeKey) as? Double ?? 14
+            return min(18, max(11, v))
+        }
+        set { UserDefaults.standard.set(min(18, max(11, newValue)), forKey: browseFontSizeKey) }
+    }
+
     private static let browseTransparencyKey = "browseTransparency"
     /// Transparenz des Durchsuchen-Fensters (0 = undurchsichtig, höher = mehr Blur/Durchblick).
     static var browseTransparency: Double {
