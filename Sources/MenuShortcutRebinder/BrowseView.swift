@@ -39,6 +39,7 @@ final class BrowseModel: ObservableObject {
     @Published var opaqueRows: Bool = Settings.browseOpaqueRows
     @Published var fontSize: Double = Settings.browseFontSize
     @Published var keyLeft: Bool = Settings.browseKeyLeft
+    @Published var compactSections: Bool = Settings.browseCompactSections
 
     var onEdit: ((BrowseItem, AppChoice) -> Void)?
     var onDelete: ((BrowseItem, AppChoice) -> Void)?
@@ -597,6 +598,7 @@ struct BrowseView: View {
     private func packedColumns(_ size: CGSize) -> [[(String, [BrowseItem])]] {
         let groups = grouped
         guard groups.count > 1 else { return [groups] }
+        if !model.compactSections { return groups.map { [$0] } }   // alte Anordnung: jede Sektion eine eigene Spalte
         let rowH = model.fontSize + 7
         let totalRows = groups.reduce(0) { $0 + sectionRows($1) }
         let maxCols = max(1, Int(size.width / model.columnWidth))

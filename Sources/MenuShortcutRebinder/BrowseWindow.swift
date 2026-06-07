@@ -88,6 +88,7 @@ final class BrowseWindow: NSObject, NSWindowDelegate {
         model.opaqueRows = Settings.browseOpaqueRows
         model.fontSize = Settings.browseFontSize
         model.keyLeft = Settings.browseKeyLeft
+        model.compactSections = Settings.browseCompactSections
         applyBackground()
         model.refreshApps(preferredPid: initialApp?.processIdentifier)
         model.loadItems()
@@ -280,6 +281,7 @@ final class BrowseWindow: NSObject, NSWindowDelegate {
         model.opaqueRows = Settings.browseOpaqueRows
         model.fontSize = Settings.browseFontSize
         model.keyLeft = Settings.browseKeyLeft
+        model.compactSections = Settings.browseCompactSections
         applyBackground()
         if window?.isVisible == true { applyWindowSize() }
     }

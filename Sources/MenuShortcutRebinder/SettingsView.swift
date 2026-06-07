@@ -15,6 +15,7 @@ struct SettingsView: View {
     @State var fontSize: Double
     @State var zebra: Bool
     @State var keyLeft: Bool
+    @State var compactSections: Bool
     @State var transparency: Double
     @State var backgroundStyle: Int
     @State var opaqueRows: Bool
@@ -158,6 +159,7 @@ struct SettingsView: View {
                 slider(Strings.setTransparency, $transparency, 0...0.30, 0.01, "%", scale: 100, live: true)
                 toggleRow(Strings.setOpaqueRows, $opaqueRows)
             }
+            toggleRow(Strings.setCompactSections, $compactSections)
             toggleRow(Strings.setZebra, $zebra)
             toggleRow(Strings.setKeyLeft, $keyLeft)
         }
@@ -283,6 +285,7 @@ struct SettingsView: View {
         Settings.browseFontSize = fontSize
         Settings.browseZebra = zebra
         Settings.browseKeyLeft = keyLeft
+        Settings.browseCompactSections = compactSections
         Settings.browseTransparency = transparency
         Settings.browseBackgroundStyle = backgroundStyle
         Settings.browseOpaqueRows = opaqueRows
@@ -319,6 +322,7 @@ final class SettingsWindow: NSObject {
             fontSize: Settings.browseFontSize,
             zebra: Settings.browseZebra,
             keyLeft: Settings.browseKeyLeft,
+            compactSections: Settings.browseCompactSections,
             transparency: Settings.browseTransparency,
             backgroundStyle: Settings.browseBackgroundStyle,
             opaqueRows: Settings.browseOpaqueRows,

@@ -155,6 +155,13 @@ enum Settings {
         set { UserDefaults.standard.set(newValue, forKey: browseBackgroundStyleKey) }
     }
 
+    private static let browseCompactKey = "browseCompactSections"
+    /// Sektionen kompakt stapeln (mehrere je Spalte, KeyClu-Stil) statt jede Sektion in eine eigene Spalte.
+    static var browseCompactSections: Bool {
+        get { UserDefaults.standard.object(forKey: browseCompactKey) as? Bool ?? true }   // Standard: kompakt
+        set { UserDefaults.standard.set(newValue, forKey: browseCompactKey) }
+    }
+
     private static let browseKeyLeftKey = "browseKeyLeft"
     /// Tastenkürzel links (rechtsbündig) + Name rechts (linksbündig), statt Name links + Kürzel rechts.
     static var browseKeyLeft: Bool {

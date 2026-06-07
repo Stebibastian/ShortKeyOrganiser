@@ -77,6 +77,7 @@ enum Strings {
     static var setFontSize: String { s("Schriftgrösse", "Font size", fr: "Taille du texte", es: "Tamaño de fuente", it: "Dimensione testo") }
     static var setZebra: String { s("Zebra-Streifen (abwechselnde Zeilenfarbe)", "Zebra stripes (alternating row colour)", fr: "Rayures zébrées (couleurs alternées)", es: "Rayas cebra (colores alternos)", it: "Strisce zebrate (colori alternati)") }
     static var setKeyLeft: String { s("Tastenkürzel links, Name rechts", "Shortcut on the left, name on the right", fr: "Raccourci à gauche, nom à droite", es: "Atajo a la izquierda, nombre a la derecha", it: "Scorciatoia a sinistra, nome a destra") }
+    static var setCompactSections: String { s("Sektionen kompakt gruppieren (mehrere je Spalte)", "Group sections compactly (several per column)", fr: "Grouper les sections de façon compacte (plusieurs par colonne)", es: "Agrupar secciones de forma compacta (varias por columna)", it: "Raggruppa le sezioni in modo compatto (più per colonna)") }
     static var setTransparency: String { s("Transparenz", "Transparency", fr: "Transparence", es: "Transparencia", it: "Trasparenza") }
     static var setBackground: String { s("Hintergrund", "Background", fr: "Arrière-plan", es: "Fondo", it: "Sfondo") }
     static var setBgOpaque: String { s("Undurchsichtig", "Opaque", fr: "Opaque", es: "Opaco", it: "Opaco") }
