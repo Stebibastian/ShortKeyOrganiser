@@ -82,9 +82,9 @@ enum Settings {
     static var browseTransparency: Double {
         get {
             let v = UserDefaults.standard.object(forKey: browseTransparencyKey) as? Double ?? 0.15
-            return min(0.85, max(0.0, v))
+            return min(0.30, max(0.0, v))
         }
-        set { UserDefaults.standard.set(min(0.85, max(0.0, newValue)), forKey: browseTransparencyKey) }
+        set { UserDefaults.standard.set(min(0.30, max(0.0, newValue)), forKey: browseTransparencyKey) }
     }
 }
 
