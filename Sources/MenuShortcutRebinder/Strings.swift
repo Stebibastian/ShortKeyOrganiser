@@ -52,6 +52,7 @@ enum Strings {
     static let setWindowSize = "Fenstergröße"
     static let setColWidth = "Spaltenbreite"
     static let setZebra = "Zebra-Streifen (abwechselnde Zeilenfarbe)"
+    static let setTransparency = "Transparenz"
     static let setSecTools = "Verwaltung & Hilfe"
     static let setSecGeneral = "Allgemein"
     static let setLogin = "Beim Anmelden starten"

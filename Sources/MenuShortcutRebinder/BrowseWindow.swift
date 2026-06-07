@@ -78,6 +78,7 @@ final class BrowseWindow: NSObject, NSWindowDelegate {
         model.showFavorites = true
         model.showDisabled = true
         model.highlightEnabled = Settings.browseHighlight
+        model.transparency = Settings.browseTransparency
         model.refreshApps(preferredPid: initialApp?.processIdentifier)
         model.loadItems()
         applyWindowSize()
@@ -101,6 +102,9 @@ final class BrowseWindow: NSObject, NSWindowDelegate {
         win.title = Strings.browseTitle
         win.level = .floating
         win.isReleasedWhenClosed = false
+        win.isOpaque = false
+        win.backgroundColor = .clear
+        win.titlebarAppearsTransparent = true
         win.contentView = NSHostingView(rootView: BrowseView(model: model))
         win.delegate = self
         self.window = win
@@ -259,6 +263,7 @@ final class BrowseWindow: NSObject, NSWindowDelegate {
     func applySettings() {
         model.zebra = Settings.browseZebra
         model.columnWidth = Settings.browseColumnWidth
+        model.transparency = Settings.browseTransparency
         if window?.isVisible == true { applyWindowSize() }
     }
 }

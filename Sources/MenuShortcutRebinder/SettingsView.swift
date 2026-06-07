@@ -11,6 +11,7 @@ struct SettingsView: View {
     @State var screenPercent: Double
     @State var columnWidth: Double
     @State var zebra: Bool
+    @State var transparency: Double
     @State var launchAtLogin: Bool
 
     let onChange: () -> Void
@@ -108,6 +109,7 @@ struct SettingsView: View {
         section(Strings.setSecView) {
             slider(Strings.setWindowSize, $screenPercent, 0.5...1.0, 0.05, "%", scale: 100)
             slider(Strings.setColWidth, $columnWidth, 160...520, 10, "pt")
+            slider(Strings.setTransparency, $transparency, 0...0.6, 0.05, "%", scale: 100)
             Toggle(Strings.setZebra, isOn: $zebra)
                 .toggleStyle(.switch).onChange(of: zebra) { _ in commit() }
         }
@@ -161,6 +163,7 @@ struct SettingsView: View {
         Settings.browseScreenPercent = screenPercent
         Settings.browseColumnWidth = columnWidth
         Settings.browseZebra = zebra
+        Settings.browseTransparency = transparency
         onChange()
     }
 }
@@ -186,6 +189,7 @@ final class SettingsWindow: NSObject {
             screenPercent: Settings.browseScreenPercent,
             columnWidth: Settings.browseColumnWidth,
             zebra: Settings.browseZebra,
+            transparency: Settings.browseTransparency,
             launchAtLogin: loginEnabled(),
             onChange: { [weak self] in self?.onChange?() },
             onToggleLogin: { [weak self] on in self?.onToggleLogin?(on) },

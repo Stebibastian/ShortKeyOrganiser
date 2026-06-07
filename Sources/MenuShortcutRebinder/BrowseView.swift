@@ -33,6 +33,7 @@ final class BrowseModel: ObservableObject {
     @Published var showFavorites: Bool = true
     @Published var showDisabled: Bool = true
     @Published var highlightEnabled: Bool = Settings.browseHighlight
+    @Published var transparency: Double = Settings.browseTransparency
 
     var onEdit: ((BrowseItem, AppChoice) -> Void)?
     var onDelete: ((BrowseItem, AppChoice) -> Void)?
@@ -247,6 +248,18 @@ struct BrowseRowView: View {
     }
 }
 
+/// Nativer macOS-Blur (Milchglas) als durchscheinender Fensterhintergrund.
+struct VisualEffectBlur: NSViewRepresentable {
+    func makeNSView(context: Context) -> NSVisualEffectView {
+        let v = NSVisualEffectView()
+        v.material = .underWindowBackground
+        v.blendingMode = .behindWindow
+        v.state = .active
+        return v
+    }
+    func updateNSView(_ nsView: NSVisualEffectView, context: Context) {}
+}
+
 struct BrowseView: View {
     @ObservedObject var model: BrowseModel
     @FocusState private var searchFocused: Bool
@@ -280,6 +293,11 @@ struct BrowseView: View {
             content
         }
         .frame(minWidth: 520, minHeight: 360)
+        .background(
+            VisualEffectBlur()
+                .overlay(Color(nsColor: .windowBackgroundColor).opacity(1 - model.transparency))
+                .ignoresSafeArea()
+        )
     }
 
     private var header: some View {

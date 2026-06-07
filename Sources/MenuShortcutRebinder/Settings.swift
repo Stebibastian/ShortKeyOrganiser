@@ -76,6 +76,16 @@ enum Settings {
         get { UserDefaults.standard.object(forKey: browseHighlightKey) as? Bool ?? true }
         set { UserDefaults.standard.set(newValue, forKey: browseHighlightKey) }
     }
+
+    private static let browseTransparencyKey = "browseTransparency"
+    /// Transparenz des Durchsuchen-Fensters (0 = undurchsichtig, höher = mehr Blur/Durchblick).
+    static var browseTransparency: Double {
+        get {
+            let v = UserDefaults.standard.object(forKey: browseTransparencyKey) as? Double ?? 0.15
+            return min(0.6, max(0.0, v))
+        }
+        set { UserDefaults.standard.set(min(0.6, max(0.0, newValue)), forKey: browseTransparencyKey) }
+    }
 }
 
 /// Bekannte Modifier-Tasten, die als Auslöser taugen.
