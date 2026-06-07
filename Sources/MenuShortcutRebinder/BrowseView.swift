@@ -33,6 +33,7 @@ final class BrowseModel: ObservableObject {
     @Published var showHidden: Bool = false
     @Published var showFavorites: Bool = true
     @Published var showDisabled: Bool = false
+    @Published var kmMode: Bool = false   // Keyboard-Maestro-Makros statt App-Menüs anzeigen
     @Published var highlightEnabled: Bool = Settings.browseHighlight
     @Published var backgroundStyle: Int = Settings.browseBackgroundStyle
     @Published var opaqueRows: Bool = Settings.browseOpaqueRows
@@ -69,6 +70,12 @@ final class BrowseModel: ObservableObject {
 
     func loadItems() {
         trusted = AXIsProcessTrusted()
+        if kmMode {
+            items = KeyboardMaestro.scan()
+            customAppTitles = []; customGlobalTitles = []
+            loading = false
+            return
+        }
         guard let app = currentApp else { items = []; return }
         scanToken += 1
         let token = scanToken
@@ -88,11 +95,19 @@ final class BrowseModel: ObservableObject {
     }
 
     func isCustom(_ item: BrowseItem) -> Bool {
-        customAppTitles.contains(item.title) || customGlobalTitles.contains(item.title)
+        !kmMode && (customAppTitles.contains(item.title) || customGlobalTitles.contains(item.title))
+    }
+
+    /// Keyboard-Maestro-Modus an/aus und Liste neu laden.
+    func toggleKM() {
+        kmMode.toggle()
+        query = ""
+        collapsed = []
+        loadItems()
     }
 
     // MARK: Favoriten / Ausblenden / Einklappen
-    func itemKey(_ item: BrowseItem) -> String { (currentApp?.bundleID ?? "") + "|" + item.pathDisplay }
+    func itemKey(_ item: BrowseItem) -> String { (kmMode ? "KM" : (currentApp?.bundleID ?? "")) + "|" + item.pathDisplay }
     func isFavorite(_ item: BrowseItem) -> Bool { favorites.contains(itemKey(item)) }
     func isHidden(_ item: BrowseItem) -> Bool { hidden.contains(itemKey(item)) }
     func toggleFavorite(_ item: BrowseItem) {
@@ -122,9 +137,12 @@ final class BrowseModel: ObservableObject {
         }
     }
 
-    func edit(_ item: BrowseItem) { if let app = currentApp { onEdit?(item, app) } }
-    func requestDelete(_ item: BrowseItem) { if let app = currentApp { onDelete?(item, app) } }
-    func perform(_ item: BrowseItem) { if let app = currentApp { onPerform?(item, app) } }
+    func edit(_ item: BrowseItem) { if !kmMode, let app = currentApp { onEdit?(item, app) } }
+    func requestDelete(_ item: BrowseItem) { if !kmMode, let app = currentApp { onDelete?(item, app) } }
+    func perform(_ item: BrowseItem) {
+        if kmMode { KeyboardMaestro.run(item.title); return }
+        if let app = currentApp { onPerform?(item, app) }
+    }
     func activateSearch() { onActivateSearch?(); searchActive = true }
     func openSettings() { onOpenSettings?() }
     func manage() { onManage?() }
@@ -205,9 +223,8 @@ struct BrowseRowView: View {
     }
 
     private var titleText: Text {
-        let prefix = item.subPath.isEmpty ? "" : item.subPath.joined(separator: " ▸ ") + " ▸ "
-        return Text(prefix).foregroundColor(.secondary)
-             + Text(item.title).foregroundColor(item.enabled ? .primary : .secondary)
+        // Der Submenü-Pfad steht jetzt als Gruppen-Überschrift in der Spalte, nicht mehr als Präfix.
+        Text(item.title).foregroundColor(item.enabled ? .primary : .secondary)
     }
 
     var body: some View {
@@ -398,6 +415,9 @@ struct BrowseView: View {
 
             Divider().frame(height: 18)
 
+            if KeyboardMaestro.isInstalled {
+                navIcon("k.square", active: model.kmMode, tip: Strings.browseKmTip) { model.toggleKM() }
+            }
             navIcon("square.and.arrow.up", active: false, tip: Strings.browsePdfTip) { exportPDF() }
             navIcon("list.bullet", active: false, tip: Strings.browseManageTip) { model.manage() }
             navIcon("gearshape", active: false, tip: Strings.browseSettingsTip) { model.openSettings() }
@@ -538,12 +558,36 @@ struct BrowseView: View {
             }
             .buttonStyle(.plain).padding(.bottom, 3)
 
-            ForEach(Array(items.enumerated()), id: \.element.id) { idx, item in
-                row(item, idx)
+            ForEach(submenuGroups(items), id: \.0) { sub, subItems in
+                if !sub.isEmpty {
+                    // Submenü-Überschrift: nicht anwählbar (wie ein echtes Submenü), Einträge eingerückt.
+                    Text(sub)
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(.tertiary)
+                        .padding(.top, 5).padding(.bottom, 1)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                ForEach(Array(subItems.enumerated()), id: \.element.id) { idx, item in
+                    row(item, idx).padding(.leading, sub.isEmpty ? 0 : 11)
+                }
             }
         }
         .frame(width: model.columnWidth, alignment: .leading)
         .padding(.horizontal, 9)
+    }
+
+    /// Einträge einer Spalte nach Submenü-Pfad gruppieren: direkte Einträge zuerst, dann je Submenü eine Gruppe.
+    private func submenuGroups(_ items: [BrowseItem]) -> [(String, [BrowseItem])] {
+        var order: [String] = []
+        var dict: [String: [BrowseItem]] = [:]
+        for it in items {
+            let key = it.subPath.joined(separator: " ▸ ")   // "" = direkt im Hauptmenü
+            if dict[key] == nil { order.append(key) }
+            dict[key, default: []].append(it)
+        }
+        let direct = order.filter { $0.isEmpty }
+        let subs   = order.filter { !$0.isEmpty }
+        return (direct + subs).map { ($0, dict[$0]!) }
     }
 
     /// Eingeklappte Spalte: schmal; der Titel als Ganzes um 90° gedreht (von oben nach unten).

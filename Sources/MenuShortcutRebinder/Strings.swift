@@ -220,5 +220,6 @@ enum Strings {
 
     // PDF-Export
     static var browsePdfTip: String { s("Als PDF exportieren", "Export as PDF", fr: "Exporter en PDF", es: "Exportar como PDF", it: "Esporta come PDF") }
+    static var browseKmTip: String { s("Keyboard-Maestro-Makros anzeigen", "Show Keyboard Maestro macros", fr: "Afficher les macros Keyboard Maestro", es: "Mostrar macros de Keyboard Maestro", it: "Mostra macro di Keyboard Maestro") }
     static func pdfHeading(_ app: String) -> String { s("\(app) – Tastenkürzel", "\(app) – Keyboard Shortcuts") }
 }
