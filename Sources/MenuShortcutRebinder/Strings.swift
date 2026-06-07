@@ -1,239 +1,190 @@
 import Foundation
 
-/// Zentrale Sammelstelle für alle benutzersichtbaren Texte.
+/// Zentrale Sammelstelle für alle benutzersichtbaren Texte - zweisprachig (Deutsch + Englisch).
 ///
-/// Dieses Tool hat (noch) keinen mehrsprachigen String-Katalog – es gibt genau
-/// eine Zielsprache (Deutsch). Alle Texte stehen hier an einer Stelle und werden
-/// nirgends inline hardcodiert, damit eine spätere Lokalisierung (z. B. `.xcstrings`
-/// oder `NSLocalizedString`) ohne Suchen-und-Ersetzen möglich ist: Man ersetzt nur
-/// die Rückgabewerte unten durch `String(localized:)`-Aufrufe.
+/// `Strings.lang` wird beim Start gesetzt ("de"/"en", abgeleitet aus der Sprach-Einstellung
+/// bzw. der System-Sprache). `s(de, en)` wählt die passende Fassung. Bewusst code-basiert
+/// (kein `.strings`-Resource-Bundle), das ist im SwiftPM-Executable robuster und erlaubt
+/// einen sofortigen Sprachwechsel ohne Bundle-Gefummel.
 enum Strings {
+    static var lang = "de"
+    private static func s(_ de: String, _ en: String) -> String { lang == "en" ? en : de }
+
     // Statusleiste
     static let appTitle = "ShortKeyOrganiser"
-    static let statusItemTooltip = "Menü-Kurzbefehl anpassen"
-    static func triggerInfo(_ trigger: String) -> String { "Auslöser: \(trigger) lange halten" }
-    static let menuQuit = "Beenden"
-    static let menuDiagnose = "Diagnose & Verbindung …"
+    static var statusItemTooltip: String { s("Menü-Kurzbefehl anpassen", "Rebind a menu shortcut") }
+    static func triggerInfo(_ t: String) -> String { s("Auslöser: \(t) lange halten", "Trigger: hold \(t)") }
+    static var menuQuit: String { s("Beenden", "Quit") }
+    static var menuDiagnose: String { s("Diagnose & Verbindung …", "Diagnostics & connection …") }
 
     // Diagnose
-    static let diagnoseTitle = "Diagnose"
-    static func diagnoseBody(accessibility: Bool, tapActive: Bool, trigger: String) -> String {
-        let ax = accessibility ? "✓ erteilt" : "✗ fehlt"
-        let tap = tapActive ? "✓ aktiv" : "✗ inaktiv"
-        var text = "Bedienungshilfen: \(ax)\nTasten-Erkennung (Event-Tap): \(tap)\nAuslöser: \(trigger)"
-        if !accessibility || !tapActive {
-            text += "\n\nSo behebst du’s:\n"
-                + "1. „Bedienungshilfen öffnen“ antippen.\n"
-                + "2. MenuShortcutRebinder in der Liste entfernen (–) und mit (+) neu hinzufügen "
-                + "– das ist zuverlässiger als nur den Haken umzulegen.\n"
-                + "3. Hierher zurück, „Erneut verbinden“."
-        }
-        return text
+    static var diagnoseTitle: String { s("Diagnose", "Diagnostics") }
+    static var diagnoseReconnect: String { s("Erneut verbinden", "Reconnect") }
+    static var diagAccessibility: String { s("Bedienungshilfen", "Accessibility") }
+    static var diagAxOk: String { s("erteilt", "granted") }
+    static var diagAxBad: String { s("fehlt", "missing") }
+    static var diagTap: String { s("Tasten-Erkennung", "Key detection") }
+    static var diagTapOk: String { s("aktiv", "active") }
+    static var diagTapBad: String { s("inaktiv", "inactive") }
+    static var diagTrigger: String { s("Auslöser-Taste", "Trigger key") }
+    static var diagFix: String {
+        s("Behebung: Systemeinstellungen öffnen → Bedienungshilfen → ShortKeyOrganiser mit (−) entfernen und mit (+) neu hinzufügen, dann Erneut verbinden.",
+          "Fix: open System Settings → Accessibility → remove ShortKeyOrganiser with (−) and add it again with (+), then Reconnect.")
     }
-    static let diagnoseReconnect = "Erneut verbinden"
-    static let diagAccessibility = "Bedienungshilfen"
-    static let diagAxOk = "erteilt"
-    static let diagAxBad = "fehlt"
-    static let diagTap = "Tasten-Erkennung"
-    static let diagTapOk = "aktiv"
-    static let diagTapBad = "inaktiv"
-    static let diagTrigger = "Auslöser-Taste"
-    static let diagFix = "Behebung: Systemeinstellungen öffnen → Bedienungshilfen → ShortKeyOrganiser mit (−) entfernen und mit (+) neu hinzufügen, dann Erneut verbinden."
-    static let menuLoginItem = "Beim Anmelden starten"
-    static let menuChangeTrigger = "Auslöser-Taste ändern …"
-    static let menuShortcuts = "Tastenkürzel verwalten …"
+
+    // ⌘-Menü + Einstellungs-Aktionen
+    static var menuShortcuts: String { s("Tastenkürzel verwalten …", "Manage shortcuts …") }
     static let menuBrowse = "ShortKeyOrganiser …"
-    static let menuBrowseSettings = "Durchsuchen-Einstellungen …"
-    static let browseSettingsTip = "Einstellungen"
-    static let browseManageTip = "Tastenkürzel verwalten"
-    static let menuSettings = "Einstellungen …"
+    static var browseSettingsTip: String { s("Einstellungen", "Settings") }
+    static var browseManageTip: String { s("Tastenkürzel verwalten", "Manage shortcuts") }
+    static var menuSettings: String { s("Einstellungen …", "Settings …") }
+    static var menuHelp: String { s("Kurzanleitung …", "Quick guide …") }
+    static var menuCheckUpdate: String { s("Nach Updates suchen …", "Check for updates …") }
+
     // Zentrale Einstellungen
-    static let setWinTitle = "Einstellungen"
-    static let setSecRebind = "Tastenkürzel umbelegen"
-    static let setRebindTrigger = "Auslöser (über Menüpunkt halten)"
-    static let setHold = "Haltedauer"
-    static let setSecBrowse = "Befehle durchsuchen"
-    static let setPeekEnable = "Per Mehrfachdruck öffnen"
-    static let setPeekHint = "⌘⌘ halten = kurzer Blick · ⌘⌘⌘ = fix offen"
-    static let setPeekTrigger = "Auslöser-Taste"
-    static let setSecKeyboard = "Tastenkürzel"
-    static let setFeatureOverlay = "Befehls-Overlay (Hauptfunktion)"
-    static let setFeatureOverlayDesc = "Auslöser-Taste zweimal drücken und beim zweiten Mal gedrückt halten → Overlay mit allen Kürzeln der aktiven App. Dreimal drücken → das Fenster bleibt offen und ist durchsuchbar."
-    static let setFeatureRebind = "Menü-Kürzel umbelegen"
-    static let setFeatureRebindDesc = "Mit der Maus über einen Menüpunkt einer App fahren und die Auslöser-Taste gedrückt halten → Fenster zum Setzen eines eigenen Kürzels (pro App oder für alle Programme)."
-    static let setSecView = "Anzeige"
-    static let setWindowSize = "Fenstergröße"
-    static let setColWidth = "Spaltenbreite"
-    static let setWidth = "Breite"
-    static let setHeight = "Höhe"
-    static let setSizeLinked = "Breite und Höhe verknüpfen"
-    static let setFontSize = "Schriftgrösse"
-    static let setZebra = "Zebra-Streifen (abwechselnde Zeilenfarbe)"
-    static let setTransparency = "Transparenz"
-    static let setBackground = "Hintergrund"
-    static let setBgOpaque = "Undurchsichtig"
-    static let setBgTransparent = "Transparent"
-    static let setBgBlur = "Milchglas"
-    static let setOpaqueRows = "Befehlszeilen deckend (besser lesbar)"
-    static let setSecTools = "Verwaltung & Hilfe"
-    static let setSecAbout = "Über"
-    static let aboutTagline = "Tastenkürzel-Overlay und Umbelegen für jede App."
-    static let aboutTools = "Werkzeuge & Hilfe"
-    static let aboutUpdates = "Updates & Start"
+    static var setWinTitle: String { s("Einstellungen", "Settings") }
+    static var setRebindTrigger: String { s("Auslöser (über Menüpunkt halten)", "Trigger (hold over a menu item)") }
+    static var setHold: String { s("Haltedauer", "Hold duration") }
+    static var setPeekEnable: String { s("Per Mehrfachdruck öffnen", "Open by multi-press") }
+    static var setPeekTrigger: String { s("Auslöser-Taste", "Trigger key") }
+    static var setSecKeyboard: String { s("Tastenkürzel", "Shortcuts") }
+    static var setFeatureOverlay: String { s("Befehls-Overlay (Hauptfunktion)", "Command overlay (main feature)") }
+    static var setFeatureOverlayDesc: String {
+        s("Auslöser-Taste zweimal drücken und beim zweiten Mal gedrückt halten → Overlay mit allen Kürzeln der aktiven App. Dreimal drücken → das Fenster bleibt offen und ist durchsuchbar.",
+          "Press the trigger key twice and hold on the second press → an overlay with every shortcut of the front app. Press three times → the window stays open and searchable.")
+    }
+    static var setFeatureRebind: String { s("Menü-Kürzel umbelegen", "Rebind menu shortcuts") }
+    static var setFeatureRebindDesc: String {
+        s("Mit der Maus über einen Menüpunkt einer App fahren und die Auslöser-Taste gedrückt halten → Fenster zum Setzen eines eigenen Kürzels (pro App oder für alle Programme).",
+          "Hover a menu item of an app and hold the trigger key → a window to set your own shortcut (per app or for all apps).")
+    }
+    static var setSecView: String { s("Anzeige", "Display") }
+    static var setWindowSize: String { s("Fenstergröße", "Window size") }
+    static var setColWidth: String { s("Spaltenbreite", "Column width") }
+    static var setWidth: String { s("Breite", "Width") }
+    static var setHeight: String { s("Höhe", "Height") }
+    static var setSizeLinked: String { s("Breite und Höhe verknüpfen", "Link width and height") }
+    static var setFontSize: String { s("Schriftgrösse", "Font size") }
+    static var setZebra: String { s("Zebra-Streifen (abwechselnde Zeilenfarbe)", "Zebra stripes (alternating row colour)") }
+    static var setTransparency: String { s("Transparenz", "Transparency") }
+    static var setBackground: String { s("Hintergrund", "Background") }
+    static var setBgOpaque: String { s("Undurchsichtig", "Opaque") }
+    static var setBgTransparent: String { s("Transparent", "Transparent") }
+    static var setBgBlur: String { s("Milchglas", "Frosted glass") }
+    static var setOpaqueRows: String { s("Befehlszeilen deckend (besser lesbar)", "Opaque command rows (better readable)") }
+    static var setSecAbout: String { s("Über", "About") }
+    static var aboutTagline: String { s("Tastenkürzel-Overlay und Umbelegen für jede App.", "Shortcut overlay and rebinding for any app.") }
+    static var aboutTools: String { s("Werkzeuge & Hilfe", "Tools & help") }
+    static var aboutUpdates: String { s("Updates & Start", "Updates & launch") }
     static let aboutCopyright = "© 2026 Sebastian Kardos"
-    static let setSecGeneral = "Allgemein"
-    static let setLogin = "Beim Anmelden starten"
-    // Durchsuchen-Einstellungen (Peek + Fenstergröße)
-    static let bsTitle = "Befehle durchsuchen - Einstellungen"
-    static let bsModifierLabel = "Auslöser-Taste (zweimal drücken, beim zweiten Mal halten):"
-    static let bsHoldLabel = "Haltedauer nach dem Doppeldruck"
-    static let bsSizeLabel = "Fenstergröße (Anteil am Bildschirm)"
-    static let bsModCommand = "Command ⌘"
-    static let bsModOption = "Option ⌥"
-    static let bsModControl = "Control ⌃"
-    static let bsEnableLabel = "Per Doppeldruck öffnen"
-    static let bsZebraLabel = "Zebra-Streifen (abwechselnde Zeilenfarbe)"
-    static let bsPeekHint = "Zweimal drücken + halten = kurzer Blick (Loslassen schließt). Dreimal drücken = fix offen (bleibt offen). Im Blick die Lupe anklicken hält ebenfalls offen."
-    static let bsClose = "Fertig"
-    static let menuHelp = "Kurzanleitung …"
-    static let menuCheckUpdate = "Nach Updates suchen …"
+    static var setLogin: String { s("Beim Anmelden starten", "Launch at login") }
+    static var setLanguage: String { s("Sprache", "Language") }
+    static var setLangSystem: String { s("System", "System") }
+
+    static var bsModCommand: String { s("Command ⌘", "Command ⌘") }
+    static var bsModOption: String { s("Option ⌥", "Option ⌥") }
+    static var bsModControl: String { s("Control ⌃", "Control ⌃") }
+
     static func setVersion(_ v: String) -> String { "ShortKeyOrganiser \(v)" }
-    static let setAutoUpdate = "Updates automatisch installieren"
-    static let updateInstalling = "Update wird installiert …"
-    static func updateTitle(_ v: String) -> String { "Version \(v) ist verfügbar" }
-    static let updateBody = "Eine neuere Version von ShortKeyOrganiser ist verfügbar. Jetzt laden und installieren?"
-    static let updateInstall = "Jetzt aktualisieren"
-    static let updatePage = "Release-Seite öffnen"
-    static let updateLater = "Später"
-    static let updateNoneTitle = "ShortKeyOrganiser ist aktuell"
-    static func updateNoneBody(_ v: String) -> String { "Du hast bereits die neueste Version (\(v))." }
-    static let updateFailTitle = "Update-Prüfung fehlgeschlagen"
-    static let updateFailBody = "Die neueste Version konnte nicht abgerufen werden. Bitte später erneut versuchen."
+    static var setAutoUpdate: String { s("Updates automatisch installieren", "Install updates automatically") }
 
-    // Tastenkürzel-Fenster mit Tabs
-    static let winTitle = "Tastenkürzel"
-    static let tabTool = "Vom Tool gesetzt"
-    static let tabSystem = "Alle im System"
+    // Updates
+    static var updateInstalling: String { s("Update wird installiert …", "Installing update …") }
+    static func updateTitle(_ v: String) -> String { s("Version \(v) ist verfügbar", "Version \(v) is available") }
+    static var updateBody: String { s("Eine neuere Version von ShortKeyOrganiser ist verfügbar. Jetzt laden und installieren?", "A newer version of ShortKeyOrganiser is available. Download and install now?") }
+    static var updateInstall: String { s("Jetzt aktualisieren", "Update now") }
+    static var updatePage: String { s("Release-Seite öffnen", "Open release page") }
+    static var updateLater: String { s("Später", "Later") }
+    static var updateNoneTitle: String { s("ShortKeyOrganiser ist aktuell", "ShortKeyOrganiser is up to date") }
+    static func updateNoneBody(_ v: String) -> String { s("Du hast bereits die neueste Version (\(v)).", "You already have the latest version (\(v)).") }
+    static var updateFailTitle: String { s("Update-Prüfung fehlgeschlagen", "Update check failed") }
+    static var updateFailBody: String { s("Die neueste Version konnte nicht abgerufen werden. Bitte später erneut versuchen.", "Couldn't fetch the latest version. Please try again later.") }
 
-    // Befehle durchsuchen (Suche im Stil der macOS-Hilfe-Suche)
+    // Tastenkürzel-Fenster
+    static var winTitle: String { s("Tastenkürzel", "Shortcuts") }
+    static var tabTool: String { s("Vom Tool gesetzt", "Set by this tool") }
+    static var tabSystem: String { s("Alle im System", "All in the system") }
+
+    // Befehle durchsuchen (Overlay)
     static let browseTitle = "ShortKeyOrganiser"
-    static let browseSearchPlaceholder = "Befehl suchen … (Schlagwort eintippen)"
-    static let browseAppLabel = "App:"
-    static let browseLoading = "Befehle werden gelesen …"
-    static let browseEmpty = "Keine Menübefehle gefunden. Ist die App offen und eine native Mac-App?"
-    static let browseNoMatch = "Kein Treffer."
-    static let browseNoAccess = "Bedienungshilfen-Recht fehlt - bitte im ⌘-Menü unter Diagnose & Verbindung prüfen."
-    static let browseCustomTip = "Von Dir gesetzt"
-    static let browseDeleteTip = "Eigenes Kürzel entfernen (Standard wiederherstellen)"
-    static let browseEditTip = "Tastenkürzel anpassen"
-    static let browsePerformTip = "Befehl ausführen"
-    static let browseFavorites = "★ Favoriten"
-    static let browseFavTip = "Als Favorit markieren"
-    static let browseHideTip = "Befehl ausblenden"
-    static let browseUnhideTip = "Wieder einblenden"
-    static let browseShowHidden = "Ausgeblendete Befehle ein-/ausblenden"
-    static let browseShowFavorites = "Favoriten-Gruppe anzeigen"
-    static let browseHighlightTip = "Tasten-Highlight beim Halten von Modifiern"
-    static let browseShowDisabledTip = "Inaktive Befehle ein-/ausblenden"
-    static func browseCount(hits: Int, total: Int) -> String { "\(hits) von \(total) Befehlen" }
-    static func browseCapped(_ cap: Int) -> String { " (erste \(cap) gezeigt)" }
+    static var browseSearchPlaceholder: String { s("Befehl suchen … (Schlagwort eintippen)", "Search commands … (type a keyword)") }
+    static var browseLoading: String { s("Befehle werden gelesen …", "Reading commands …") }
+    static var browseEmpty: String { s("Keine Menübefehle gefunden. Ist die App offen und eine native Mac-App?", "No menu commands found. Is the app open and a native Mac app?") }
+    static var browseNoMatch: String { s("Kein Treffer.", "No match.") }
+    static var browseNoAccess: String { s("Bedienungshilfen-Recht fehlt - bitte unter Diagnose & Verbindung prüfen.", "Accessibility permission missing - check Diagnostics & connection.") }
+    static var browseEditTip: String { s("Tastenkürzel anpassen", "Change shortcut") }
+    static var browsePerformTip: String { s("Befehl ausführen", "Run command") }
+    static var browseFavorites: String { s("★ Favoriten", "★ Favourites") }
+    static var browseFavTip: String { s("Als Favorit markieren", "Mark as favourite") }
+    static var browseHideTip: String { s("Befehl ausblenden", "Hide command") }
+    static var browseUnhideTip: String { s("Wieder einblenden", "Show again") }
+    static var browseShowHidden: String { s("Ausgeblendete Befehle ein-/ausblenden", "Show/hide hidden commands") }
+    static var browseShowFavorites: String { s("Favoriten-Gruppe anzeigen", "Show favourites group") }
+    static var browseHighlightTip: String { s("Tasten-Highlight beim Halten von Modifiern", "Key highlight when holding modifiers") }
+    static var browseShowDisabledTip: String { s("Inaktive Befehle ein-/ausblenden", "Show/hide inactive commands") }
+    static var browseDeleteTip: String { s("Eigenes Kürzel entfernen (Standard wiederherstellen)", "Remove your shortcut (restore default)") }
 
-    // System-Kurzbefehle (Anzeige)
-    static let sysEmpty = "Keine eigenen App-Kurzbefehle gefunden."
-    static let refresh = "Aktualisieren"
-    static let sysEdit = "Ändern"
-    static let sysDelete = "Löschen"
-    static let sysReadOnly = "– nur lesbar"
-    static let sysDeleteTitle = "Kürzel entfernen?"
+    // System-Kürzel löschen
+    static var sysDeleteTitle: String { s("Kürzel entfernen?", "Remove shortcut?") }
     static func sysDeleteBody(shortcut: String, title: String, domain: String) -> String {
-        "„\(shortcut)“ für „\(title)“ in \(domain) wirklich entfernen?\n\n"
-        + "Das ändert einen echten macOS-App-Kurzbefehl. Die betroffene App muss danach "
-        + "neu gestartet werden.\n\n"
-        + "Hinweis: In den Systemeinstellungen wird die Änderung erst sichtbar, nachdem du "
-        + "sie schließt und neu öffnest (deren Liste aktualisiert sich nicht von selbst)."
+        s("\(shortcut) für „\(title)“ in \(domain) wirklich entfernen?\n\nDas ändert einen echten macOS-App-Kurzbefehl. Die betroffene App muss danach neu gestartet werden.\n\nHinweis: In den Systemeinstellungen wird die Änderung erst sichtbar, nachdem du sie schließt und neu öffnest.",
+          "Really remove \(shortcut) for \(title) in \(domain)?\n\nThis changes a real macOS app shortcut. The affected app must be restarted afterwards.\n\nNote: in System Settings the change only shows after you close and reopen it.")
     }
-    static let sysDeletedRestart = "Entfernt – betroffene App neu starten, damit es greift."
+    static var sysDelete: String { s("Löschen", "Delete") }
 
-    // Verwaltung / Zurücksetzen
-    static let managerEmpty = "Noch keine Kürzel über dieses Tool gesetzt."
-    static let reset = "Zurücksetzen"
-    static let resetAll = "Alle zurücksetzen"
-    static let resetAllConfirm = "Wirklich alle hier gelisteten Kürzel zurücksetzen?"
-    static let closeButton = "Schließen"
-    static let resetDoneRestart = "Zurückgesetzt – betroffene App neu starten, damit es greift."
-
-    // Einstellungsdialog
-    static let settingsTitle = "Auslöser anpassen"
-    static let settingsTriggerLabel = "Auslöser-Taste (gedrückt halten):"
-    static let settingsTriggerHint =
-        "Drück die gewünschte Modifier-Taste. Nur Modifier-Tasten – normale Tasten würden "
-        + "in offenen Menüs Probleme machen. Am sichersten: ⌃ oder ⇧ (⌥ und teils ⌘ blenden "
-        + "in Menüs alternative Einträge ein)."
-    static let settingsDurationLabel = "Haltedauer:"
-
-    // Start-Hinweis & Hilfe
-    static func launchedHint(_ trigger: String) -> String {
-        "Aktiv – \(trigger) über einem Menüpunkt halten"
-    }
-    static func loginItemFailed(_ reason: String) -> String { "Login-Eintrag fehlgeschlagen: \(reason)" }
-    static let helpTitle = "So funktioniert’s"
+    // Login / Hinweise
+    static func launchedHint(_ t: String) -> String { s("Aktiv – \(t) über einem Menüpunkt halten", "Active - hold \(t) over a menu item") }
+    static func loginItemFailed(_ r: String) -> String { s("Login-Eintrag fehlgeschlagen: \(r)", "Login item failed: \(r)") }
+    static var helpTitle: String { s("So funktioniert’s", "How it works") }
     static func helpBody(trigger: String, seconds: String) -> String {
-        "1. In einer beliebigen App ein Menü öffnen.\n"
-        + "2. Mit der Maus über den gewünschten Eintrag fahren.\n"
-        + "3. Die \(trigger)-Taste ~\(seconds) s halten.\n"
-        + "4. Im Fenster das neue Kürzel drücken, Bereich wählen, „Anpassen“.\n\n"
-        + "Bei „nur diese App“ die App danach neu starten, damit das Menü das "
-        + "Kürzel zeigt."
+        s("1. In einer beliebigen App ein Menü öffnen.\n2. Mit der Maus über den gewünschten Eintrag fahren.\n3. Die \(trigger)-Taste ~\(seconds) s halten.\n4. Im Fenster das neue Kürzel drücken, Bereich wählen, Anpassen.\n\nBei „nur diese App“ die App danach neu starten, damit das Menü das Kürzel zeigt.",
+          "1. Open a menu in any app.\n2. Hover the item you want.\n3. Hold the \(trigger) key for ~\(seconds) s.\n4. In the window press the new shortcut, pick the scope, Apply.\n\nFor \"this app only\" restart the app afterwards so its menu shows the shortcut.")
     }
 
-    // Fenster „Anpassen?"
-    static let panelTitle = "Tastenkürzel anpassen?"
-    static func panelTarget(item: String, app: String) -> String {
-        "Menüpunkt „\(item)“ in \(app)"
-    }
-    static let panelTargetUnknownApp = "unbekannte App"
-    static let recorderPlaceholder = "Neues Kürzel drücken …"
-    static let recorderHint = "Halte die gewünschte Kombination (z. B. ⌘⇧F) gedrückt."
-    static let scopeApp = "Nur in dieser App"
-    static func scopeAppNamed(_ app: String) -> String { "Nur in \(app)" }
-    static let scopeGlobal = "In allen Programmen"
-    static let cancel = "Abbrechen"
-    static let save = "Anpassen"
+    // Umbelegen-Fenster
+    static var panelTitle: String { s("Tastenkürzel anpassen?", "Rebind shortcut?") }
+    static func panelTarget(item: String, app: String) -> String { s("Menüpunkt „\(item)“ in \(app)", "Menu item \(item) in \(app)") }
+    static var panelTargetUnknownApp: String { s("unbekannte App", "unknown app") }
+    static var recorderPlaceholder: String { s("Neues Kürzel drücken …", "Press the new shortcut …") }
+    static var recorderHint: String { s("Halte die gewünschte Kombination (z. B. ⌘⇧F) gedrückt.", "Hold the combination you want (e.g. ⌘⇧F).") }
+    static var scopeApp: String { s("Nur in dieser App", "This app only") }
+    static func scopeAppNamed(_ app: String) -> String { s("Nur in \(app)", "\(app) only") }
+    static var scopeGlobal: String { s("In allen Programmen", "All apps") }
+    static var cancel: String { s("Abbrechen", "Cancel") }
+    static var save: String { s("Anpassen", "Apply") }
 
-    // Hinweise / Fehler
-    static let noMenuItem = "Kein Menüpunkt unter dem Mauszeiger."
-    static let needShortcut = "Bitte zuerst ein Kürzel drücken."
-    static let appScopeNeedsBundle = "Diese App liefert keine Programm-Kennung – nur „alle Programme“ möglich."
-    static func conflictWarning(shortcut: String, other: String) -> String {
-        "Achtung: \(shortcut) ist hier schon für „\(other)“ vergeben – wird ersetzt."
-    }
+    static var noMenuItem: String { s("Kein Menüpunkt unter dem Mauszeiger.", "No menu item under the cursor.") }
+    static var needShortcut: String { s("Bitte zuerst ein Kürzel drücken.", "Press a shortcut first.") }
+    static var appScopeNeedsBundle: String { s("Diese App liefert keine Programm-Kennung – nur „alle Programme“ möglich.", "This app provides no bundle id - only \"all apps\" is possible.") }
+    static func conflictWarning(shortcut: String, other: String) -> String { s("Achtung: \(shortcut) ist hier schon für „\(other)“ vergeben – wird ersetzt.", "Note: \(shortcut) is already assigned to \(other) here - it will be replaced.") }
 
-    // Neustart-Nachfrage
-    static let restartTitle = "Kürzel gespeichert"
-    static func restartBodyApp(_ app: String) -> String {
-        "Damit „\(app)“ das neue Kürzel zeigt, muss die App einmal neu gestartet werden. "
-        + "In den Systemeinstellungen → Tastatur erscheint es erst nach Schliessen und Neuöffnen."
-    }
-    static let restartBodyGlobal =
-        "Das Kürzel gilt für alle Programme. Bereits laufende Apps übernehmen es erst nach einem Neustart. "
-        + "In den Systemeinstellungen → Tastatur erscheint es erst nach Schliessen und Neuöffnen."
-    static let restartNow = "Jetzt neu starten"
-    static let restartLater = "Später"
-    static let ok = "OK"
-    static let resetRestartTitle = "Kürzel entfernt"
-    static func resetRestartBodyApp(_ app: String) -> String {
-        "Damit „\(app)“ wieder sein Standard-Kürzel zeigt, muss die App einmal neu gestartet werden."
-    }
-    static let resetRestartBodyGlobal =
-        "Das Kürzel wurde entfernt. Bereits laufende Programme zeigen den Standard erst nach einem Neustart."
+    // Neustart-Nachfrage (nach Umbelegen)
+    static var restartTitle: String { s("Kürzel gespeichert", "Shortcut saved") }
+    static func restartBodyApp(_ app: String) -> String { s("Damit „\(app)“ das neue Kürzel zeigt, muss die App einmal neu gestartet werden. In den Systemeinstellungen → Tastatur erscheint es erst nach Schliessen und Neuöffnen.", "For \(app) to show the new shortcut, the app has to be restarted once. In System Settings → Keyboard it only appears after closing and reopening.") }
+    static var restartBodyGlobal: String { s("Das Kürzel gilt für alle Programme. Bereits laufende Apps übernehmen es erst nach einem Neustart.", "The shortcut applies to all apps. Apps already running pick it up only after a restart.") }
+    static var restartNow: String { s("Jetzt neu starten", "Restart now") }
+    static var restartLater: String { s("Später", "Later") }
+    static var ok: String { s("OK", "OK") }
+    static var resetRestartTitle: String { s("Kürzel entfernt", "Shortcut removed") }
+    static func resetRestartBodyApp(_ app: String) -> String { s("Damit „\(app)“ wieder sein Standard-Kürzel zeigt, muss die App einmal neu gestartet werden.", "For \(app) to show its default shortcut again, the app has to be restarted once.") }
+    static var resetRestartBodyGlobal: String { s("Das Kürzel wurde entfernt. Bereits laufende Programme zeigen den Standard erst nach einem Neustart.", "The shortcut was removed. Apps already running show the default only after a restart.") }
 
-    // Bedienungshilfen
-    static let axAlertTitle = "Bedienungshilfen-Zugriff nötig"
-    static let axAlertBody =
-        "MenuShortcutRebinder braucht Zugriff auf „Bedienungshilfen“, um den Menüpunkt unter dem "
-        + "Mauszeiger zu lesen und die Auslöser-Taste global zu erkennen.\n\n"
-        + "Systemeinstellungen → Datenschutz & Sicherheit → Bedienungshilfen → MenuShortcutRebinder "
-        + "aktivieren. Falls schon ein Eintrag da ist, der nicht wirkt: mit (–) entfernen und mit (+) "
-        + "neu hinzufügen. Danach im ⌘-Menü „Diagnose & Verbindung“ → „Erneut verbinden“."
-    static let openSettings = "Systemeinstellungen öffnen"
+    static var openSettings: String { s("Systemeinstellungen öffnen", "Open System Settings") }
+
+    // Tastenkürzel-Verwaltung (ShortcutsWindow) + weitere Browse-Texte
+    static var refresh: String { s("Aktualisieren", "Refresh") }
+    static var sysEdit: String { s("Ändern", "Change") }
+    static var sysReadOnly: String { s("– nur lesbar", "– read-only") }
+    static var sysEmpty: String { s("Keine eigenen App-Kurzbefehle gefunden.", "No custom app shortcuts found.") }
+    static var managerEmpty: String { s("Noch keine Kürzel über dieses Tool gesetzt.", "No shortcuts set via this tool yet.") }
+    static var reset: String { s("Zurücksetzen", "Reset") }
+    static var resetAll: String { s("Alle zurücksetzen", "Reset all") }
+    static var resetAllConfirm: String { s("Wirklich alle hier gelisteten Kürzel zurücksetzen?", "Really reset all shortcuts listed here?") }
+    static var closeButton: String { s("Schließen", "Close") }
+    static var resetDoneRestart: String { s("Zurückgesetzt – betroffene App neu starten, damit es greift.", "Reset - restart the affected app for it to take effect.") }
+    static var sysDeletedRestart: String { s("Entfernt – betroffene App neu starten, damit es greift.", "Removed - restart the affected app for it to take effect.") }
+    static let browseAppLabel = "App:"
+    static var browseCustomTip: String { s("Von Dir gesetzt", "Set by you") }
+    static func browseCount(hits: Int, total: Int) -> String { s("\(hits) von \(total) Befehlen", "\(hits) of \(total) commands") }
+    static func browseCapped(_ cap: Int) -> String { s(" (erste \(cap) gezeigt)", " (first \(cap) shown)") }
 }

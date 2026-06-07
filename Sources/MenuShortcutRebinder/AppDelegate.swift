@@ -13,6 +13,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var lastFrontApp: NSRunningApplication?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        Strings.lang = Settings.resolvedLanguage   // Sprache VOR dem ersten Text-Zugriff setzen
         NSApp.setActivationPolicy(.accessory)
         setupStatusItem()
 
@@ -174,6 +175,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         SettingsWindow.shared.onDiagnose = { [weak self] in self?.diagnose() }
         SettingsWindow.shared.onHelp = { [weak self] in self?.showHelp() }
         SettingsWindow.shared.onCheckUpdate = { [weak self] in self?.checkForUpdates() }
+        SettingsWindow.shared.onLanguageChange = { [weak self] lang in
+            Settings.appLanguage = lang
+            self?.relaunchSelf()   // Neustart, damit alle Texte/Menüs in der neuen Sprache neu aufgebaut werden
+        }
         SettingsWindow.shared.onLiveView = { BrowseWindow.shared.applySettings() }
         SettingsWindow.shared.loginEnabled = { SMAppService.mainApp.status == .enabled }
     }

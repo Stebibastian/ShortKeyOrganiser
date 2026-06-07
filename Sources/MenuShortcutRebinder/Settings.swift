@@ -111,6 +111,24 @@ enum Settings {
         set { UserDefaults.standard.set(newValue, forKey: autoUpdateKey) }
     }
 
+    private static let appLanguageKey = "appLanguage"
+    /// Sprache der Oberfläche: "system" (Standard), "de" oder "en".
+    static var appLanguage: String {
+        get { UserDefaults.standard.string(forKey: appLanguageKey) ?? "system" }
+        set { UserDefaults.standard.set(newValue, forKey: appLanguageKey) }
+    }
+
+    /// Tatsächlich genutzte Sprache ("de"/"en"), aus Einstellung + System abgeleitet.
+    static var resolvedLanguage: String {
+        switch appLanguage {
+        case "de": return "de"
+        case "en": return "en"
+        default:
+            let pref = Locale.preferredLanguages.first ?? "en"
+            return pref.hasPrefix("de") ? "de" : "en"
+        }
+    }
+
     private static let browseTransparencyKey = "browseTransparency"
     /// Transparenz des Durchsuchen-Fensters (0 = undurchsichtig, höher = mehr Blur/Durchblick).
     static var browseTransparency: Double {

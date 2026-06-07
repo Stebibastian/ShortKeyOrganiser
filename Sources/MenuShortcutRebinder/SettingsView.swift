@@ -19,6 +19,7 @@ struct SettingsView: View {
     @State var opaqueRows: Bool
     @State var launchAtLogin: Bool
     @State var autoUpdate: Bool
+    @State var appLanguage: String
 
     let onChange: () -> Void
     let onToggleLogin: (Bool) -> Void
@@ -26,6 +27,7 @@ struct SettingsView: View {
     let onDiagnose: () -> Void
     let onHelp: () -> Void
     let onCheckUpdate: () -> Void
+    let onLanguageChange: (String) -> Void
     let onLiveView: () -> Void   // leichte Live-Aktualisierung der Ansicht (ohne Detektor-Neustart)
 
     @State private var selection: Section = .keyboard
@@ -178,6 +180,16 @@ struct SettingsView: View {
                 Spacer()
             }
 
+            row(Strings.setLanguage) {
+                Picker("", selection: $appLanguage) {
+                    Text(Strings.setLangSystem).tag("system")
+                    Text("Deutsch").tag("de")
+                    Text("English").tag("en")
+                }
+                .labelsHidden().frame(width: 160)
+                .onChange(of: appLanguage) { onLanguageChange($0) }
+            }
+
             GroupBox(Strings.aboutTools) {
                 VStack(alignment: .leading, spacing: 12) {
                     Button(Strings.menuShortcuts) { onManage() }
@@ -284,6 +296,7 @@ final class SettingsWindow: NSObject {
     var onDiagnose: (() -> Void)?
     var onHelp: (() -> Void)?
     var onCheckUpdate: (() -> Void)?
+    var onLanguageChange: ((String) -> Void)?
     var onLiveView: (() -> Void)?
     var loginEnabled: () -> Bool = { false }
 
@@ -306,12 +319,14 @@ final class SettingsWindow: NSObject {
             opaqueRows: Settings.browseOpaqueRows,
             launchAtLogin: loginEnabled(),
             autoUpdate: Settings.autoUpdate,
+            appLanguage: Settings.appLanguage,
             onChange: { [weak self] in self?.onChange?() },
             onToggleLogin: { [weak self] on in self?.onToggleLogin?(on) },
             onManage: { [weak self] in self?.onManage?() },
             onDiagnose: { [weak self] in self?.onDiagnose?() },
             onHelp: { [weak self] in self?.onHelp?() },
             onCheckUpdate: { [weak self] in self?.onCheckUpdate?() },
+            onLanguageChange: { [weak self] l in self?.onLanguageChange?(l) },
             onLiveView: { [weak self] in self?.onLiveView?() })
         let controller = NSHostingController(rootView: view)
         controller.sizingOptions = [.preferredContentSize]   // Fenster passt sich je Tab an
