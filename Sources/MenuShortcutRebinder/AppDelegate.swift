@@ -171,6 +171,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         SettingsWindow.shared.onManage = { ShortcutsWindow.shared.present() }
         SettingsWindow.shared.onDiagnose = { [weak self] in self?.diagnose() }
         SettingsWindow.shared.onHelp = { [weak self] in self?.showHelp() }
+        SettingsWindow.shared.onLiveView = { BrowseWindow.shared.applySettings() }
         SettingsWindow.shared.loginEnabled = { SMAppService.mainApp.status == .enabled }
     }
 

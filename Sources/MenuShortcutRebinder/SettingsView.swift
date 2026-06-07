@@ -23,6 +23,7 @@ struct SettingsView: View {
     let onManage: () -> Void
     let onDiagnose: () -> Void
     let onHelp: () -> Void
+    let onLiveView: () -> Void   // leichte Live-Aktualisierung der Ansicht (ohne Detektor-Neustart)
 
     @State private var selection: Section = .keyboard
 
@@ -136,12 +137,12 @@ struct SettingsView: View {
         section(Strings.setSecView) {
             toggleRow(Strings.setSizeLinked, $sizeLinked)
             if sizeLinked {
-                slider(Strings.setWindowSize, $screenPercent, 0.4...1.0, 0.05, "%", scale: 100)
+                slider(Strings.setWindowSize, $screenPercent, 0.4...1.0, 0.05, "%", scale: 100, live: true)
             } else {
-                slider(Strings.setWidth, $screenPercent, 0.4...1.0, 0.05, "%", scale: 100)
-                slider(Strings.setHeight, $heightPercent, 0.4...1.0, 0.05, "%", scale: 100)
+                slider(Strings.setWidth, $screenPercent, 0.4...1.0, 0.05, "%", scale: 100, live: true)
+                slider(Strings.setHeight, $heightPercent, 0.4...1.0, 0.05, "%", scale: 100, live: true)
             }
-            slider(Strings.setColWidth, $columnWidth, 160...520, 10, "pt")
+            slider(Strings.setColWidth, $columnWidth, 160...520, 10, "pt", live: true)
             row(Strings.setBackground) {
                 Picker("", selection: $backgroundStyle) {
                     Text(Strings.setBgOpaque).tag(0)
@@ -152,7 +153,7 @@ struct SettingsView: View {
                 .onChange(of: backgroundStyle) { _ in commit() }
             }
             if backgroundStyle == 1 {
-                slider(Strings.setTransparency, $transparency, 0...0.30, 0.01, "%", scale: 100)
+                slider(Strings.setTransparency, $transparency, 0...0.30, 0.01, "%", scale: 100, live: true)
                 toggleRow(Strings.setOpaqueRows, $opaqueRows)
             }
             toggleRow(Strings.setZebra, $zebra)
@@ -212,17 +213,19 @@ struct SettingsView: View {
     }
 
     private func slider(_ label: String, _ value: Binding<Double>, _ range: ClosedRange<Double>,
-                        _ step: Double, _ unit: String, scale: Double = 1, disabled: Bool = false) -> some View {
+                        _ step: Double, _ unit: String, scale: Double = 1, disabled: Bool = false,
+                        live: Bool = false) -> some View {
         HStack(spacing: 16) {
             Text(label).frame(width: 150, alignment: .leading)
             Slider(value: value, in: range, step: step) { e in if !e { commit() } }
+                .onChange(of: value.wrappedValue) { _ in if live { commit(live: true) } }
             Text("\(Int((value.wrappedValue * scale).rounded())) \(unit)")
                 .monospacedDigit().foregroundStyle(.secondary).frame(width: 54, alignment: .trailing)
         }
         .disabled(disabled)
     }
 
-    private func commit() {
+    private func commit(live: Bool = false) {
         Settings.triggerKeyCode = rebindKeyCode
         Settings.holdDuration = rebindHoldMs / 1000.0
         Settings.peekEnabled = peekEnabled
@@ -237,7 +240,7 @@ struct SettingsView: View {
         Settings.browseTransparency = transparency
         Settings.browseBackgroundStyle = backgroundStyle
         Settings.browseOpaqueRows = opaqueRows
-        onChange()
+        if live { onLiveView() } else { onChange() }
     }
 }
 
@@ -249,6 +252,7 @@ final class SettingsWindow: NSObject {
     var onManage: (() -> Void)?
     var onDiagnose: (() -> Void)?
     var onHelp: (() -> Void)?
+    var onLiveView: (() -> Void)?
     var loginEnabled: () -> Bool = { false }
 
     func present() {
@@ -272,7 +276,8 @@ final class SettingsWindow: NSObject {
             onToggleLogin: { [weak self] on in self?.onToggleLogin?(on) },
             onManage: { [weak self] in self?.onManage?() },
             onDiagnose: { [weak self] in self?.onDiagnose?() },
-            onHelp: { [weak self] in self?.onHelp?() })
+            onHelp: { [weak self] in self?.onHelp?() },
+            onLiveView: { [weak self] in self?.onLiveView?() })
         let win = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 760, height: 560),
                            styleMask: [.titled, .closable], backing: .buffered, defer: false)
         win.title = Strings.setWinTitle
