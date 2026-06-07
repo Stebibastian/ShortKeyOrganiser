@@ -109,7 +109,7 @@ struct SettingsView: View {
         section(Strings.setSecView) {
             slider(Strings.setWindowSize, $screenPercent, 0.5...1.0, 0.05, "%", scale: 100)
             slider(Strings.setColWidth, $columnWidth, 160...520, 10, "pt")
-            slider(Strings.setTransparency, $transparency, 0...0.6, 0.05, "%", scale: 100)
+            slider(Strings.setTransparency, $transparency, 0...0.85, 0.05, "%", scale: 100)
             Toggle(Strings.setZebra, isOn: $zebra)
                 .toggleStyle(.switch).onChange(of: zebra) { _ in commit() }
         }

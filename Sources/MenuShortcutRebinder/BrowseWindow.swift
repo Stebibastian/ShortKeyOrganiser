@@ -78,7 +78,7 @@ final class BrowseWindow: NSObject, NSWindowDelegate {
         model.showFavorites = true
         model.showDisabled = true
         model.highlightEnabled = Settings.browseHighlight
-        model.transparency = Settings.browseTransparency
+        applyTransparency()
         model.refreshApps(preferredPid: initialApp?.processIdentifier)
         model.loadItems()
         applyWindowSize()
@@ -103,11 +103,11 @@ final class BrowseWindow: NSObject, NSWindowDelegate {
         win.level = .floating
         win.isReleasedWhenClosed = false
         win.isOpaque = false
-        win.backgroundColor = .clear
         win.titlebarAppearsTransparent = true
         win.contentView = NSHostingView(rootView: BrowseView(model: model))
         win.delegate = self
         self.window = win
+        applyTransparency()
 
         // Auto-Follow: wechselt die vorderste App, folgt das offene Fenster automatisch
         // (die eigene App wird ignoriert, damit Klicks ins Fenster nichts umschalten).
@@ -263,7 +263,14 @@ final class BrowseWindow: NSObject, NSWindowDelegate {
     func applySettings() {
         model.zebra = Settings.browseZebra
         model.columnWidth = Settings.browseColumnWidth
-        model.transparency = Settings.browseTransparency
+        applyTransparency()
         if window?.isVisible == true { applyWindowSize() }
+    }
+
+    /// Echte Fenster-Transparenz (inkl. Titelleiste) über die Hintergrundfarbe des Fensters.
+    /// 0 % = undurchsichtig, höher = mehr Durchblick (Untergrenze, damit nichts ganz verschwindet).
+    private func applyTransparency() {
+        let alpha = max(0.15, 1.0 - Settings.browseTransparency)
+        window?.backgroundColor = NSColor.windowBackgroundColor.withAlphaComponent(alpha)
     }
 }
