@@ -6,14 +6,19 @@ cd "$(dirname "$0")"
 ./make-cert.sh || echo "  (Zertifikat-Setup übersprungen - nutze bestehendes oder ad-hoc)"
 ./make-app.sh
 
-DEST="/Applications/MenuShortcutRebinder.app"
+DEST="/Applications/ShortKeyOrganiser.app"
 
-# Laufende Instanz beenden, sonst kann 'open' nach dem Bundle-Tausch mit Fehler -600 scheitern.
-pkill -x MenuShortcutRebinder 2>/dev/null && sleep 1 || true
+# Laufende Instanz(en) beenden (alter + neuer Name), sonst kann 'open' mit Fehler -600 scheitern.
+pkill -x ShortKeyOrganiser 2>/dev/null || true
+pkill -x MenuShortcutRebinder 2>/dev/null || true
+sleep 1
 
 echo "→ Installiere nach $DEST …"
-rm -rf "$DEST"
-cp -R "MenuShortcutRebinder.app" "$DEST"
+rm -rf "$DEST" "/Applications/MenuShortcutRebinder.app"   # alte Namens-Variante mit entfernen
+cp -R "ShortKeyOrganiser.app" "$DEST"
+
+# Launch Services neu registrieren, damit Finder/Programme sofort den neuen Namen zeigen.
+/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -f "$DEST" 2>/dev/null || true
 
 echo "→ Starte …"
 open "$DEST" 2>/dev/null || { sleep 2; open "$DEST"; }

@@ -129,8 +129,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private func setupStatusItem() {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         if let button = statusItem.button {
+            let iconConfig = NSImage.SymbolConfiguration(pointSize: 18, weight: .medium)
             button.image = NSImage(systemSymbolName: "command.square",
-                                   accessibilityDescription: Strings.statusItemTooltip)
+                                   accessibilityDescription: Strings.statusItemTooltip)?
+                .withSymbolConfiguration(iconConfig)
+            button.image?.isTemplate = true
             button.toolTip = Strings.statusItemTooltip
         }
 

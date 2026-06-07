@@ -4,7 +4,7 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 
-APP="MenuShortcutRebinder.app"
+APP="ShortKeyOrganiser.app"
 
 echo "→ Kompiliere (release) …"
 swift build -c release
@@ -12,7 +12,7 @@ swift build -c release
 echo "→ Baue $APP …"
 rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
-cp ".build/release/MenuShortcutRebinder" "$APP/Contents/MacOS/MenuShortcutRebinder"
+cp ".build/release/MenuShortcutRebinder" "$APP/Contents/MacOS/ShortKeyOrganiser"
 cp "AppSupport/Info.plist" "$APP/Contents/Info.plist"
 
 # Icon bei Bedarf erzeugen und einbetten
