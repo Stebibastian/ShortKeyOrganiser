@@ -266,6 +266,7 @@ struct VisualEffectBlur: NSViewRepresentable {
 struct BrowseView: View {
     @ObservedObject var model: BrowseModel
     @FocusState private var searchFocused: Bool
+    @State private var showAppPicker = false
 
     private var filtered: [BrowseItem] { model.filteredItems }
 
@@ -311,17 +312,7 @@ struct BrowseView: View {
     private var header: some View {
         HStack(spacing: 6) {
             Spacer().frame(width: 62)   // Platz für die Fenster-Ampeln (randloser Titel)
-            if let icon = model.currentApp?.icon {
-                Image(nsImage: icon).resizable().frame(width: 20, height: 20)
-            }
-            Picker("", selection: $model.selectedPid) {
-                ForEach(model.apps) { app in Text(app.name).tag(app.pid) }
-            }
-            .labelsHidden()
-            .frame(maxWidth: 200)
-            .onChange(of: model.selectedPid) { _ in
-                model.query = ""; model.searchActive = false; model.loadItems()
-            }
+            appChooser
 
             if model.searchActive {
                 searchField
@@ -361,6 +352,54 @@ struct BrowseView: View {
         .frame(height: 34)
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
+    }
+
+    /// App-Auswahl: grosses Icon + Name als Überschrift; Klick öffnet die Liste der laufenden Apps mit Icons.
+    private var appChooser: some View {
+        Button { showAppPicker.toggle() } label: {
+            HStack(spacing: 9) {
+                if let icon = model.currentApp?.icon {
+                    Image(nsImage: icon).resizable().frame(width: 28, height: 28)
+                }
+                Text(model.currentApp?.name ?? "—")
+                    .font(.title3.weight(.semibold)).lineLimit(1)
+                Image(systemName: "chevron.up.chevron.down")
+                    .font(.system(size: 9, weight: .semibold)).foregroundStyle(.secondary)
+            }
+            .padding(.horizontal, 6).padding(.vertical, 2)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .popover(isPresented: $showAppPicker, arrowEdge: .bottom) {
+            VStack(alignment: .leading, spacing: 1) {
+                ForEach(model.apps) { app in
+                    Button {
+                        model.selectedPid = app.pid
+                        model.query = ""; model.searchActive = false; model.loadItems()
+                        showAppPicker = false
+                    } label: {
+                        HStack(spacing: 8) {
+                            if let icon = app.icon {
+                                Image(nsImage: icon).resizable().frame(width: 18, height: 18)
+                            } else {
+                                Color.clear.frame(width: 18, height: 18)
+                            }
+                            Text(app.name)
+                            Spacer(minLength: 16)
+                            if app.pid == model.selectedPid {
+                                Image(systemName: "checkmark")
+                                    .font(.system(size: 10, weight: .bold)).foregroundStyle(Color.accentColor)
+                            }
+                        }
+                        .padding(.horizontal, 10).padding(.vertical, 5)
+                        .frame(width: 250, alignment: .leading)
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(.vertical, 6)
+        }
     }
 
     /// Einheitlicher Leisten-Knopf (gut klickbare Fläche), aktiver Zustand farbig hinterlegt.
