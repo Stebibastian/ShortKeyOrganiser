@@ -147,6 +147,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
                                 action: #selector(openBrowse), keyEquivalent: ""))
         menu.addItem(NSMenuItem(title: Strings.menuSettings,
                                 action: #selector(openSettings), keyEquivalent: ","))
+        menu.addItem(NSMenuItem(title: Strings.menuCheckUpdate,
+                                action: #selector(checkForUpdates), keyEquivalent: ""))
         menu.addItem(.separator())
         menu.addItem(NSMenuItem(title: Strings.menuQuit,
                                 action: #selector(quit), keyEquivalent: "q"))
