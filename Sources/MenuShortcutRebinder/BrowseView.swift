@@ -523,11 +523,17 @@ struct BrowseView: View {
             info(model.items.isEmpty ? Strings.browseEmpty : Strings.browseNoMatch)
         } else {
             GeometryReader { geo in
+                let colCount = max(1, Int(geo.size.width / model.columnWidth))
+                let cols = distributeColumns(grouped, into: colCount)
                 ScrollView([.horizontal, .vertical]) {
                     HStack(alignment: .top, spacing: 0) {
-                        ForEach(Array(grouped.enumerated()), id: \.element.0) { idx, group in
-                            if idx > 0 { Divider() }
-                            column(group.0, group.1)
+                        ForEach(Array(cols.enumerated()), id: \.offset) { ci, colGroups in
+                            if ci > 0 { Divider() }
+                            VStack(alignment: .leading, spacing: 16) {
+                                ForEach(Array(colGroups.enumerated()), id: \.element.0) { _, group in
+                                    column(group.0, group.1)
+                                }
+                            }
                         }
                     }
                     .padding(12)
@@ -536,6 +542,30 @@ struct BrowseView: View {
                 }
             }
         }
+    }
+
+    /// Verteilt die Sektionen balanciert auf `count` Spalten (mehrere Sektionen je Spalte, KeyClu-Stil).
+    private func distributeColumns(_ groups: [(String, [BrowseItem])], into count: Int) -> [[(String, [BrowseItem])]] {
+        guard count > 1, groups.count > 1 else { return [groups] }
+        func estHeight(_ g: (String, [BrowseItem])) -> Int {
+            if model.isCollapsed(g.0) { return 1 }
+            let subs = Set(g.1.map { $0.subPath.joined(separator: "▸") }).filter { !$0.isEmpty }.count
+            return 2 + g.1.count + subs   // Kategorie-Überschrift + Einträge + Submenü-Überschriften
+        }
+        let total = groups.reduce(0) { $0 + estHeight($1) }
+        let target = max(1, total / count)
+        var cols: [[(String, [BrowseItem])]] = []
+        var cur: [(String, [BrowseItem])] = []
+        var curH = 0
+        for g in groups {
+            let h = estHeight(g)
+            if curH > 0, curH + h > target, cols.count < count - 1 {
+                cols.append(cur); cur = []; curH = 0
+            }
+            cur.append(g); curH += h
+        }
+        if !cur.isEmpty { cols.append(cur) }
+        return cols
     }
 
     @ViewBuilder private func column(_ cat: String, _ items: [BrowseItem]) -> some View {
@@ -591,24 +621,19 @@ struct BrowseView: View {
     }
 
     /// Eingeklappte Spalte: schmal; der Titel als Ganzes um 90° gedreht (von oben nach unten).
+    /// Eingeklappte Sektion: nur die Überschrift (im Masonry-Layout sitzt sie in einer Spalte mit anderen).
     private func collapsedColumn(_ cat: String) -> some View {
         Button { model.toggleCollapsed(cat) } label: {
-            VStack(spacing: 8) {
+            HStack(spacing: 4) {
                 Image(systemName: "chevron.right").font(.system(size: 9, weight: .bold))
-                Text(cat)
-                    .font(.system(size: 12, weight: .bold))
-                    .lineLimit(1)
-                    .fixedSize()
-                    .rotationEffect(.degrees(90))
-                    .frame(width: 16, height: 140)
-                    .clipped()
+                Text(cat).font(.system(size: 12, weight: .bold))
+                Spacer()
             }
-            .frame(width: 28)
-            .foregroundStyle(.secondary)
-            .contentShape(Rectangle())
+            .foregroundStyle(.secondary).contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .padding(.top, 4)
+        .frame(width: model.columnWidth, alignment: .leading)
+        .padding(.horizontal, 9)
     }
 
     private func row(_ item: BrowseItem, _ idx: Int) -> some View {
