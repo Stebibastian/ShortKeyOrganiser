@@ -76,6 +76,11 @@ enum Strings {
     static let setBgBlur = "Milchglas"
     static let setOpaqueRows = "Befehlszeilen deckend (besser lesbar)"
     static let setSecTools = "Verwaltung & Hilfe"
+    static let setSecAbout = "Über"
+    static let aboutTagline = "Tastenkürzel-Overlay und Umbelegen für jede App."
+    static let aboutTools = "Werkzeuge & Hilfe"
+    static let aboutUpdates = "Updates & Start"
+    static let aboutCopyright = "© 2026 Sebastian Kardos"
     static let setSecGeneral = "Allgemein"
     static let setLogin = "Beim Anmelden starten"
     // Durchsuchen-Einstellungen (Peek + Fenstergröße)

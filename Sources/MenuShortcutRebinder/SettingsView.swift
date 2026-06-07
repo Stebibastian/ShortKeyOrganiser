@@ -31,20 +31,20 @@ struct SettingsView: View {
     @State private var selection: Section = .keyboard
 
     enum Section: String, CaseIterable, Identifiable {
-        case keyboard, view, tools
+        case keyboard, view, about
         var id: String { rawValue }
         var title: String {
             switch self {
             case .keyboard: return Strings.setSecKeyboard
             case .view:     return Strings.setSecView
-            case .tools:    return Strings.setSecTools
+            case .about:    return Strings.setSecAbout
             }
         }
         var icon: String {
             switch self {
             case .keyboard: return "command"
             case .view:     return "rectangle.split.3x1"
-            case .tools:    return "wrench.and.screwdriver"
+            case .about:    return "info.circle"
             }
         }
     }
@@ -57,47 +57,44 @@ struct SettingsView: View {
     ]
 
     var body: some View {
-        HStack(spacing: 0) {
-            sidebar
+        VStack(spacing: 0) {
+            tabBar
             Divider()
             ScrollView {
-                detail.padding(28).frame(maxWidth: .infinity, alignment: .leading)
+                detail.padding(26).frame(maxWidth: .infinity, alignment: .leading)
             }
         }
-        .frame(width: 760, height: 560)
+        .frame(width: 620, height: selection == .about ? 470 : 560)
     }
 
-    // Feste Seitenleiste (immer sichtbar, eigener Auswahl-Stil).
-    private var sidebar: some View {
-        VStack(alignment: .leading, spacing: 2) {
+    // Tab-Leiste oben (Icon + Titel je Bereich), Stil wie die macOS-Einstellungen.
+    private var tabBar: some View {
+        HStack(spacing: 6) {
             ForEach(Section.allCases) { sec in
                 Button { selection = sec } label: {
-                    HStack(spacing: 8) {
-                        Image(systemName: sec.icon).frame(width: 20)
-                        Text(sec.title)
-                        Spacer()
+                    VStack(spacing: 3) {
+                        Image(systemName: sec.icon).font(.system(size: 17))
+                        Text(sec.title).font(.caption)
                     }
-                    .padding(.horizontal, 10).padding(.vertical, 7)
-                    .background(RoundedRectangle(cornerRadius: 6)
-                        .fill(selection == sec ? Color.accentColor : Color.clear))
-                    .foregroundStyle(selection == sec ? Color.white : Color.primary)
+                    .frame(width: 88, height: 48)
+                    .background(RoundedRectangle(cornerRadius: 8)
+                        .fill(selection == sec ? Color.accentColor.opacity(0.18) : Color.clear))
+                    .foregroundStyle(selection == sec ? Color.accentColor : Color.primary)
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
             }
             Spacer()
         }
-        .padding(8)
-        .frame(width: 210)
-        .frame(maxHeight: .infinity)
-        .background(Color(nsColor: .windowBackgroundColor))
+        .padding(.horizontal, 14).padding(.vertical, 8)
+        .frame(maxWidth: .infinity)
     }
 
     @ViewBuilder private var detail: some View {
         switch selection {
         case .keyboard: keyboardSection
         case .view:     viewSection
-        case .tools:    toolsSection
+        case .about:    aboutSection
         }
     }
 
@@ -164,22 +161,46 @@ struct SettingsView: View {
         }
     }
 
-    // MARK: Verwaltung & Hilfe
+    // MARK: Über (App-Info + Werkzeuge + Updates)
 
-    private var toolsSection: some View {
-        section(Strings.setSecTools) {
-            Button(Strings.menuShortcuts) { onManage() }
-            Button(Strings.menuDiagnose) { onDiagnose() }
-            Button(Strings.menuHelp) { onHelp() }
-            Button(Strings.menuCheckUpdate) { onCheckUpdate() }
-            toggleRow(Strings.setAutoUpdate, $autoUpdate)
-            Divider().padding(.vertical, 6)
-            row(Strings.setLogin) {
-                Toggle("", isOn: $launchAtLogin).labelsHidden().toggleStyle(.switch)
-                    .onChange(of: launchAtLogin) { onToggleLogin($0) }
+    private var aboutSection: some View {
+        VStack(alignment: .leading, spacing: 20) {
+            HStack(spacing: 16) {
+                if let icon = NSApp.applicationIconImage {
+                    Image(nsImage: icon).resizable().frame(width: 72, height: 72)
+                }
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("ShortKeyOrganiser").font(.title.bold())
+                    Text("Version \(UpdateChecker.currentVersion)").foregroundStyle(.secondary)
+                    Text(Strings.aboutTagline).font(.callout).foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Spacer()
             }
-            Text(Strings.setVersion(UpdateChecker.currentVersion))
-                .font(.callout).foregroundStyle(.secondary).padding(.top, 6)
+
+            GroupBox(Strings.aboutTools) {
+                VStack(alignment: .leading, spacing: 12) {
+                    Button(Strings.menuShortcuts) { onManage() }
+                    Button(Strings.menuDiagnose) { onDiagnose() }
+                    Button(Strings.menuHelp) { onHelp() }
+                }
+                .padding(8).frame(maxWidth: .infinity, alignment: .leading)
+            }
+
+            GroupBox(Strings.aboutUpdates) {
+                VStack(alignment: .leading, spacing: 12) {
+                    HStack { Button(Strings.menuCheckUpdate) { onCheckUpdate() }; Spacer() }
+                    toggleRow(Strings.setAutoUpdate, $autoUpdate)
+                    row(Strings.setLogin) {
+                        Toggle("", isOn: $launchAtLogin).labelsHidden().toggleStyle(.switch)
+                            .onChange(of: launchAtLogin) { onToggleLogin($0) }
+                    }
+                }
+                .padding(8).frame(maxWidth: .infinity, alignment: .leading)
+            }
+
+            Text(Strings.aboutCopyright).font(.caption).foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, alignment: .center)
         }
     }
 
@@ -292,12 +313,13 @@ final class SettingsWindow: NSObject {
             onHelp: { [weak self] in self?.onHelp?() },
             onCheckUpdate: { [weak self] in self?.onCheckUpdate?() },
             onLiveView: { [weak self] in self?.onLiveView?() })
-        let win = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 760, height: 560),
-                           styleMask: [.titled, .closable], backing: .buffered, defer: false)
+        let controller = NSHostingController(rootView: view)
+        controller.sizingOptions = [.preferredContentSize]   // Fenster passt sich je Tab an
+        let win = NSWindow(contentViewController: controller)
+        win.styleMask = [.titled, .closable]
         win.title = Strings.setWinTitle
         win.level = .floating
         win.isReleasedWhenClosed = false
-        win.contentView = NSHostingView(rootView: view)
         self.window = win
         NSApp.activate(ignoringOtherApps: true)
         win.center()

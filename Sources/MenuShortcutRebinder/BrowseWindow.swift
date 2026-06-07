@@ -18,6 +18,11 @@ final class BrowseWindow: NSObject, NSWindowDelegate {
 
     func present(initialApp: NSRunningApplication?) {
         if window == nil { build() }
+        // Toggle: ist das fixe Fenster bereits offen, schließt ⌘⌘⌘ es wieder.
+        if window?.isVisible == true && !isPeek {
+            closeBrowse()
+            return
+        }
         isPeek = false
         pinned = true   // normaler Modus: Fenster bleibt offen
         prepare(initialApp: initialApp)
