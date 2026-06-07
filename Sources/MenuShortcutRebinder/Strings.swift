@@ -31,6 +31,14 @@ enum Strings {
         return text
     }
     static let diagnoseReconnect = "Erneut verbinden"
+    static let diagAccessibility = "Bedienungshilfen"
+    static let diagAxOk = "erteilt"
+    static let diagAxBad = "fehlt"
+    static let diagTap = "Tasten-Erkennung"
+    static let diagTapOk = "aktiv"
+    static let diagTapBad = "inaktiv"
+    static let diagTrigger = "Auslöser-Taste"
+    static let diagFix = "Behebung: Systemeinstellungen öffnen → Bedienungshilfen → ShortKeyOrganiser mit (−) entfernen und mit (+) neu hinzufügen, dann Erneut verbinden."
     static let menuLoginItem = "Beim Anmelden starten"
     static let menuChangeTrigger = "Auslöser-Taste ändern …"
     static let menuShortcuts = "Tastenkürzel verwalten …"

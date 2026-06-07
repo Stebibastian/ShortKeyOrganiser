@@ -1,4 +1,5 @@
 import AppKit
+import SwiftUI
 import ApplicationServices
 import ServiceManagement
 
@@ -290,10 +291,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     @objc private func diagnose() {
         let alert = NSAlert()
         alert.messageText = Strings.diagnoseTitle
-        alert.informativeText = Strings.diagnoseBody(
+        let host = NSHostingView(rootView: DiagnoseView(
             accessibility: AXIsProcessTrusted(),
             tapActive: detector.isActive,
-            trigger: TriggerKey.name(for: Settings.triggerKeyCode))
+            trigger: TriggerKey.name(for: Settings.triggerKeyCode)))
+        host.frame.size = host.fittingSize
+        alert.accessoryView = host
         alert.addButton(withTitle: Strings.openSettings)        // erster Button
         alert.addButton(withTitle: Strings.diagnoseReconnect)   // zweiter Button
         alert.addButton(withTitle: Strings.ok)                  // dritter Button
