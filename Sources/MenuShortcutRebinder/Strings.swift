@@ -221,5 +221,8 @@ enum Strings {
     // PDF-Export
     static var browsePdfTip: String { s("Als PDF exportieren", "Export as PDF", fr: "Exporter en PDF", es: "Exportar como PDF", it: "Esporta come PDF") }
     static var browseKmTip: String { s("Keyboard-Maestro-Makros anzeigen", "Show Keyboard Maestro macros", fr: "Afficher les macros Keyboard Maestro", es: "Mostrar macros de Keyboard Maestro", it: "Mostra macro di Keyboard Maestro") }
+    static var pdfScopeTitle: String { s("Was exportieren?", "Export what?", fr: "Exporter quoi ?", es: "¿Qué exportar?", it: "Cosa esportare?") }
+    static var pdfScopeAll: String { s("Alle Befehle", "All commands", fr: "Toutes les commandes", es: "Todos los comandos", it: "Tutti i comandi") }
+    static var pdfScopeFavorites: String { s("Nur Favoriten", "Favourites only", fr: "Favoris uniquement", es: "Solo favoritos", it: "Solo preferiti") }
     static func pdfHeading(_ app: String) -> String { s("\(app) – Tastenkürzel", "\(app) – Keyboard Shortcuts") }
 }

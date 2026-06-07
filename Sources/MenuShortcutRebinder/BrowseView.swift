@@ -341,22 +341,52 @@ struct BrowseView: View {
         return result
     }
 
-    /// Exportiert die aktuelle Befehlsübersicht (mit Kürzeln) als PDF-Cheatsheet.
+    /// Exportiert die Befehlsübersicht als mehrseitiges PDF-Cheatsheet. Fragt vorher: alle oder nur Favoriten.
     @MainActor private func exportPDF() {
+        let scope = NSAlert()
+        scope.messageText = Strings.pdfScopeTitle
+        scope.addButton(withTitle: Strings.pdfScopeAll)
+        scope.addButton(withTitle: Strings.pdfScopeFavorites)
+        scope.addButton(withTitle: Strings.cancel)
+        let onlyFavorites: Bool
+        switch scope.runModal() {
+        case .alertFirstButtonReturn:  onlyFavorites = false
+        case .alertSecondButtonReturn: onlyFavorites = true
+        default: return
+        }
+
         let app = model.currentApp?.name ?? "App"
-        let renderer = ImageRenderer(content: CheatsheetView(appName: app, groups: grouped))
-        renderer.scale = 2
+        let groups: [(String, [BrowseItem])]
+        if onlyFavorites {
+            let favs = filtered.filter { model.isFavorite($0) }
+            groups = favs.isEmpty ? [] : [(Strings.browseFavorites, favs)]
+        } else {
+            groups = grouped
+        }
+        guard !groups.isEmpty else { return }
+
         let panel = NSSavePanel()
         panel.nameFieldStringValue = "\(app) Shortcuts.pdf"
         panel.allowedContentTypes = [.pdf]
         guard panel.runModal() == .OK, let url = panel.url else { return }
+
+        let renderer = ImageRenderer(content: CheatsheetView(appName: app, groups: groups))
+        renderer.scale = 2
         renderer.render { size, renderInContext in
-            var box = CGRect(origin: .zero, size: size)
+            let totalH = size.height
+            let pageH = min(totalH, size.width * 1.414)   // A4-Verhältnis (Höhe = Breite × √2)
+            let pages = max(1, Int(ceil(totalH / pageH)))
+            var mediaBox = CGRect(x: 0, y: 0, width: size.width, height: pageH)
             guard let consumer = CGDataConsumer(url: url as CFURL),
-                  let ctx = CGContext(consumer: consumer, mediaBox: &box, nil) else { return }
-            ctx.beginPDFPage(nil)
-            renderInContext(ctx)
-            ctx.endPDFPage()
+                  let ctx = CGContext(consumer: consumer, mediaBox: &mediaBox, nil) else { return }
+            for p in 0..<pages {
+                ctx.beginPDFPage(nil)
+                ctx.saveGState()
+                ctx.translateBy(x: 0, y: -(totalH - CGFloat(p + 1) * pageH))   // Seite p von oben zeigen
+                renderInContext(ctx)
+                ctx.restoreGState()
+                ctx.endPDFPage()
+            }
             ctx.closePDF()
         }
     }
@@ -523,8 +553,7 @@ struct BrowseView: View {
             info(model.items.isEmpty ? Strings.browseEmpty : Strings.browseNoMatch)
         } else {
             GeometryReader { geo in
-                let colCount = max(1, Int(geo.size.width / model.columnWidth))
-                let cols = distributeColumns(grouped, into: colCount)
+                let cols = packedColumns(geo.size)
                 ScrollView([.horizontal, .vertical]) {
                     HStack(alignment: .top, spacing: 0) {
                         ForEach(Array(cols.enumerated()), id: \.offset) { ci, colGroups in
@@ -544,21 +573,31 @@ struct BrowseView: View {
         }
     }
 
-    /// Verteilt die Sektionen balanciert auf `count` Spalten (mehrere Sektionen je Spalte, KeyClu-Stil).
-    private func distributeColumns(_ groups: [(String, [BrowseItem])], into count: Int) -> [[(String, [BrowseItem])]] {
-        guard count > 1, groups.count > 1 else { return [groups] }
-        func estHeight(_ g: (String, [BrowseItem])) -> Int {
-            if model.isCollapsed(g.0) { return 1 }
-            let subs = Set(g.1.map { $0.subPath.joined(separator: "▸") }).filter { !$0.isEmpty }.count
-            return 2 + g.1.count + subs   // Kategorie-Überschrift + Einträge + Submenü-Überschriften
-        }
-        let total = groups.reduce(0) { $0 + estHeight($1) }
-        let target = max(1, total / count)
+    private func sectionRows(_ g: (String, [BrowseItem])) -> Int {
+        if model.isCollapsed(g.0) { return 2 }
+        let subs = Set(g.1.map { $0.subPath.joined(separator: "▸") }).filter { !$0.isEmpty }.count
+        return 2 + g.1.count + subs   // Kategorie-Überschrift + Einträge + Submenü-Überschriften
+    }
+
+    /// Packt die Sektionen kompakt in Spalten (KeyClu-Stil): die Spaltenzahl richtet sich nach der
+    /// HÖHE (so wenige Spalten wie nötig, damit jede ~ die Fensterhöhe füllt), nicht nach der Breite.
+    /// Dadurch werden auch bei breitem Fenster mehrere Sektionen gestapelt statt nebeneinandergelegt.
+    private func packedColumns(_ size: CGSize) -> [[(String, [BrowseItem])]] {
+        let groups = grouped
+        guard groups.count > 1 else { return [groups] }
+        let rowH = model.fontSize + 7
+        let totalRows = groups.reduce(0) { $0 + sectionRows($1) }
+        let maxCols = max(1, Int(size.width / model.columnWidth))
+        let availRows = max(8, Int(size.height / rowH))
+        let neededCols = max(1, Int((Double(totalRows) / Double(availRows)).rounded(.up)))
+        let count = max(1, min(maxCols, neededCols))
+        guard count > 1 else { return [groups] }
+        let target = max(1, totalRows / count)
         var cols: [[(String, [BrowseItem])]] = []
         var cur: [(String, [BrowseItem])] = []
         var curH = 0
         for g in groups {
-            let h = estHeight(g)
+            let h = sectionRows(g)
             if curH > 0, curH + h > target, cols.count < count - 1 {
                 cols.append(cur); cur = []; curH = 0
             }
