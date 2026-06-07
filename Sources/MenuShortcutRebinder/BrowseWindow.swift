@@ -99,9 +99,10 @@ final class BrowseWindow: NSObject, NSWindowDelegate {
 
     private func build() {
         let win = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 900, height: 600),
-                           styleMask: [.titled, .closable],
+                           styleMask: [.titled, .closable, .fullSizeContentView],
                            backing: .buffered, defer: false)
         win.title = Strings.browseTitle
+        win.titleVisibility = .hidden                 // kein Titeltext, Inhalt reicht bis oben
         win.level = .floating
         win.isReleasedWhenClosed = false
         win.isOpaque = false
