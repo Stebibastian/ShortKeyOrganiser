@@ -39,17 +39,10 @@ enum SystemShortcuts {
                                               entries: entries(dict)))
         }
 
-        // Pro App in Sandbox-Containern (nur lesbar – CFPreferences erreicht den Container nicht)
-        let containers = NSHomeDirectory() + "/Library/Containers"
-        for c in (try? FileManager.default.contentsOfDirectory(atPath: containers))?.sorted() ?? [] {
-            let plist = "\(containers)/\(c)/Data/Library/Preferences/\(c).plist"
-            guard let dict = NSDictionary(contentsOfFile: plist) as? [String: Any],
-                  let ke = dict["NSUserKeyEquivalents"] as? [String: String], !ke.isEmpty else { continue }
-            if groups.contains(where: { $0.bundleID == c }) { continue }
-            groups.append(SystemShortcutGroup(domain: appName(c), scope: .app,
-                                              bundleID: c, editable: false,
-                                              entries: entries(ke)))
-        }
+        // Hinweis: Sandbox-Container anderer Apps (~/Library/Containers/*/Data/…) werden
+        // bewusst NICHT mehr gescannt – das löste bei jedem Öffnen einen macOS-Ordner-
+        // Berechtigungs-Dialog aus und brachte kaum Mehrwert (die Kürzel kommen aus den
+        // CFPreferences oben). Damit verschwindet der lästige Prompt.
 
         return groups
     }

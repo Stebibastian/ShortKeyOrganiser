@@ -183,6 +183,9 @@ struct SettingsView: View {
                     Text(Strings.setLangSystem).tag("system")
                     Text("Deutsch").tag("de")
                     Text("English").tag("en")
+                    Text("Français").tag("fr")
+                    Text("Español").tag("es")
+                    Text("Italiano").tag("it")
                 }
                 .labelsHidden().frame(width: 160)
                 .onChange(of: appLanguage) { onLanguageChange($0) }

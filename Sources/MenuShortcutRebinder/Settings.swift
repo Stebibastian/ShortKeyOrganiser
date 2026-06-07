@@ -111,22 +111,24 @@ enum Settings {
         set { UserDefaults.standard.set(newValue, forKey: autoUpdateKey) }
     }
 
+    /// Unterstützte Oberflächensprachen.
+    static let supportedLanguages = ["de", "en", "fr", "es", "it"]
+
     private static let appLanguageKey = "appLanguage"
-    /// Sprache der Oberfläche: "system" (Standard), "de" oder "en".
+    /// Sprache der Oberfläche: "system" (Standard) oder ein Code aus `supportedLanguages`.
     static var appLanguage: String {
         get { UserDefaults.standard.string(forKey: appLanguageKey) ?? "system" }
         set { UserDefaults.standard.set(newValue, forKey: appLanguageKey) }
     }
 
-    /// Tatsächlich genutzte Sprache ("de"/"en"), aus Einstellung + System abgeleitet.
+    /// Tatsächlich genutzte Sprache, aus Einstellung + System-Sprachreihenfolge abgeleitet.
     static var resolvedLanguage: String {
-        switch appLanguage {
-        case "de": return "de"
-        case "en": return "en"
-        default:
-            let pref = Locale.preferredLanguages.first ?? "en"
-            return pref.hasPrefix("de") ? "de" : "en"
+        if supportedLanguages.contains(appLanguage) { return appLanguage }
+        for code in Locale.preferredLanguages {
+            let base = String(code.prefix(2))
+            if supportedLanguages.contains(base) { return base }
         }
+        return "en"
     }
 
     private static let onboardingDoneKey = "onboardingDone"
