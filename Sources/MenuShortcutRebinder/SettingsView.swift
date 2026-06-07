@@ -176,6 +176,8 @@ struct SettingsView: View {
                 Toggle("", isOn: $launchAtLogin).labelsHidden().toggleStyle(.switch)
                     .onChange(of: launchAtLogin) { onToggleLogin($0) }
             }
+            Text(Strings.setVersion(UpdateChecker.currentVersion))
+                .font(.callout).foregroundStyle(.secondary).padding(.top, 6)
         }
     }
 

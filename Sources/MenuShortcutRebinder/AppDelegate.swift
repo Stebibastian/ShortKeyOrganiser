@@ -60,8 +60,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
                 HUD.show(Strings.launchedHint(TriggerKey.shortName(for: Settings.triggerKeyCode)))
             }
         } else {
+            // Der System-Dialog (aus promptAccessibility) genügt – kein zweites App-Fenster.
             startTrustBackupPolling()
-            showAccessibilityAlert()
         }
     }
 
@@ -299,18 +299,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             relaunchSelf()   // frischer Prozess erhält den Tap zuverlässig
         default:
             break
-        }
-    }
-
-    private func showAccessibilityAlert() {
-        let alert = NSAlert()
-        alert.messageText = Strings.axAlertTitle
-        alert.informativeText = Strings.axAlertBody
-        alert.addButton(withTitle: Strings.openSettings)
-        alert.addButton(withTitle: Strings.ok)
-        NSApp.activate(ignoringOtherApps: true)
-        if alert.runModal() == .alertFirstButtonReturn {
-            openAccessibilitySettings()
         }
     }
 
