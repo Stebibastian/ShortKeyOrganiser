@@ -4,7 +4,6 @@ import ServiceManagement
 
 final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var statusItem: NSStatusItem!
-    private var triggerInfoItem: NSMenuItem!
     private let detector = LongPressDetector()
     private let peekDetector = PeekTriggerDetector()
     private var trustTimer: Timer?
@@ -41,6 +40,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         peekDetector.onFixOpen = { [weak self] in
             BrowseWindow.shared.present(initialApp: self?.lastFrontApp)
         }
+        configureSettingsWindow()
 
         promptAccessibility()   // System-Prompt + Eintrag in der Rechte-Liste anlegen
         trustedAtLaunch = AXIsProcessTrusted()
@@ -137,28 +137,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let menu = NSMenu()
         menu.delegate = self
 
-        let header = NSMenuItem(title: Strings.appTitle, action: nil, keyEquivalent: "")
-        header.isEnabled = false
-        menu.addItem(header)
-
-        triggerInfoItem = NSMenuItem(title: triggerInfoText(), action: nil, keyEquivalent: "")
-        triggerInfoItem.isEnabled = false
-        menu.addItem(triggerInfoItem)
-
-        menu.addItem(.separator())
-
         menu.addItem(NSMenuItem(title: Strings.menuBrowse,
                                 action: #selector(openBrowse), keyEquivalent: ""))
-        menu.addItem(NSMenuItem(title: Strings.menuShortcuts,
-                                action: #selector(openShortcuts), keyEquivalent: ""))
-        menu.addItem(.separator())
         menu.addItem(NSMenuItem(title: Strings.menuSettings,
                                 action: #selector(openSettings), keyEquivalent: ","))
-        menu.addItem(NSMenuItem(title: Strings.menuDiagnose,
-                                action: #selector(diagnose), keyEquivalent: ""))
-        menu.addItem(NSMenuItem(title: Strings.menuHelp,
-                                action: #selector(showHelp), keyEquivalent: ""))
-
         menu.addItem(.separator())
         menu.addItem(NSMenuItem(title: Strings.menuQuit,
                                 action: #selector(quit), keyEquivalent: "q"))
@@ -168,31 +150,28 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     /// Vor dem Öffnen Login-Haken und Auslöser-Anzeige aktualisieren.
-    func menuWillOpen(_ menu: NSMenu) {
-        triggerInfoItem.title = triggerInfoText()
-    }
-
-    private func triggerInfoText() -> String {
-        Strings.triggerInfo(TriggerKey.name(for: Settings.triggerKeyCode))
-    }
+    func menuWillOpen(_ menu: NSMenu) { }
 
     // MARK: - Einstellungen
 
-    @objc private func openSettings() {
+    private func configureSettingsWindow() {
         SettingsWindow.shared.onChange = { [weak self] in
             guard let self else { return }
             self.detector.triggerKeyCode = Int64(Settings.triggerKeyCode)
             self.detector.holdDuration = Settings.holdDuration
-            self.triggerInfoItem.title = self.triggerInfoText()
             self.configurePeek()
             self.peekDetector.stop()
             if Settings.peekEnabled { self.peekDetector.start() }
             BrowseWindow.shared.applySettings()
         }
         SettingsWindow.shared.onToggleLogin = { [weak self] on in self?.setLogin(on) }
+        SettingsWindow.shared.onManage = { ShortcutsWindow.shared.present() }
+        SettingsWindow.shared.onDiagnose = { [weak self] in self?.diagnose() }
+        SettingsWindow.shared.onHelp = { [weak self] in self?.showHelp() }
         SettingsWindow.shared.loginEnabled = { SMAppService.mainApp.status == .enabled }
-        SettingsWindow.shared.present()
     }
+
+    @objc private func openSettings() { SettingsWindow.shared.present() }
 
     private func setLogin(_ on: Bool) {
         do {

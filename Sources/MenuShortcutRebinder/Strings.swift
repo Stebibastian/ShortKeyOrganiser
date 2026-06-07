@@ -9,7 +9,7 @@ import Foundation
 /// die Rückgabewerte unten durch `String(localized:)`-Aufrufe.
 enum Strings {
     // Statusleiste
-    static let appTitle = "Menü-Kurzbefehl-Umbieger"
+    static let appTitle = "ShortKeyOrganiser"
     static let statusItemTooltip = "Menü-Kurzbefehl anpassen"
     static func triggerInfo(_ trigger: String) -> String { "Auslöser: \(trigger) lange halten" }
     static let menuQuit = "Beenden"
@@ -34,8 +34,10 @@ enum Strings {
     static let menuLoginItem = "Beim Anmelden starten"
     static let menuChangeTrigger = "Auslöser-Taste ändern …"
     static let menuShortcuts = "Tastenkürzel verwalten …"
-    static let menuBrowse = "Befehle durchsuchen …"
+    static let menuBrowse = "ShortKeyOrganiser …"
     static let menuBrowseSettings = "Durchsuchen-Einstellungen …"
+    static let browseSettingsTip = "Einstellungen"
+    static let browseManageTip = "Tastenkürzel verwalten"
     static let menuSettings = "Einstellungen …"
     // Zentrale Einstellungen
     static let setWinTitle = "Einstellungen"
@@ -50,6 +52,7 @@ enum Strings {
     static let setWindowSize = "Fenstergröße"
     static let setColWidth = "Spaltenbreite"
     static let setZebra = "Zebra-Streifen (abwechselnde Zeilenfarbe)"
+    static let setSecTools = "Verwaltung & Hilfe"
     static let setSecGeneral = "Allgemein"
     static let setLogin = "Beim Anmelden starten"
     // Durchsuchen-Einstellungen (Peek + Fenstergröße)
@@ -72,7 +75,7 @@ enum Strings {
     static let tabSystem = "Alle im System"
 
     // Befehle durchsuchen (Suche im Stil der macOS-Hilfe-Suche)
-    static let browseTitle = "Befehle durchsuchen"
+    static let browseTitle = "ShortKeyOrganiser"
     static let browseSearchPlaceholder = "Befehl suchen … (Schlagwort eintippen)"
     static let browseAppLabel = "App:"
     static let browseLoading = "Befehle werden gelesen …"

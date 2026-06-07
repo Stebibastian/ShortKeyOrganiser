@@ -16,6 +16,9 @@ struct SettingsView: View {
 
     let onChange: () -> Void
     let onToggleLogin: (Bool) -> Void
+    let onManage: () -> Void
+    let onDiagnose: () -> Void
+    let onHelp: () -> Void
 
     private let triggerKeys: [(Int, String)] = [
         (62, "Rechte ⌃ (Control)"), (59, "Linke ⌃ (Control)"),
@@ -54,6 +57,12 @@ struct SettingsView: View {
                        unit: "%", scale: 100)
                 slider(Strings.setColWidth, value: $columnWidth, range: 160...520, step: 10, unit: "pt")
                 Toggle(Strings.setZebra, isOn: $zebra).onChange(of: zebra) { _ in commit() }
+            }
+
+            Section(Strings.setSecTools) {
+                Button(Strings.menuShortcuts) { onManage() }
+                Button(Strings.menuDiagnose) { onDiagnose() }
+                Button(Strings.menuHelp) { onHelp() }
             }
 
             Section(Strings.setSecGeneral) {
@@ -96,6 +105,9 @@ final class SettingsWindow: NSObject {
     private var window: NSWindow?
     var onChange: (() -> Void)?
     var onToggleLogin: ((Bool) -> Void)?
+    var onManage: (() -> Void)?
+    var onDiagnose: (() -> Void)?
+    var onHelp: (() -> Void)?
     var loginEnabled: () -> Bool = { false }
 
     func present() {
@@ -111,7 +123,10 @@ final class SettingsWindow: NSObject {
             zebra: Settings.browseZebra,
             launchAtLogin: loginEnabled(),
             onChange: { [weak self] in self?.onChange?() },
-            onToggleLogin: { [weak self] on in self?.onToggleLogin?(on) })
+            onToggleLogin: { [weak self] on in self?.onToggleLogin?(on) },
+            onManage: { [weak self] in self?.onManage?() },
+            onDiagnose: { [weak self] in self?.onDiagnose?() },
+            onHelp: { [weak self] in self?.onHelp?() })
         let win = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 480, height: 540),
                            styleMask: [.titled, .closable], backing: .buffered, defer: false)
         win.title = Strings.setWinTitle

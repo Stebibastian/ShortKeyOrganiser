@@ -9,7 +9,7 @@
     <key>CFBundleName</key>
     <string>MenuShortcutRebinder</string>
     <key>CFBundleDisplayName</key>
-    <string>Menü-Kurzbefehl-Umbieger</string>
+    <string>ShortKeyOrganiser</string>
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleShortVersionString</key>

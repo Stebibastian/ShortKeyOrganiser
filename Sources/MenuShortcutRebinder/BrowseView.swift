@@ -36,6 +36,8 @@ final class BrowseModel: ObservableObject {
     var onDelete: ((BrowseItem, AppChoice) -> Void)?
     var onPerform: ((BrowseItem, AppChoice) -> Void)?
     var onActivateSearch: (() -> Void)?
+    var onOpenSettings: (() -> Void)?
+    var onManage: (() -> Void)?
 
     private var scanToken = 0
 
@@ -117,6 +119,8 @@ final class BrowseModel: ObservableObject {
     func requestDelete(_ item: BrowseItem) { if let app = currentApp { onDelete?(item, app) } }
     func perform(_ item: BrowseItem) { if let app = currentApp { onPerform?(item, app) } }
     func activateSearch() { onActivateSearch?(); searchActive = true }
+    func openSettings() { onOpenSettings?() }
+    func manage() { onManage?() }
 
     func moveSelection(_ delta: Int) {
         let list = filteredItems
@@ -271,7 +275,7 @@ struct BrowseView: View {
     }
 
     private var header: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: 6) {
             if let icon = model.currentApp?.icon {
                 Image(nsImage: icon).resizable().frame(width: 20, height: 20)
             }
@@ -284,7 +288,15 @@ struct BrowseView: View {
                 model.query = ""; model.searchActive = false; model.loadItems()
             }
 
-            Spacer()
+            if model.searchActive {
+                searchField
+            } else {
+                navIcon("magnifyingglass", active: false, tip: Strings.browseSearchPlaceholder) {
+                    model.activateSearch()
+                }
+            }
+
+            Divider().frame(height: 18)
 
             navIcon("star", active: model.showFavorites, tip: Strings.browseShowFavorites) {
                 model.showFavorites.toggle()
@@ -298,28 +310,28 @@ struct BrowseView: View {
                 model.setColumnWidth(model.columnWidth + 30)
             }
 
-            if model.searchActive {
-                searchField
-            } else {
-                navIcon("magnifyingglass", active: false, tip: Strings.browseSearchPlaceholder) {
-                    model.activateSearch()
-                }
-            }
+            Divider().frame(height: 18)
+
+            navIcon("list.bullet", active: false, tip: Strings.browseManageTip) { model.manage() }
+            navIcon("gearshape", active: false, tip: Strings.browseSettingsTip) { model.openSettings() }
+
+            Spacer()
         }
         .frame(height: 34)
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
     }
 
-    /// Einheitlicher Leisten-Knopf (gleiche Größe), aktiver Zustand farbig hinterlegt.
+    /// Einheitlicher Leisten-Knopf (gut klickbare Fläche), aktiver Zustand farbig hinterlegt.
     private func navIcon(_ symbol: String, active: Bool, tip: String,
                          _ action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Image(systemName: symbol)
-                .font(.system(size: 13))
-                .frame(width: 26, height: 24)
+                .font(.system(size: 14))
+                .frame(width: 30, height: 26)
                 .background(RoundedRectangle(cornerRadius: 6)
                     .fill(active ? Color.accentColor.opacity(0.18) : Color.clear))
+                .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .foregroundStyle(active ? Color.accentColor : .secondary)
@@ -361,7 +373,8 @@ struct BrowseView: View {
                         }
                     }
                     .padding(12)
-                    .frame(minWidth: geo.size.width, alignment: .topLeading)   // immer linksbündig
+                    .frame(minWidth: geo.size.width, minHeight: geo.size.height,
+                           alignment: .topLeading)   // immer oben-links bündig (nicht zentriert)
                 }
             }
         }
