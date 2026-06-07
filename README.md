@@ -7,6 +7,10 @@ A macOS menu-bar app that does two things for **any** app's menu commands:
 
 Runs as a menu-bar agent (no Dock icon). Built in Swift/AppKit + SwiftUI on native macOS APIs.
 
+![Command overlay - hold a modifier and the commands you can trigger light up in yellow](docs/screenshots/overlay-highlight.png)
+
+![Searchable, categorised overlay of any app's shortcuts](docs/screenshots/overlay.png)
+
 ## Features
 
 - **Searchable overlay** of the front app's commands, grouped by menu, with colour-coded modifiers (⌘ blue, ⇧ green, ⌥ orange, ⌃ pink).
