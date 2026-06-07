@@ -31,7 +31,7 @@ final class BrowseModel: ObservableObject {
     @Published var collapsed: Set<String> = []
     @Published var showHidden: Bool = false
     @Published var showFavorites: Bool = true
-    @Published var showDisabled: Bool = true
+    @Published var showDisabled: Bool = false
     @Published var highlightEnabled: Bool = Settings.browseHighlight
     @Published var backgroundStyle: Int = Settings.browseBackgroundStyle
     @Published var opaqueRows: Bool = Settings.browseOpaqueRows
@@ -330,12 +330,12 @@ struct BrowseView: View {
             navIcon("star", active: model.showFavorites, tip: Strings.browseShowFavorites) {
                 model.showFavorites.toggle()
             }
-            navIcon(model.showHidden ? "eye" : "eye.slash", active: model.showHidden,
+            navIcon(model.showHidden ? "eye" : "eye.slash", active: !model.showHidden,
                     tip: Strings.browseShowHidden) { model.showHidden.toggle() }
             navIcon("highlighter", active: model.highlightEnabled, tip: Strings.browseHighlightTip) {
                 model.toggleHighlight()
             }
-            navIcon("circle.dashed", active: model.showDisabled, tip: Strings.browseShowDisabledTip) {
+            navIcon("circle.dashed", active: !model.showDisabled, tip: Strings.browseShowDisabledTip) {
                 model.showDisabled.toggle()
             }
             navIcon("minus", active: false, tip: "Schmälere Spalten") {

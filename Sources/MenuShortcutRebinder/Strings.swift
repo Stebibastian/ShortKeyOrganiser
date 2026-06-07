@@ -105,10 +105,10 @@ enum Strings {
     static let browseFavTip = "Als Favorit markieren"
     static let browseHideTip = "Befehl ausblenden"
     static let browseUnhideTip = "Wieder einblenden"
-    static let browseShowHidden = "Ausgeblendete anzeigen"
+    static let browseShowHidden = "Ausgeblendete Befehle ein-/ausblenden"
     static let browseShowFavorites = "Favoriten-Gruppe anzeigen"
     static let browseHighlightTip = "Tasten-Highlight beim Halten von Modifiern"
-    static let browseShowDisabledTip = "Inaktive (ausgegraute) Befehle anzeigen"
+    static let browseShowDisabledTip = "Inaktive Befehle ein-/ausblenden"
     static func browseCount(hits: Int, total: Int) -> String { "\(hits) von \(total) Befehlen" }
     static func browseCapped(_ cap: Int) -> String { " (erste \(cap) gezeigt)" }
 

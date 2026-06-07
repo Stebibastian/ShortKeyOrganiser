@@ -76,7 +76,7 @@ final class BrowseWindow: NSObject, NSWindowDelegate {
         model.collapsed = []
         model.showHidden = false
         model.showFavorites = true
-        model.showDisabled = true
+        model.showDisabled = false
         model.highlightEnabled = Settings.browseHighlight
         model.backgroundStyle = Settings.browseBackgroundStyle
         model.opaqueRows = Settings.browseOpaqueRows
