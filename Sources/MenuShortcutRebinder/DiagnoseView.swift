@@ -112,3 +112,15 @@ struct UpdateView: View {
         }
     }
 }
+
+/// Kleines Fortschritts-Fenster während des Updates (unbestimmter Balken, läuft hin und her).
+struct UpdateProgressView: View {
+    var body: some View {
+        VStack(spacing: 16) {
+            Text(Strings.updateInstalling).font(.system(size: 13, weight: .medium))
+            ProgressView().progressViewStyle(.linear).frame(width: 260)
+        }
+        .padding(26)
+        .frame(width: 320)
+    }
+}

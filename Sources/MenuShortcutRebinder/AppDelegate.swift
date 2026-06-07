@@ -216,8 +216,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         UpdateChecker.check { [weak self] result in
             guard case .success(let info?) = result else { return }
             if Settings.autoUpdate {
-                HUD.show(Strings.updateInstalling)
-                self?.runUpdate()                 // im Hintergrund laden + installieren + neu starten
+                self?.runUpdate()                 // zeigt Fortschritt + installiert im Hintergrund
             } else {
                 self?.showUpdateAlert(info)
             }
@@ -260,8 +259,25 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     /// Lädt + installiert die neueste notarisierte Version (web-install.sh) und startet neu.
     /// Das Skript wird LOSGELÖST gestartet (nohup + &, eigene Session), damit es den
     /// Selbst-Neustart (pkill) der App überlebt; Ausgabe nach /tmp/sko-update.log.
+    private var updateProgressWindow: NSWindow?
+
+    /// Kleines Fenster mit laufendem Balken, sichtbar bis das Skript die App neu startet.
+    private func showUpdateProgress() {
+        let win = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 320, height: 100),
+                           styleMask: [.titled], backing: .buffered, defer: false)
+        win.titleVisibility = .hidden
+        win.titlebarAppearsTransparent = true
+        win.level = .floating
+        win.isReleasedWhenClosed = false
+        win.contentView = NSHostingView(rootView: UpdateProgressView())
+        win.center()
+        NSApp.activate(ignoringOtherApps: true)
+        win.makeKeyAndOrderFront(nil)
+        updateProgressWindow = win
+    }
+
     private func runUpdate() {
-        HUD.show(Strings.updateInstalling)
+        showUpdateProgress()
         let task = Process()
         task.executableURL = URL(fileURLWithPath: "/bin/bash")
         task.arguments = ["-c",
@@ -269,6 +285,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         do {
             try task.run()
         } catch {
+            updateProgressWindow?.orderOut(nil)
             HUD.show(Strings.updateFailBody)
         }
     }
