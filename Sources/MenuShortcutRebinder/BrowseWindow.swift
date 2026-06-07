@@ -82,6 +82,7 @@ final class BrowseWindow: NSObject, NSWindowDelegate {
         model.showHidden = false
         model.showFavorites = true
         model.showDisabled = false
+        model.kmMode = false   // beim Öffnen immer die normale Übersicht, nie Keyboard Maestro
         model.highlightEnabled = Settings.browseHighlight
         model.backgroundStyle = Settings.browseBackgroundStyle
         model.opaqueRows = Settings.browseOpaqueRows
