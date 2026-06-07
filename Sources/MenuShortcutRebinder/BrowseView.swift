@@ -360,7 +360,6 @@ struct BrowseView: View {
         .frame(height: 34)
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
-        .background(Color(nsColor: .windowBackgroundColor))   // obere Leiste immer deckend
     }
 
     /// Einheitlicher Leisten-Knopf (gut klickbare Fläche), aktiver Zustand farbig hinterlegt.
@@ -370,8 +369,11 @@ struct BrowseView: View {
             Image(systemName: symbol)
                 .font(.system(size: 14))
                 .frame(width: 30, height: 26)
+                // Knopf bleibt deckend (eigener Hintergrund), auch wenn der Leisten-Grund transparent ist.
                 .background(RoundedRectangle(cornerRadius: 6)
-                    .fill(active ? Color.accentColor.opacity(0.18) : Color.clear))
+                    .fill(active ? Color.accentColor.opacity(0.22) : Color.clear))
+                .background(RoundedRectangle(cornerRadius: 6)
+                    .fill(Color(nsColor: .windowBackgroundColor)))
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
