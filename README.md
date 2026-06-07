@@ -19,13 +19,15 @@ Runs as a menu-bar agent (no Dock icon). Built in Swift/AppKit + SwiftUI on nati
 
 ## Install
 
-**Recommended - download the notarised release** (no build, no warnings):
+**One line in Terminal** - downloads the notarised release, installs it to Applications, launches it:
 
-1. Download **`ShortKeyOrganiser.zip`** from the [latest release](https://github.com/Stebibastian/ShortKeyOrganiser/releases/latest).
-2. Unzip, drag **ShortKeyOrganiser.app** into `/Applications`, open it.
-3. Grant **Accessibility** on first launch - the app relaunches itself.
+```bash
+curl -fsSL https://raw.githubusercontent.com/Stebibastian/ShortKeyOrganiser/main/web-install.sh | bash
+```
 
-It's signed with a Developer ID certificate and notarised by Apple, so it runs on any Mac with **no Gatekeeper warning**.
+**Or manually:** download **`ShortKeyOrganiser.zip`** from the [latest release](https://github.com/Stebibastian/ShortKeyOrganiser/releases/latest), unzip, drag **ShortKeyOrganiser.app** into `/Applications`, open it.
+
+Either way, grant **Accessibility** on first launch - the app relaunches itself. It's signed with a Developer ID certificate and notarised by Apple, so it runs on any Mac with **no Gatekeeper warning**.
 
 ### Build from source instead
 
