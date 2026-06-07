@@ -76,6 +76,7 @@ final class BrowseWindow: NSObject, NSWindowDelegate {
         model.collapsed = []
         model.showHidden = false
         model.showFavorites = true
+        model.showDisabled = true
         model.highlightEnabled = Settings.browseHighlight
         model.refreshApps(preferredPid: initialApp?.processIdentifier)
         model.loadItems()

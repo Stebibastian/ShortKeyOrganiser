@@ -31,6 +31,7 @@ final class BrowseModel: ObservableObject {
     @Published var collapsed: Set<String> = []
     @Published var showHidden: Bool = false
     @Published var showFavorites: Bool = true
+    @Published var showDisabled: Bool = true
     @Published var highlightEnabled: Bool = Settings.browseHighlight
 
     var onEdit: ((BrowseItem, AppChoice) -> Void)?
@@ -106,7 +107,8 @@ final class BrowseModel: ObservableObject {
     }
 
     var filteredItems: [BrowseItem] {
-        let base = showHidden ? items : items.filter { !isHidden($0) }
+        var base = showHidden ? items : items.filter { !isHidden($0) }
+        if !showDisabled { base = base.filter { $0.enabled } }
         let q = query.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         guard !q.isEmpty else { return base }
         let tokens = q.split(separator: " ").map(String.init)
@@ -176,8 +178,8 @@ struct BrowseRowView: View {
     let isCustom: Bool
     let isFavorite: Bool
     let isHidden: Bool
-    let emphasized: Bool
-    let dimmed: Bool
+    let keyHighlight: Bool   // Modifier-Treffer → gelb
+    let selected: Bool       // Tastatur-Auswahl bei Suche → Akzent
     let zebra: Bool
     let onPerform: () -> Void
     let onEdit: () -> Void
@@ -187,7 +189,8 @@ struct BrowseRowView: View {
     @State private var hover = false
 
     private var fill: Color {
-        if emphasized { return Color.accentColor.opacity(0.30) }
+        if keyHighlight { return Color.yellow.opacity(0.35) }
+        if selected { return Color.accentColor.opacity(0.30) }
         if hover { return Color.accentColor.opacity(0.12) }
         if zebra { return Color.secondary.opacity(0.08) }
         return .clear
@@ -231,7 +234,7 @@ struct BrowseRowView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(RoundedRectangle(cornerRadius: 5).fill(fill))
         .contentShape(Rectangle())
-        .opacity((dimmed || isHidden) ? 0.45 : 1)
+        .opacity(isHidden ? 0.45 : 1)
         .font(.system(size: 13))
         .help(item.pathDisplay)
         .onHover { hover = $0 }
@@ -310,6 +313,9 @@ struct BrowseView: View {
                     tip: Strings.browseShowHidden) { model.showHidden.toggle() }
             navIcon("highlighter", active: model.highlightEnabled, tip: Strings.browseHighlightTip) {
                 model.toggleHighlight()
+            }
+            navIcon("circle.dashed", active: model.showDisabled, tip: Strings.browseShowDisabledTip) {
+                model.showDisabled.toggle()
             }
             navIcon("minus", active: false, tip: "Schmälere Spalten") {
                 model.setColumnWidth(model.columnWidth - 30)
@@ -439,15 +445,14 @@ struct BrowseView: View {
 
     private func row(_ item: BrowseItem, _ idx: Int) -> some View {
         let held = model.highlightEnabled ? model.heldMods : []
-        let modMatch = !held.isEmpty && !item.baseKey.isEmpty && item.modifiers == held
-        let selMatch = !model.query.isEmpty && item.id == model.selectedID
-        let dim = !held.isEmpty && !modMatch
+        let keyHighlight = !held.isEmpty && !item.baseKey.isEmpty && item.modifiers == held
+        let selected = !model.query.isEmpty && item.id == model.selectedID
         return BrowseRowView(item: item,
                              isCustom: model.isCustom(item),
                              isFavorite: model.isFavorite(item),
                              isHidden: model.isHidden(item),
-                             emphasized: modMatch || selMatch,
-                             dimmed: dim,
+                             keyHighlight: keyHighlight,
+                             selected: selected,
                              zebra: model.zebra && idx % 2 == 1,
                              onPerform: { model.perform(item) },
                              onEdit: { model.edit(item) },
