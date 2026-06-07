@@ -352,71 +352,80 @@ struct BrowseView: View {
         } else if filtered.isEmpty {
             info(model.items.isEmpty ? Strings.browseEmpty : Strings.browseNoMatch)
         } else {
-            GeometryReader { geo in
-                let cols = max(1, Int(geo.size.width / CGFloat(model.columnWidth)))
-                ScrollView { columnsLayout(cols).padding(12) }
-            }
-        }
-    }
-
-    private func columnsLayout(_ n: Int) -> some View {
-        var buckets = Array(repeating: [(String, [BrowseItem])](), count: n)
-        var heights = Array(repeating: 0, count: n)
-        for group in grouped {
-            let idx = heights.enumerated().min(by: { $0.element < $1.element })?.offset ?? 0
-            buckets[idx].append(group)
-            heights[idx] += (model.isCollapsed(group.0) ? 1 : group.1.count) + 3
-        }
-        return HStack(alignment: .top, spacing: 0) {
-            ForEach(0..<n, id: \.self) { i in
-                VStack(alignment: .leading, spacing: 14) {
-                    ForEach(buckets[i], id: \.0) { (cat, items) in
-                        categoryBlock(cat, items)
+            ScrollView([.horizontal, .vertical]) {
+                HStack(alignment: .top, spacing: 0) {
+                    ForEach(Array(grouped.enumerated()), id: \.element.0) { idx, group in
+                        if idx > 0 { Divider() }
+                        column(group.0, group.1)
                     }
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, 9)
-                if i < n - 1 { Divider() }
+                .padding(12)
             }
         }
     }
 
-    private func categoryBlock(_ cat: String, _ items: [BrowseItem]) -> some View {
+    @ViewBuilder private func column(_ cat: String, _ items: [BrowseItem]) -> some View {
+        if model.isCollapsed(cat) {
+            collapsedColumn(cat)
+        } else {
+            expandedColumn(cat, items)
+        }
+    }
+
+    private func expandedColumn(_ cat: String, _ items: [BrowseItem]) -> some View {
         VStack(alignment: .leading, spacing: 1) {
             Button { model.toggleCollapsed(cat) } label: {
                 HStack(spacing: 4) {
-                    Image(systemName: model.isCollapsed(cat) ? "chevron.right" : "chevron.down")
-                        .font(.system(size: 9, weight: .bold))
+                    Image(systemName: "chevron.down").font(.system(size: 9, weight: .bold))
                     Text(cat).font(.system(size: 12, weight: .bold))
                     Spacer()
                 }
-                .foregroundStyle(.secondary)
-                .contentShape(Rectangle())
+                .foregroundStyle(.secondary).contentShape(Rectangle())
             }
-            .buttonStyle(.plain)
-            .padding(.bottom, 3)
+            .buttonStyle(.plain).padding(.bottom, 3)
 
-            if !model.isCollapsed(cat) {
-                ForEach(Array(items.enumerated()), id: \.element.id) { idx, item in
-                    let held = model.heldMods
-                    let modMatch = !held.isEmpty && !item.baseKey.isEmpty && item.modifiers == held
-                    let selMatch = !model.query.isEmpty && item.id == model.selectedID
-                    let dim = !held.isEmpty && !modMatch
-                    BrowseRowView(item: item,
-                                  isCustom: model.isCustom(item),
-                                  isFavorite: model.isFavorite(item),
-                                  isHidden: model.isHidden(item),
-                                  emphasized: modMatch || selMatch,
-                                  dimmed: dim,
-                                  zebra: model.zebra && idx % 2 == 1,
-                                  onPerform: { model.perform(item) },
-                                  onEdit: { model.edit(item) },
-                                  onDelete: { model.requestDelete(item) },
-                                  onToggleFavorite: { model.toggleFavorite(item) },
-                                  onToggleHidden: { model.toggleHidden(item) })
-                }
+            ForEach(Array(items.enumerated()), id: \.element.id) { idx, item in
+                row(item, idx)
             }
         }
+        .frame(width: model.columnWidth, alignment: .leading)
+        .padding(.horizontal, 9)
+    }
+
+    /// Eingeklappte Spalte: schmal, Titel senkrecht (Buchstaben untereinander).
+    private func collapsedColumn(_ cat: String) -> some View {
+        Button { model.toggleCollapsed(cat) } label: {
+            VStack(spacing: 1) {
+                Image(systemName: "chevron.right").font(.system(size: 9, weight: .bold)).padding(.bottom, 3)
+                ForEach(Array(cat.enumerated()), id: \.offset) { _, ch in
+                    Text(String(ch)).font(.system(size: 11, weight: .bold))
+                }
+            }
+            .foregroundStyle(.secondary)
+            .frame(width: 18)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .padding(.horizontal, 6).padding(.top, 2)
+    }
+
+    private func row(_ item: BrowseItem, _ idx: Int) -> some View {
+        let held = model.heldMods
+        let modMatch = !held.isEmpty && !item.baseKey.isEmpty && item.modifiers == held
+        let selMatch = !model.query.isEmpty && item.id == model.selectedID
+        let dim = !held.isEmpty && !modMatch
+        return BrowseRowView(item: item,
+                             isCustom: model.isCustom(item),
+                             isFavorite: model.isFavorite(item),
+                             isHidden: model.isHidden(item),
+                             emphasized: modMatch || selMatch,
+                             dimmed: dim,
+                             zebra: model.zebra && idx % 2 == 1,
+                             onPerform: { model.perform(item) },
+                             onEdit: { model.edit(item) },
+                             onDelete: { model.requestDelete(item) },
+                             onToggleFavorite: { model.toggleFavorite(item) },
+                             onToggleHidden: { model.toggleHidden(item) })
     }
 
     private func info(_ text: String) -> some View {
