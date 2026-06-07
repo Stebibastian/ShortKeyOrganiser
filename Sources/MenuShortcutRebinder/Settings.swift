@@ -70,6 +70,12 @@ enum Settings {
         get { UserDefaults.standard.object(forKey: browseZebraKey) as? Bool ?? false }
         set { UserDefaults.standard.set(newValue, forKey: browseZebraKey) }
     }
+
+    private static let browseHighlightKey = "browseHighlight"
+    static var browseHighlight: Bool {
+        get { UserDefaults.standard.object(forKey: browseHighlightKey) as? Bool ?? true }
+        set { UserDefaults.standard.set(newValue, forKey: browseHighlightKey) }
+    }
 }
 
 /// Bekannte Modifier-Tasten, die als Auslöser taugen.

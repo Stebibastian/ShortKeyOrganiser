@@ -33,6 +33,7 @@ final class BrowseWindow: NSObject, NSWindowDelegate {
         isPeek = true
         pinned = false
         prepare(initialApp: initialApp)
+        model.heldMods = Self.mods(from: NSEvent.modifierFlags)   // schon gehaltene Modifier sofort highlighten
         window?.orderFrontRegardless()
     }
 
@@ -75,6 +76,7 @@ final class BrowseWindow: NSObject, NSWindowDelegate {
         model.collapsed = []
         model.showHidden = false
         model.showFavorites = true
+        model.highlightEnabled = Settings.browseHighlight
         model.refreshApps(preferredPid: initialApp?.processIdentifier)
         model.loadItems()
         applyWindowSize()

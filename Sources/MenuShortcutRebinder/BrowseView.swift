@@ -31,6 +31,7 @@ final class BrowseModel: ObservableObject {
     @Published var collapsed: Set<String> = []
     @Published var showHidden: Bool = false
     @Published var showFavorites: Bool = true
+    @Published var highlightEnabled: Bool = Settings.browseHighlight
 
     var onEdit: ((BrowseItem, AppChoice) -> Void)?
     var onDelete: ((BrowseItem, AppChoice) -> Void)?
@@ -138,6 +139,10 @@ final class BrowseModel: ObservableObject {
         let clamped = min(520, max(160, w))
         columnWidth = clamped
         Settings.browseColumnWidth = clamped
+    }
+    func toggleHighlight() {
+        highlightEnabled.toggle()
+        Settings.browseHighlight = highlightEnabled
     }
 }
 
@@ -303,6 +308,9 @@ struct BrowseView: View {
             }
             navIcon(model.showHidden ? "eye" : "eye.slash", active: model.showHidden,
                     tip: Strings.browseShowHidden) { model.showHidden.toggle() }
+            navIcon("highlighter", active: model.highlightEnabled, tip: Strings.browseHighlightTip) {
+                model.toggleHighlight()
+            }
             navIcon("minus", active: false, tip: "Schmälere Spalten") {
                 model.setColumnWidth(model.columnWidth - 30)
             }
@@ -430,7 +438,7 @@ struct BrowseView: View {
     }
 
     private func row(_ item: BrowseItem, _ idx: Int) -> some View {
-        let held = model.heldMods
+        let held = model.highlightEnabled ? model.heldMods : []
         let modMatch = !held.isEmpty && !item.baseKey.isEmpty && item.modifiers == held
         let selMatch = !model.query.isEmpty && item.id == model.selectedID
         let dim = !held.isEmpty && !modMatch
