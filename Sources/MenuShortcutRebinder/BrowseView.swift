@@ -411,7 +411,7 @@ struct BrowseView: View {
             Divider()
             content
         }
-        .frame(minWidth: 520, minHeight: 360)
+        .frame(minWidth: 520)   // Höhe folgt dem Fenster (Mindesthöhe wird am Fenster selbst gesetzt)
         .background(backdrop)
     }
 

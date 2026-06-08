@@ -151,6 +151,7 @@ final class BrowseWindow: NSObject, NSWindowDelegate {
         win.isReleasedWhenClosed = false
         win.isOpaque = false
         win.titlebarAppearsTransparent = true
+        win.contentMinSize = NSSize(width: 520, height: 300)   // verhindert ein zu flaches Fenster
         win.contentView = NSHostingView(rootView: BrowseView(model: model))
         win.delegate = self
         self.window = win
