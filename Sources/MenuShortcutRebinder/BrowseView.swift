@@ -568,7 +568,7 @@ struct BrowseView: View {
         } else {
             GeometryReader { geo in
                 let cols = packedColumns(geo.size)
-                ScrollView([.horizontal, .vertical]) {
+                ScrollView(.horizontal) {   // nur horizontal; vertikal passt alles ins Fenster (kein Scrollbalken-Teufelskreis)
                     HStack(alignment: .top, spacing: 0) {
                         ForEach(Array(cols.enumerated()), id: \.offset) { ci, colGroups in
                             if ci > 0 { Divider() }
@@ -580,8 +580,7 @@ struct BrowseView: View {
                         }
                     }
                     .padding(12)
-                    .frame(minWidth: geo.size.width, minHeight: geo.size.height,
-                           alignment: .topLeading)   // immer oben-links bündig (nicht zentriert)
+                    .frame(minWidth: geo.size.width, alignment: .topLeading)   // horizontal füllen; vertikal nur so hoch wie nötig (kein erzwungener Scroll)
                 }
             }
         }
@@ -603,7 +602,9 @@ struct BrowseView: View {
         // Spaltenweise bis zur Fensterhöhe füllen, dann die nächste Spalte beginnen – so wird bei
         // langen Listen horizontal weitergeblättert statt eine Spalte über den Fensterrand zu schieben.
         let rowH = model.fontSize + 7
-        let availRows = max(10, Int(size.height / rowH))
+        // Reserve für Padding + horizontalen Scrollbalken, damit jede Spalte sicher in die Fensterhöhe passt
+        // (es gibt kein vertikales Scrollen mehr, also darf nichts überlaufen).
+        let availRows = max(8, Int((size.height - 52) / rowH))
         // Überlange Sektionen vorab in mehrere Teile splitten, damit keine höher als das Fenster ist.
         // (Submenü-Überschriften erscheinen im Folgeteil automatisch wieder, da pro Spalte neu gruppiert.)
         var blocks: [(String, [BrowseItem])] = []
