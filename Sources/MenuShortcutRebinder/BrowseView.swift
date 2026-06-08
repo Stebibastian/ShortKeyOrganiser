@@ -568,7 +568,7 @@ struct BrowseView: View {
         } else {
             GeometryReader { geo in
                 let cols = packedColumns(geo.size)
-                ScrollView(.horizontal) {   // nur horizontal; vertikal passt alles ins Fenster (kein Scrollbalken-Teufelskreis)
+                ScrollView([.horizontal, .vertical]) {   // beide Richtungen; ohne erzwungene minHeight kein Teufelskreis, aber nichts wird abgeschnitten
                     HStack(alignment: .top, spacing: 0) {
                         ForEach(Array(cols.enumerated()), id: \.offset) { ci, colGroups in
                             if ci > 0 { Divider() }
