@@ -60,7 +60,7 @@ enum FullMenuScanner {
         var key = ""
         if let ch = rawAttr(item, "AXMenuItemCmdChar") as? String,
            !ch.trimmingCharacters(in: .whitespaces).isEmpty {
-            key = ch.uppercased()
+            key = symbolFor(ch)
         } else if let vk = rawAttr(item, "AXMenuItemCmdVirtualKey") as? Int, let sym = vkMap[vk] {
             key = sym
         }
@@ -86,6 +86,21 @@ enum FullMenuScanner {
     private static func title(_ el: AXUIElement) -> String {
         (rawAttr(el, "AXTitle") as? String) ?? ""
     }
+
+    /// Wandelt ein AX-Kürzelzeichen in die lesbare Form. Pfeil-/Funktionstasten liefert macOS als
+    /// Unicode-Funktionstasten (U+F700…), die sonst als „?" erscheinen würden.
+    private static func symbolFor(_ ch: String) -> String {
+        if let scalar = ch.unicodeScalars.first, let sym = fkMap[scalar.value] { return sym }
+        return ch.uppercased()
+    }
+
+    private static let fkMap: [UInt32: String] = [
+        0xF700: "↑", 0xF701: "↓", 0xF702: "←", 0xF703: "→",
+        0xF728: "⌦", 0xF729: "↖", 0xF72B: "↘", 0xF72C: "⇞", 0xF72D: "⇟",
+        0xF704: "F1", 0xF705: "F2", 0xF706: "F3", 0xF707: "F4", 0xF708: "F5",
+        0xF709: "F6", 0xF70A: "F7", 0xF70B: "F8", 0xF70C: "F9", 0xF70D: "F10",
+        0xF70E: "F11", 0xF70F: "F12", 0xF710: "F13", 0xF711: "F14", 0xF712: "F15",
+    ]
 
     private static let vkMap: [Int: String] = [
         36: "↩", 48: "⇥", 49: "Leertaste", 51: "⌫", 53: "⎋", 71: "⌧",
