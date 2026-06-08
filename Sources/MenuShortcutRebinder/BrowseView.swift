@@ -586,6 +586,7 @@ struct BrowseView: View {
                            minHeight: max(0, geo.size.height - 20),
                            alignment: .topLeading)
                 }
+                .scrollIndicators(.hidden, axes: .vertical)   // kein vertikaler Balken → löst keinen Teufelskreis aus; vertikal scrollen geht weiter per Trackpad
             }
         }
     }
