@@ -46,6 +46,29 @@ enum Settings {
         set { UserDefaults.standard.set(newValue, forKey: browseSizeLinkedKey) }
     }
 
+    private static let browseRememberPosKey = "browseRememberPosition"
+    /// true = Fenster öffnet an der zuletzt genutzten Position; false = immer zentriert.
+    static var browseRememberPosition: Bool {
+        get { UserDefaults.standard.bool(forKey: browseRememberPosKey) }   // Standard: zentriert
+        set { UserDefaults.standard.set(newValue, forKey: browseRememberPosKey) }
+    }
+
+    private static let browsePosXKey = "browsePosX"
+    private static let browsePosYKey = "browsePosY"
+    /// Zuletzt genutzte Fensterposition (nil = noch keine gemerkt).
+    static var browsePosition: CGPoint? {
+        get {
+            let d = UserDefaults.standard
+            guard d.object(forKey: browsePosXKey) != nil else { return nil }
+            return CGPoint(x: d.double(forKey: browsePosXKey), y: d.double(forKey: browsePosYKey))
+        }
+        set {
+            let d = UserDefaults.standard
+            if let p = newValue { d.set(p.x, forKey: browsePosXKey); d.set(p.y, forKey: browsePosYKey) }
+            else { d.removeObject(forKey: browsePosXKey); d.removeObject(forKey: browsePosYKey) }
+        }
+    }
+
     private static let browseColumnWidthKey = "browseColumnWidth"
     static let defaultBrowseColumnWidth = 250.0
     /// Gewünschte Spaltenbreite (160-520 pt) der „Befehle durchsuchen"-Ansicht; bestimmt die Spaltenzahl.

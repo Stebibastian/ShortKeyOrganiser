@@ -15,6 +15,7 @@ final class BrowseWindow: NSObject, NSWindowDelegate {
     private var flagsMonitors: [Any] = []
     private var isPeek = false
     private var pinned = false
+    private var suppressMoveSave = false   // unterdrückt Positions-Speichern beim programmatischen Platzieren
 
     func present(initialApp: NSRunningApplication?) {
         if window == nil { build() }
@@ -104,13 +105,45 @@ final class BrowseWindow: NSObject, NSWindowDelegate {
                                                       : Settings.browseHeightPercent)
         window.setContentSize(NSSize(width: (vf.width * wPct).rounded(),
                                      height: (vf.height * hPct).rounded()))
-        window.setFrameOrigin(NSPoint(x: vf.minX + (vf.width - window.frame.width) / 2,
-                                      y: vf.minY + (vf.height - window.frame.height) / 2))
+        suppressMoveSave = true
+        if Settings.browseRememberPosition, let pos = Settings.browsePosition,
+           vf.intersects(NSRect(origin: pos, size: window.frame.size)) {
+            window.setFrameOrigin(pos)
+        } else {
+            window.setFrameOrigin(NSPoint(x: vf.minX + (vf.width - window.frame.width) / 2,
+                                          y: vf.minY + (vf.height - window.frame.height) / 2))
+        }
+        DispatchQueue.main.async { self.suppressMoveSave = false }
+    }
+
+    func windowDidEndLiveResize(_ notification: Notification) { offerSaveSize() }
+
+    func windowDidMove(_ notification: Notification) {
+        guard !suppressMoveSave, Settings.browseRememberPosition,
+              let w = window, w.isVisible else { return }
+        Settings.browsePosition = w.frame.origin
+    }
+
+    /// Fragt nach einem manuellen Resize, ob die neue Größe als Standard übernommen werden soll.
+    private func offerSaveSize() {
+        guard let window, let screen = NSScreen.main else { return }
+        let vf = screen.visibleFrame
+        let alert = NSAlert()
+        alert.messageText = Strings.sizeSaveTitle
+        alert.informativeText = Strings.sizeSaveBody
+        alert.addButton(withTitle: Strings.sizeSaveDefault)
+        alert.addButton(withTitle: Strings.sizeSaveTemp)
+        if alert.runModal() == .alertFirstButtonReturn {
+            Settings.browseScreenPercent = Double(window.frame.width / vf.width)
+            Settings.browseHeightPercent = Double(window.frame.height / vf.height)
+            Settings.browseSizeLinked = false
+            if Settings.browseRememberPosition { Settings.browsePosition = window.frame.origin }
+        }
     }
 
     private func build() {
         let win = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 900, height: 600),
-                           styleMask: [.titled, .closable, .fullSizeContentView],
+                           styleMask: [.titled, .closable, .resizable, .fullSizeContentView],
                            backing: .buffered, defer: false)
         win.title = Strings.browseTitle
         win.titleVisibility = .hidden                 // kein Titeltext, Inhalt reicht bis oben

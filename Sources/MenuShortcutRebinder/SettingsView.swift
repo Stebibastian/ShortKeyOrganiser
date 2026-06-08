@@ -16,6 +16,7 @@ struct SettingsView: View {
     @State var zebra: Bool
     @State var keyLeft: Bool
     @State var compactSections: Bool
+    @State var rememberPosition: Bool
     @State var transparency: Double
     @State var backgroundStyle: Int
     @State var opaqueRows: Bool
@@ -160,6 +161,7 @@ struct SettingsView: View {
                 toggleRow(Strings.setOpaqueRows, $opaqueRows)
             }
             toggleRow(Strings.setCompactSections, $compactSections)
+            toggleRow(Strings.setRememberPosition, $rememberPosition)
             toggleRow(Strings.setZebra, $zebra)
             toggleRow(Strings.setKeyLeft, $keyLeft)
         }
@@ -286,6 +288,7 @@ struct SettingsView: View {
         Settings.browseZebra = zebra
         Settings.browseKeyLeft = keyLeft
         Settings.browseCompactSections = compactSections
+        Settings.browseRememberPosition = rememberPosition
         Settings.browseTransparency = transparency
         Settings.browseBackgroundStyle = backgroundStyle
         Settings.browseOpaqueRows = opaqueRows
@@ -323,6 +326,7 @@ final class SettingsWindow: NSObject {
             zebra: Settings.browseZebra,
             keyLeft: Settings.browseKeyLeft,
             compactSections: Settings.browseCompactSections,
+            rememberPosition: Settings.browseRememberPosition,
             transparency: Settings.browseTransparency,
             backgroundStyle: Settings.browseBackgroundStyle,
             opaqueRows: Settings.browseOpaqueRows,
