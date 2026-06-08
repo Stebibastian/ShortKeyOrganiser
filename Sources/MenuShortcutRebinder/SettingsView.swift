@@ -16,7 +16,7 @@ struct SettingsView: View {
     @State var zebra: Bool
     @State var keyLeft: Bool
     @State var compactSections: Bool
-    @State var rememberPosition: Bool
+    @State var anchor: Int
     @State var transparency: Double
     @State var backgroundStyle: Int
     @State var opaqueRows: Bool
@@ -161,7 +161,7 @@ struct SettingsView: View {
                 toggleRow(Strings.setOpaqueRows, $opaqueRows)
             }
             toggleRow(Strings.setCompactSections, $compactSections)
-            toggleRow(Strings.setRememberPosition, $rememberPosition)
+            row(Strings.setPosition) { positionGrid }
             toggleRow(Strings.setZebra, $zebra)
             toggleRow(Strings.setKeyLeft, $keyLeft)
         }
@@ -260,6 +260,26 @@ struct SettingsView: View {
         }
     }
 
+    /// 3×3-Raster zur Wahl der Fensterposition (Mitte / Kanten / Ecken).
+    private var positionGrid: some View {
+        let codes = [5, 1, 6, 3, 0, 4, 7, 2, 8]   // oben-links, oben, oben-rechts, links, Mitte, …
+        return VStack(spacing: 4) {
+            ForEach(0..<3, id: \.self) { r in
+                HStack(spacing: 4) {
+                    ForEach(0..<3, id: \.self) { c in
+                        let a = codes[r * 3 + c]
+                        Button { anchor = a; commit() } label: {
+                            RoundedRectangle(cornerRadius: 3)
+                                .fill(anchor == a ? Color.accentColor : Color.secondary.opacity(0.18))
+                                .frame(width: 28, height: 18)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+            }
+        }
+    }
+
     private func slider(_ label: String, _ value: Binding<Double>, _ range: ClosedRange<Double>,
                         _ step: Double, _ unit: String, scale: Double = 1, disabled: Bool = false,
                         live: Bool = false) -> some View {
@@ -288,7 +308,7 @@ struct SettingsView: View {
         Settings.browseZebra = zebra
         Settings.browseKeyLeft = keyLeft
         Settings.browseCompactSections = compactSections
-        Settings.browseRememberPosition = rememberPosition
+        Settings.browseAnchor = anchor
         Settings.browseTransparency = transparency
         Settings.browseBackgroundStyle = backgroundStyle
         Settings.browseOpaqueRows = opaqueRows
@@ -326,7 +346,7 @@ final class SettingsWindow: NSObject {
             zebra: Settings.browseZebra,
             keyLeft: Settings.browseKeyLeft,
             compactSections: Settings.browseCompactSections,
-            rememberPosition: Settings.browseRememberPosition,
+            anchor: Settings.browseAnchor,
             transparency: Settings.browseTransparency,
             backgroundStyle: Settings.browseBackgroundStyle,
             opaqueRows: Settings.browseOpaqueRows,

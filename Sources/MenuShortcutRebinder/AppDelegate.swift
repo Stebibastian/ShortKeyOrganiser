@@ -157,8 +157,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
         menu.addItem(NSMenuItem(title: Strings.menuBrowse,
                                 action: #selector(openBrowse), keyEquivalent: ""))
-        menu.addItem(NSMenuItem(title: Strings.menuSavePosition,
-                                action: #selector(saveBrowsePosition), keyEquivalent: ""))
         menu.addItem(NSMenuItem(title: Strings.menuTutorial,
                                 action: #selector(openTutorial), keyEquivalent: ""))
         menu.addItem(NSMenuItem(title: Strings.menuSettings,
@@ -220,10 +218,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     @objc private func openTutorial() {
         OnboardingWindow.shared.present()
-    }
-
-    @objc private func saveBrowsePosition() {
-        BrowseWindow.shared.saveCurrentPosition()
     }
 
     private func configurePeek() {

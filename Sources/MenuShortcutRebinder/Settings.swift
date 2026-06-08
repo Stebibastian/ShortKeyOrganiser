@@ -46,27 +46,11 @@ enum Settings {
         set { UserDefaults.standard.set(newValue, forKey: browseSizeLinkedKey) }
     }
 
-    private static let browseRememberPosKey = "browseRememberPosition"
-    /// true = Fenster öffnet an der zuletzt genutzten Position; false = immer zentriert.
-    static var browseRememberPosition: Bool {
-        get { UserDefaults.standard.bool(forKey: browseRememberPosKey) }   // Standard: zentriert
-        set { UserDefaults.standard.set(newValue, forKey: browseRememberPosKey) }
-    }
-
-    private static let browsePosXKey = "browsePosX"
-    private static let browsePosYKey = "browsePosY"
-    /// Zuletzt genutzte Fensterposition (nil = noch keine gemerkt).
-    static var browsePosition: CGPoint? {
-        get {
-            let d = UserDefaults.standard
-            guard d.object(forKey: browsePosXKey) != nil else { return nil }
-            return CGPoint(x: d.double(forKey: browsePosXKey), y: d.double(forKey: browsePosYKey))
-        }
-        set {
-            let d = UserDefaults.standard
-            if let p = newValue { d.set(p.x, forKey: browsePosXKey); d.set(p.y, forKey: browsePosYKey) }
-            else { d.removeObject(forKey: browsePosXKey); d.removeObject(forKey: browsePosYKey) }
-        }
+    private static let browseAnchorKey = "browseAnchor"
+    /// Fenster-Anker: 0=Mitte, 1=oben, 2=unten, 3=links, 4=rechts, 5=oben-links, 6=oben-rechts, 7=unten-links, 8=unten-rechts.
+    static var browseAnchor: Int {
+        get { UserDefaults.standard.object(forKey: browseAnchorKey) as? Int ?? 0 }
+        set { UserDefaults.standard.set(newValue, forKey: browseAnchorKey) }
     }
 
     private static let browseColumnWidthKey = "browseColumnWidth"

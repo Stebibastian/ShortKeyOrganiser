@@ -15,7 +15,6 @@ final class BrowseWindow: NSObject, NSWindowDelegate {
     private var flagsMonitors: [Any] = []
     private var isPeek = false
     private var pinned = false
-    private var suppressMoveSave = false   // unterdrückt Positions-Speichern beim programmatischen Platzieren
 
     func present(initialApp: NSRunningApplication?) {
         if window == nil { build() }
@@ -105,32 +104,26 @@ final class BrowseWindow: NSObject, NSWindowDelegate {
                                                       : Settings.browseHeightPercent)
         window.setContentSize(NSSize(width: (vf.width * wPct).rounded(),
                                      height: (vf.height * hPct).rounded()))
-        suppressMoveSave = true
-        if Settings.browseRememberPosition, let pos = Settings.browsePosition,
-           vf.intersects(NSRect(origin: pos, size: window.frame.size)) {
-            window.setFrameOrigin(pos)
-        } else {
-            window.setFrameOrigin(NSPoint(x: vf.minX + (vf.width - window.frame.width) / 2,
-                                          y: vf.minY + (vf.height - window.frame.height) / 2))
-        }
-        DispatchQueue.main.async { self.suppressMoveSave = false }
+        // Anker-basiert positionieren – relativ zum aktuellen Bildschirm, funktioniert mit mehreren Monitoren.
+        let w = window.frame.width, h = window.frame.height, m: CGFloat = 12
+        let (col, rowTop) = Self.anchorColRow(Settings.browseAnchor)
+        let x = col == 0 ? vf.minX + m : (col == 2 ? vf.maxX - w - m : vf.minX + (vf.width - w) / 2)
+        let y = rowTop == 0 ? vf.maxY - h - m : (rowTop == 2 ? vf.minY + m : vf.minY + (vf.height - h) / 2)
+        window.setFrameOrigin(NSPoint(x: x, y: y))
     }
 
-    /// Speichert die aktuelle Fensterposition als feste Position und aktiviert das Positions-Merken.
-    func saveCurrentPosition() {
-        guard let window, window.isVisible else { HUD.show(Strings.posNeedOpen); return }
-        Settings.browsePosition = window.frame.origin
-        Settings.browseRememberPosition = true
-        HUD.show(Strings.posSaved)
+    /// Anker-Code → (Spalte 0=links/1=mitte/2=rechts, Zeile 0=oben/1=mitte/2=unten).
+    static func anchorColRow(_ a: Int) -> (Int, Int) {
+        switch a {
+        case 1: return (1, 0); case 2: return (1, 2)      // oben / unten
+        case 3: return (0, 1); case 4: return (2, 1)      // links / rechts
+        case 5: return (0, 0); case 6: return (2, 0)      // oben-links / oben-rechts
+        case 7: return (0, 2); case 8: return (2, 2)      // unten-links / unten-rechts
+        default: return (1, 1)                            // Mitte
+        }
     }
 
     func windowDidEndLiveResize(_ notification: Notification) { offerSaveSize() }
-
-    func windowDidMove(_ notification: Notification) {
-        guard !suppressMoveSave, Settings.browseRememberPosition,
-              let w = window, w.isVisible else { return }
-        Settings.browsePosition = w.frame.origin
-    }
 
     /// Fragt nach einem manuellen Resize, ob die neue Größe als Standard übernommen werden soll.
     private func offerSaveSize() {
@@ -145,7 +138,6 @@ final class BrowseWindow: NSObject, NSWindowDelegate {
             Settings.browseScreenPercent = Double(window.frame.width / vf.width)
             Settings.browseHeightPercent = Double(window.frame.height / vf.height)
             Settings.browseSizeLinked = false
-            if Settings.browseRememberPosition { Settings.browsePosition = window.frame.origin }
         }
     }
 

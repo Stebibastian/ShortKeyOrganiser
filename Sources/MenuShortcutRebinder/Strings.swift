@@ -78,7 +78,7 @@ enum Strings {
     static var setZebra: String { s("Zebra-Streifen (abwechselnde Zeilenfarbe)", "Zebra stripes (alternating row colour)", fr: "Rayures zébrées (couleurs alternées)", es: "Rayas cebra (colores alternos)", it: "Strisce zebrate (colori alternati)") }
     static var setKeyLeft: String { s("Tastenkürzel links, Name rechts", "Shortcut on the left, name on the right", fr: "Raccourci à gauche, nom à droite", es: "Atajo a la izquierda, nombre a la derecha", it: "Scorciatoia a sinistra, nome a destra") }
     static var setCompactSections: String { s("Sektionen kompakt gruppieren (mehrere je Spalte)", "Group sections compactly (several per column)", fr: "Grouper les sections de façon compacte (plusieurs par colonne)", es: "Agrupar secciones de forma compacta (varias por columna)", it: "Raggruppa le sezioni in modo compatto (più per colonna)") }
-    static var setRememberPosition: String { s("Fensterposition merken (sonst zentriert)", "Remember window position (otherwise centred)", fr: "Mémoriser la position de la fenêtre (sinon centrée)", es: "Recordar la posición de la ventana (si no, centrada)", it: "Ricorda la posizione della finestra (altrimenti centrata)") }
+    static var setPosition: String { s("Fensterposition", "Window position", fr: "Position de la fenêtre", es: "Posición de la ventana", it: "Posizione della finestra") }
     static var sizeSaveTitle: String { s("Fenstergröße geändert", "Window size changed", fr: "Taille de fenêtre modifiée", es: "Tamaño de ventana cambiado", it: "Dimensione finestra modificata") }
     static var sizeSaveBody: String { s("Möchtest du die neue Größe als Standard übernehmen oder nur dieses Mal verwenden?", "Use the new size as the default, or just this time?", fr: "Utiliser la nouvelle taille par défaut ou seulement cette fois ?", es: "¿Usar el nuevo tamaño como predeterminado o solo esta vez?", it: "Usare la nuova dimensione come predefinita o solo questa volta?") }
     static var sizeSaveDefault: String { s("Als Standard", "Set as default", fr: "Par défaut", es: "Predeterminado", it: "Come predefinita") }
@@ -216,9 +216,6 @@ enum Strings {
 
     // Onboarding / Tutorial
     static var menuTutorial: String { s("Einführung …", "Tutorial …", fr: "Tutoriel …", es: "Tutorial …", it: "Tutorial …") }
-    static var menuSavePosition: String { s("Fensterposition speichern", "Save window position", fr: "Enregistrer la position de la fenêtre", es: "Guardar posición de la ventana", it: "Salva posizione finestra") }
-    static var posSaved: String { s("Position gespeichert", "Position saved", fr: "Position enregistrée", es: "Posición guardada", it: "Posizione salvata") }
-    static var posNeedOpen: String { s("Öffne zuerst das Fenster (3× Command).", "Open the window first (Command ×3).", fr: "Ouvre d'abord la fenêtre (Commande ×3).", es: "Abre primero la ventana (Comando ×3).", it: "Apri prima la finestra (Comando ×3).") }
     static var obIntroTitle: String { s("Willkommen bei ShortKeyOrganiser", "Welcome to ShortKeyOrganiser", fr: "Bienvenue dans ShortKeyOrganiser", es: "Bienvenido a ShortKeyOrganiser", it: "Benvenuto in ShortKeyOrganiser") }
     static var obIntroDesc: String { s("Drei kurze Gesten – probier sie gleich selbst aus. Überspringen geht jederzeit.", "Three quick gestures – try them yourself right now. You can skip anytime.", fr: "Trois gestes rapides – essaie-les tout de suite. Tu peux passer à tout moment.", es: "Tres gestos rápidos: pruébalos ahora mismo. Puedes omitir cuando quieras.", it: "Tre gesti rapidi – provali subito. Puoi saltare in qualsiasi momento.") }
     static var obStart: String { s("Los geht’s", "Get started", fr: "Commencer", es: "Empezar", it: "Inizia") }
