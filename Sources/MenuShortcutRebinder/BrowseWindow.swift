@@ -116,6 +116,14 @@ final class BrowseWindow: NSObject, NSWindowDelegate {
         DispatchQueue.main.async { self.suppressMoveSave = false }
     }
 
+    /// Speichert die aktuelle Fensterposition als feste Position und aktiviert das Positions-Merken.
+    func saveCurrentPosition() {
+        guard let window, window.isVisible else { HUD.show(Strings.posNeedOpen); return }
+        Settings.browsePosition = window.frame.origin
+        Settings.browseRememberPosition = true
+        HUD.show(Strings.posSaved)
+    }
+
     func windowDidEndLiveResize(_ notification: Notification) { offerSaveSize() }
 
     func windowDidMove(_ notification: Notification) {
