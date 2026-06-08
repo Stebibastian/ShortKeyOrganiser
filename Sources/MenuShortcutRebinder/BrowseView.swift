@@ -580,7 +580,11 @@ struct BrowseView: View {
                         }
                     }
                     .padding(12)
-                    .frame(minWidth: geo.size.width, alignment: .topLeading)   // horizontal füllen; vertikal nur so hoch wie nötig (kein erzwungener Scroll)
+                    // Oben-links bündig: minHeight füllt das Fenster (kein Zentrieren), aber 20px Reserve
+                    // lassen Platz für den horizontalen Scrollbalken → er löst keinen vertikalen aus (kein Teufelskreis).
+                    .frame(minWidth: geo.size.width,
+                           minHeight: max(0, geo.size.height - 20),
+                           alignment: .topLeading)
                 }
             }
         }
