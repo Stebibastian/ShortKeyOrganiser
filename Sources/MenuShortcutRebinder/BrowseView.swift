@@ -108,6 +108,12 @@ final class BrowseModel: ObservableObject {
         loadItems()
     }
 
+    /// Spalten kombinieren (kompakt) ⇄ entgruppieren (klassisch) – wie der Schalter in den Einstellungen.
+    func toggleCompact() {
+        compactSections.toggle()
+        Settings.browseCompactSections = compactSections
+    }
+
     // MARK: Favoriten / Ausblenden / Einklappen
     func itemKey(_ item: BrowseItem) -> String { (kmMode ? "KM" : (currentApp?.bundleID ?? "")) + "|" + item.pathDisplay }
     func isFavorite(_ item: BrowseItem) -> Bool { favorites.contains(itemKey(item)) }
@@ -464,6 +470,7 @@ struct BrowseView: View {
             }
             navIcon("square.and.arrow.up", active: false, tip: Strings.browsePdfTip) { exportPDF() }
             navIcon("list.bullet", active: false, tip: Strings.browseManageTip) { model.manage() }
+            navIcon("rectangle.grid.1x2", active: model.compactSections, tip: Strings.browseCompactTip) { model.toggleCompact() }
             navIcon("gearshape", active: false, tip: Strings.browseSettingsTip) { model.openSettings() }
 
             Spacer()
