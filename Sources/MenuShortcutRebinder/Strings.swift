@@ -107,6 +107,7 @@ enum Strings {
 
     // Updates
     static var updateInstalling: String { s("Update wird installiert …", "Installing update …") }
+    static var updateRelaunchHint: String { s("ShortKeyOrganiser wird heruntergeladen und startet sich neu.", "ShortKeyOrganiser is downloading and will relaunch.", fr: "ShortKeyOrganiser se télécharge et redémarre.", es: "ShortKeyOrganiser se está descargando y se reiniciará.", it: "ShortKeyOrganiser si sta scaricando e si riavvierà.") }
     static func updateTitle(_ v: String) -> String { s("Version \(v) ist verfügbar", "Version \(v) is available") }
     static var updateBody: String { s("Eine neuere Version von ShortKeyOrganiser ist verfügbar. Jetzt laden und installieren?", "A newer version of ShortKeyOrganiser is available. Download and install now?") }
     static var updateInstall: String { s("Jetzt aktualisieren", "Update now", fr: "Mettre à jour", es: "Actualizar ahora", it: "Aggiorna ora") }
