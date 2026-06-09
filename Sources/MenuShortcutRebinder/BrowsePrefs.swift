@@ -5,6 +5,7 @@ import Foundation
 enum BrowsePrefs {
     private static let favKey = "browseFavorites"
     private static let hidKey = "browseHidden"
+    private static let colKey = "browseCollapsed"
 
     static var favorites: Set<String> {
         get { Set(UserDefaults.standard.stringArray(forKey: favKey) ?? []) }
@@ -13,5 +14,10 @@ enum BrowsePrefs {
     static var hidden: Set<String> {
         get { Set(UserDefaults.standard.stringArray(forKey: hidKey) ?? []) }
         set { UserDefaults.standard.set(Array(newValue), forKey: hidKey) }
+    }
+    /// Eingeklappte Kategorien (Schlüssel „<bundleID>|<Kategorie>"), bleibt über Öffnen hinweg erhalten.
+    static var collapsed: Set<String> {
+        get { Set(UserDefaults.standard.stringArray(forKey: colKey) ?? []) }
+        set { UserDefaults.standard.set(Array(newValue), forKey: colKey) }
     }
 }

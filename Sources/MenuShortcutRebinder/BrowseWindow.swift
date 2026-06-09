@@ -78,7 +78,7 @@ final class BrowseWindow: NSObject, NSWindowDelegate {
         model.heldMods = []
         model.favorites = BrowsePrefs.favorites
         model.hidden = BrowsePrefs.hidden
-        model.collapsed = []
+        model.collapsed = BrowsePrefs.collapsed   // eingeklappte Kategorien bleiben über Öffnen hinweg erhalten
         model.showHidden = false
         model.showFavorites = true
         model.showDisabled = false

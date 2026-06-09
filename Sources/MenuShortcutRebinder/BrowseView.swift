@@ -29,7 +29,7 @@ final class BrowseModel: ObservableObject {
     @Published var searchActive: Bool = false
     @Published var favorites: Set<String> = BrowsePrefs.favorites
     @Published var hidden: Set<String> = BrowsePrefs.hidden
-    @Published var collapsed: Set<String> = []
+    @Published var collapsed: Set<String> = BrowsePrefs.collapsed
     @Published var showHidden: Bool = false
     @Published var showFavorites: Bool = true
     @Published var showDisabled: Bool = false
@@ -104,7 +104,6 @@ final class BrowseModel: ObservableObject {
     func toggleKM() {
         kmMode.toggle()
         query = ""
-        collapsed = []
         loadItems()
     }
 
@@ -128,9 +127,12 @@ final class BrowseModel: ObservableObject {
         if hidden.contains(k) { hidden.remove(k) } else { hidden.insert(k) }
         BrowsePrefs.hidden = hidden
     }
-    func isCollapsed(_ cat: String) -> Bool { collapsed.contains(cat) }
+    func collapseKey(_ cat: String) -> String { (kmMode ? "KM" : (currentApp?.bundleID ?? "")) + "|" + cat }
+    func isCollapsed(_ cat: String) -> Bool { collapsed.contains(collapseKey(cat)) }
     func toggleCollapsed(_ cat: String) {
-        if collapsed.contains(cat) { collapsed.remove(cat) } else { collapsed.insert(cat) }
+        let k = collapseKey(cat)
+        if collapsed.contains(k) { collapsed.remove(k) } else { collapsed.insert(k) }
+        BrowsePrefs.collapsed = collapsed
     }
 
     var filteredItems: [BrowseItem] {
@@ -649,7 +651,11 @@ struct BrowseView: View {
 
     @ViewBuilder private func column(_ cat: String, _ items: [BrowseItem]) -> some View {
         if model.isCollapsed(cat) {
-            collapsedColumn(cat)
+            if model.compactSections {
+                collapsedHeader(cat)          // kompakt: nur die Überschrift, Spalte bleibt mit anderen Sektionen
+            } else {
+                collapsedColumnNarrow(cat)    // klassisch: ganze Spalte schmal, Titel gedreht
+            }
         } else {
             expandedColumn(cat, items)
         }
@@ -699,20 +705,44 @@ struct BrowseView: View {
         return (direct + subs).map { ($0, dict[$0]!) }
     }
 
-    /// Eingeklappte Spalte: schmal; der Titel als Ganzes um 90° gedreht (von oben nach unten).
-    /// Eingeklappte Sektion: nur die Überschrift (im Masonry-Layout sitzt sie in einer Spalte mit anderen).
-    private func collapsedColumn(_ cat: String) -> some View {
+    /// Kompakt-Modus: eingeklappte Sektion = nur die hervorgehobene Überschrift (die Spalte bleibt bestehen).
+    private func collapsedHeader(_ cat: String) -> some View {
         Button { model.toggleCollapsed(cat) } label: {
             HStack(spacing: 4) {
                 Image(systemName: "chevron.right").font(.system(size: 9, weight: .bold))
                 Text(cat).font(.system(size: 12, weight: .bold))
                 Spacer()
             }
-            .foregroundStyle(.secondary).contentShape(Rectangle())
+            .foregroundStyle(.secondary)
+            .padding(.vertical, 3).padding(.horizontal, 6)
+            .background(RoundedRectangle(cornerRadius: 5).fill(Color.secondary.opacity(0.14)))
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .frame(width: model.columnWidth, alignment: .leading)
         .padding(.horizontal, 9)
+    }
+
+    /// Klassisch-Modus: eingeklappte Spalte = schmal, Titel um 90° gedreht, leicht hervorgehoben.
+    private func collapsedColumnNarrow(_ cat: String) -> some View {
+        Button { model.toggleCollapsed(cat) } label: {
+            VStack(spacing: 8) {
+                Image(systemName: "chevron.right").font(.system(size: 9, weight: .bold))
+                Text(cat)
+                    .font(.system(size: 12, weight: .bold))
+                    .lineLimit(1).fixedSize()
+                    .rotationEffect(.degrees(90))
+                    .frame(width: 16, height: 140)
+                    .clipped()
+            }
+            .frame(width: 30)
+            .padding(.vertical, 6)
+            .background(RoundedRectangle(cornerRadius: 5).fill(Color.secondary.opacity(0.14)))
+            .foregroundStyle(.secondary)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .padding(.top, 4)
     }
 
     private func row(_ item: BrowseItem, _ idx: Int) -> some View {
