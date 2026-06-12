@@ -16,12 +16,14 @@ Runs as a menu-bar agent (no Dock icon). Built in Swift/AppKit + SwiftUI on nati
 ## Features
 
 - **Searchable overlay** of the front app's commands, grouped by menu, with colour-coded modifiers (⌘ blue, ⇧ green, ⌥ orange, ⌃ pink).
+- **Fast loading:** menus appear incrementally with skeleton placeholders while scanning, attribute reads are batched, and the last scan per app is cached and refreshed in the background - even apps with thousands of menu items (looking at you, FileMaker) feel instant.
 - **Live key highlight:** hold ⌘ (or any modifier) and the commands you could trigger light up in yellow.
-- **Run a command** by clicking its row; **rebind** or **reset** a shortcut inline.
-- **Peek & pin triggers:** double-tap-and-hold = peek, triple-tap = stay open. Modifier and timings are configurable.
+- **Run a command** by clicking its row or with ↑/↓ + Return; **rebind** or **reset** a shortcut inline.
+- **Configurable triggers:** choose the press count (2-5×) for the quick peek and the pinned-open gesture, optionally with hold at the end - with a live test field in Settings.
+- **Recently used** commands appear as their own group, next to favourites.
 - **Favourites, hide, collapsible columns** - a collapsed column shrinks to a slim lane with a rotated title.
 - **Background style:** opaque, see-through (adjustable), or frosted glass.
-- **Central settings** with a sidebar: Shortcuts, View, Management & Help.
+- **Central settings** with tabs (Shortcuts, Display, About) and a reset-to-defaults button.
 
 ## Install
 
@@ -54,7 +56,7 @@ cd ShortKeyOrganiser
 
 ## Usage
 
-**Overlay:** press the trigger key **twice and hold** on the second press → the overlay appears with every shortcut of the front app. Press **three times** to keep it open and searchable (Esc closes it). While the overlay is up, hold a modifier to highlight matching commands; type a ⌘-shortcut to run it directly; click a row to run it.
+**Overlay:** press the trigger key **twice and hold** on the second press → the overlay appears with every shortcut of the front app. Press **three times** to keep it open and searchable (Esc closes it). Both gestures (press count, hold) are configurable in **Settings → Shortcuts**, including a live test field. While the overlay is up, hold a modifier to highlight matching commands; type a ⌘-shortcut to run it directly; click a row or use ↑/↓ + Return to run a command.
 
 **Rebind a shortcut:**
 
