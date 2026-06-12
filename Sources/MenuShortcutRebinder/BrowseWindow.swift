@@ -81,6 +81,7 @@ final class BrowseWindow: NSObject, NSWindowDelegate {
         model.collapsed = BrowsePrefs.collapsed   // eingeklappte Kategorien bleiben über Öffnen hinweg erhalten
         model.showHidden = false
         model.showFavorites = true
+        model.showRecents = Settings.browseShowRecents
         model.showDisabled = false
         model.kmMode = false   // beim Öffnen immer die normale Übersicht, nie Keyboard Maestro
         model.highlightEnabled = Settings.browseHighlight
@@ -311,6 +312,7 @@ final class BrowseWindow: NSObject, NSWindowDelegate {
     /// Übernimmt geänderte Einstellungen (Zebra, Spaltenbreite, Fenstergröße).
     func applySettings() {
         model.zebra = Settings.browseZebra
+        model.showRecents = Settings.browseShowRecents
         model.columnWidth = Settings.browseColumnWidth
         model.backgroundStyle = Settings.browseBackgroundStyle
         model.opaqueRows = Settings.browseOpaqueRows

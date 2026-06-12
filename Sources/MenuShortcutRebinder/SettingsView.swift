@@ -15,6 +15,7 @@ struct SettingsView: View {
     @State var fontSize: Double
     @State var zebra: Bool
     @State var keyLeft: Bool
+    @State var showRecents: Bool
     @State var compactSections: Bool
     @State var anchor: Int
     @State var transparency: Double
@@ -164,6 +165,7 @@ struct SettingsView: View {
             row(Strings.setPosition) { positionGrid }
             toggleRow(Strings.setZebra, $zebra)
             toggleRow(Strings.setKeyLeft, $keyLeft)
+            toggleRow(Strings.setShowRecents, $showRecents)
         }
     }
 
@@ -307,6 +309,7 @@ struct SettingsView: View {
         Settings.browseFontSize = fontSize
         Settings.browseZebra = zebra
         Settings.browseKeyLeft = keyLeft
+        Settings.browseShowRecents = showRecents
         Settings.browseCompactSections = compactSections
         Settings.browseAnchor = anchor
         Settings.browseTransparency = transparency
@@ -345,6 +348,7 @@ final class SettingsWindow: NSObject {
             fontSize: Settings.browseFontSize,
             zebra: Settings.browseZebra,
             keyLeft: Settings.browseKeyLeft,
+            showRecents: Settings.browseShowRecents,
             compactSections: Settings.browseCompactSections,
             anchor: Settings.browseAnchor,
             transparency: Settings.browseTransparency,

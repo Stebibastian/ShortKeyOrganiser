@@ -183,6 +183,13 @@ enum Settings {
         set { UserDefaults.standard.set(newValue, forKey: browseKeyLeftKey) }
     }
 
+    private static let browseShowRecentsKey = "browseShowRecents"
+    /// „Zuletzt benutzt"-Gruppe (die letzten ausgeführten Befehle je App) im Overlay anzeigen.
+    static var browseShowRecents: Bool {
+        get { UserDefaults.standard.object(forKey: browseShowRecentsKey) as? Bool ?? true }
+        set { UserDefaults.standard.set(newValue, forKey: browseShowRecentsKey) }
+    }
+
     private static let browseOpaqueRowsKey = "browseOpaqueRows"
     /// Im Transparent-Modus: Befehlszeilen mit deckendem Hintergrund (bessere Lesbarkeit).
     static var browseOpaqueRows: Bool {

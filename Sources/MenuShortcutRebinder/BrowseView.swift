@@ -12,6 +12,15 @@ struct AppChoice: Identifiable {
     let icon: NSImage?
 }
 
+/// Threadsicherer Zähler für Scan-Generationen: nur der jüngste Scan darf
+/// Ergebnisse anzeigen (ältere laufen ggf. noch im Hintergrund).
+final class ScanToken {
+    private let lock = NSLock()
+    private var value = 0
+    func next() -> Int { lock.lock(); defer { lock.unlock() }; value += 1; return value }
+    var current: Int { lock.lock(); defer { lock.unlock() }; return value }
+}
+
 /// Zustand der „Befehle durchsuchen"-Ansicht.
 final class BrowseModel: ObservableObject {
     @Published var apps: [AppChoice] = []
@@ -20,6 +29,9 @@ final class BrowseModel: ObservableObject {
     @Published var query: String = "" { didSet { selectedID = filteredItems.first?.id } }
     @Published var selectedID: UUID?
     @Published var loading = false
+    @Published var pendingMenus: [String] = []   // Menüs, deren Scan noch läuft (Skeleton-Spalten)
+    @Published var refreshing = false            // Cache wird gezeigt, frischer Scan läuft im Hintergrund
+    @Published var truncatedMenus: Set<String> = []   // Menüs, bei denen die Sicherheitsgrenze griff
     @Published var trusted = true
     @Published var customAppTitles: Set<String> = []
     @Published var customGlobalTitles: Set<String> = []
@@ -32,6 +44,8 @@ final class BrowseModel: ObservableObject {
     @Published var collapsed: Set<String> = BrowsePrefs.collapsed
     @Published var showHidden: Bool = false
     @Published var showFavorites: Bool = true
+    @Published var showRecents: Bool = Settings.browseShowRecents
+    @Published var recents: [String] = []   // Menüpfade der zuletzt ausgeführten Befehle (aktuelle App)
     @Published var showDisabled: Bool = false
     @Published var kmMode: Bool = false   // Keyboard-Maestro-Makros statt App-Menüs anzeigen
     @Published var highlightEnabled: Bool = Settings.browseHighlight
@@ -48,9 +62,23 @@ final class BrowseModel: ObservableObject {
     var onOpenSettings: (() -> Void)?
     var onManage: (() -> Void)?
 
-    private var scanToken = 0
+    private let scanToken = ScanToken()
+
+    /// Letzter vollständiger Scan pro App (im Speicher): beim Wiederöffnen sofort
+    /// anzeigen, im Hintergrund frisch scannen. An die pid gebunden – nach einem
+    /// Neustart der Ziel-App wären die AX-Referenzen tot, dann verfällt der Eintrag.
+    private struct CacheEntry {
+        let pid: pid_t
+        let items: [BrowseItem]
+        let truncated: Set<String>
+        let date: Date
+    }
+    private static var cache: [String: CacheEntry] = [:]
 
     var currentApp: AppChoice? { apps.first { $0.pid == selectedPid } }
+
+    /// Schlüssel-Präfix für Favoriten/Verlauf/Cache der aktuellen Quelle.
+    var appKey: String { kmMode ? "KM" : (currentApp?.bundleID ?? "") }
 
     func refreshApps(preferredPid: pid_t?) {
         let running = NSWorkspace.shared.runningApplications
@@ -70,30 +98,88 @@ final class BrowseModel: ObservableObject {
         }
     }
 
-    func loadItems() {
+    func loadItems(forceReload: Bool = false) {
         trusted = AXIsProcessTrusted()
+        let token = scanToken.next()   // macht laufende Scans ungültig
+        recents = BrowsePrefs.recents(for: appKey)
         if kmMode {
             items = KeyboardMaestro.scan()
             customAppTitles = []; customGlobalTitles = []
-            loading = false
+            loading = false; refreshing = false
+            pendingMenus = []; truncatedMenus = []
             return
         }
-        guard let app = currentApp else { items = []; return }
-        scanToken += 1
-        let token = scanToken
-        loading = true
+        guard let app = currentApp else {
+            items = []; pendingMenus = []; loading = false; refreshing = false
+            return
+        }
         let pid = app.pid
         let bundleID = app.bundleID
-        DispatchQueue.global(qos: .userInitiated).async {
-            let scanned = FullMenuScanner.scan(pid: pid)
+        let cacheKey = bundleID ?? "pid-\(pid)"
+
+        if !forceReload, let cached = Self.cache[cacheKey], cached.pid == pid {
+            // Cache sofort zeigen, im Hintergrund komplett frisch scannen und austauschen.
+            items = cached.items
+            truncatedMenus = cached.truncated
+            loading = false; refreshing = true
+            pendingMenus = []
+        } else {
+            items = []; truncatedMenus = []
+            loading = true; refreshing = false
+            pendingMenus = []
+        }
+        customAppTitles = Set(Preferences.current(scope: .app, bundleID: bundleID).keys)
+        customGlobalTitles = Set(Preferences.current(scope: .global, bundleID: nil).keys)
+
+        let incremental = !refreshing   // ohne Cache: Menü für Menü anzeigen, mit Skeletons
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            guard let self else { return }
+            let menus = FullMenuScanner.topMenus(pid: pid)
+            if incremental {
+                let names = menus.map(\.name)
+                DispatchQueue.main.async {
+                    guard token == self.scanToken.current else { return }
+                    self.pendingMenus = names
+                    self.loading = false   // ab jetzt zeigen Skeleton-Spalten den Fortschritt
+                }
+            }
+            var all: [BrowseItem] = []
+            var truncated: Set<String> = []
+            for m in menus {
+                guard token == self.scanToken.current else { return }   // veralteter Scan
+                let result = FullMenuScanner.scanMenu(m.menu, named: m.name)
+                all += result.items
+                if result.truncated { truncated.insert(m.name) }
+                if incremental {
+                    let snapshot = all
+                    let trunc = truncated
+                    DispatchQueue.main.async {
+                        guard token == self.scanToken.current else { return }
+                        self.items = snapshot
+                        self.truncatedMenus = trunc
+                        self.pendingMenus.removeAll { $0 == m.name }
+                    }
+                }
+            }
+            let finalItems = all
+            let trunc = truncated
             DispatchQueue.main.async {
-                guard token == self.scanToken else { return }
-                self.items = scanned
-                self.customAppTitles = Set(Preferences.current(scope: .app, bundleID: bundleID).keys)
-                self.customGlobalTitles = Set(Preferences.current(scope: .global, bundleID: nil).keys)
+                guard token == self.scanToken.current else { return }
+                self.items = finalItems
+                self.truncatedMenus = trunc
+                self.pendingMenus = []
                 self.loading = false
+                self.refreshing = false
+                Self.cache[cacheKey] = CacheEntry(pid: pid, items: finalItems,
+                                                  truncated: trunc, date: Date())
             }
         }
+    }
+
+    /// Aktualisieren-Knopf: Cache der aktuellen App verwerfen und frisch einlesen.
+    func reload() {
+        if let app = currentApp { Self.cache.removeValue(forKey: app.bundleID ?? "pid-\(app.pid)") }
+        loadItems(forceReload: true)
     }
 
     func isCustom(_ item: BrowseItem) -> Bool {
@@ -150,6 +236,8 @@ final class BrowseModel: ObservableObject {
     func edit(_ item: BrowseItem) { if !kmMode, let app = currentApp { onEdit?(item, app) } }
     func requestDelete(_ item: BrowseItem) { if !kmMode, let app = currentApp { onDelete?(item, app) } }
     func perform(_ item: BrowseItem) {
+        BrowsePrefs.addRecent(item.pathDisplay, for: appKey)
+        recents = BrowsePrefs.recents(for: appKey)
         if kmMode { KeyboardMaestro.run(item.title); return }
         if let app = currentApp { onPerform?(item, app) }
     }
@@ -164,9 +252,8 @@ final class BrowseModel: ObservableObject {
         selectedID = list[min(list.count - 1, max(0, cur + delta))].id
     }
     func performSelected() {
-        guard let id = selectedID, let item = filteredItems.first(where: { $0.id == id }),
-              let app = currentApp else { return }
-        onPerform?(item, app)
+        guard let id = selectedID, let item = filteredItems.first(where: { $0.id == id }) else { return }
+        perform(item)   // gleicher Weg wie der Klick (inkl. Verlauf + Keyboard-Maestro-Modus)
     }
 
     func setColumnWidth(_ w: Double) {
@@ -343,7 +430,7 @@ struct BrowseView: View {
 
     private var filtered: [BrowseItem] { model.filteredItems }
 
-    /// Favoriten zuoberst als eigene Gruppe, dann die Menü-Kategorien.
+    /// Favoriten und Verlauf zuoberst als eigene Gruppen, dann die Menü-Kategorien.
     private var grouped: [(String, [BrowseItem])] {
         let f = filtered
         var result: [(String, [BrowseItem])] = []
@@ -351,7 +438,12 @@ struct BrowseView: View {
             let favs = f.filter { model.isFavorite($0) }
             if !favs.isEmpty { result.append((Strings.browseFavorites, favs)) }
         }
-        // Favoriten bleiben zusätzlich in ihrer normalen Kategorie.
+        if model.showRecents && !model.recents.isEmpty {
+            let byPath = Dictionary(grouping: f, by: \.pathDisplay)
+            let recent = model.recents.compactMap { byPath[$0]?.first }
+            if !recent.isEmpty { result.append((Strings.browseRecents, recent)) }
+        }
+        // Favoriten/Verlauf bleiben zusätzlich in ihrer normalen Kategorie.
         var order: [String] = []
         var dict: [String: [BrowseItem]] = [:]
         for it in f {
@@ -437,6 +529,12 @@ struct BrowseView: View {
             Spacer().frame(width: 30)   // Platz für die Fenster-Ampeln (randloser Titel)
             appChooser
 
+            // Dezentes Lade-Feedback: dreht sich, solange gescannt oder im Hintergrund aktualisiert wird.
+            if model.refreshing || !model.pendingMenus.isEmpty || model.loading {
+                ProgressView().controlSize(.small)
+                    .help(Strings.browseUpdating)
+            }
+
             if model.searchActive {
                 searchField
             } else {
@@ -467,6 +565,7 @@ struct BrowseView: View {
 
             Divider().frame(height: 18)
 
+            navIcon("arrow.clockwise", active: false, tip: Strings.browseRefreshTip) { model.reload() }
             if KeyboardMaestro.isInstalled {
                 navIcon("k.square", active: model.kmMode, tip: Strings.browseKmTip) { model.toggleKM() }
             }
@@ -569,33 +668,64 @@ struct BrowseView: View {
 
     @ViewBuilder private var content: some View {
         if !model.trusted {
-            info(Strings.browseNoAccess)
-        } else if model.loading {
-            ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
-        } else if filtered.isEmpty {
-            info(model.items.isEmpty ? Strings.browseEmpty : Strings.browseNoMatch)
+            emptyState(icon: "lock.shield",
+                       title: Strings.browseNoAccess,
+                       hint: Strings.browseNoAccessHint,
+                       button: (Strings.openSettings, {
+                           let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")!
+                           NSWorkspace.shared.open(url)
+                       }))
+        } else if filtered.isEmpty && model.pendingMenus.isEmpty && !model.loading {
+            if model.items.isEmpty {
+                emptyState(icon: "menubar.rectangle",
+                           title: Strings.browseEmpty,
+                           hint: Strings.browseEmptyHint,
+                           button: (Strings.browseRetry, { model.reload() }))
+            } else {
+                emptyState(icon: "magnifyingglass",
+                           title: Strings.browseNoMatch,
+                           hint: Strings.browseNoMatchHint)
+            }
         } else {
             GeometryReader { geo in
                 let cols = packedColumns(geo.size)
                 ScrollView([.horizontal, .vertical]) {   // beide Richtungen; ohne erzwungene minHeight kein Teufelskreis, aber nichts wird abgeschnitten
-                    HStack(alignment: .top, spacing: 0) {
-                        ForEach(Array(cols.enumerated()), id: \.offset) { ci, colGroups in
-                            if ci > 0 { Divider() }
-                            VStack(alignment: .leading, spacing: 16) {
-                                ForEach(Array(colGroups.enumerated()), id: \.element.0) { _, group in
-                                    column(group.0, group.1)
+                    ScrollViewReader { proxy in
+                        HStack(alignment: .top, spacing: 0) {
+                            ForEach(Array(cols.enumerated()), id: \.offset) { ci, colGroups in
+                                if ci > 0 { Divider() }
+                                VStack(alignment: .leading, spacing: 16) {
+                                    ForEach(Array(colGroups.enumerated()), id: \.element.0) { _, group in
+                                        column(group.0, group.1)
+                                    }
+                                }
+                            }
+                            // Noch ladende Menüs als Skeleton-Spalten (füllen sich von links nach rechts).
+                            ForEach(model.pendingMenus, id: \.self) { name in
+                                SkeletonColumn(name: name, width: model.columnWidth,
+                                               rowHeight: model.fontSize + 8)
+                            }
+                            if model.loading && model.pendingMenus.isEmpty {
+                                ForEach(0..<3, id: \.self) { _ in
+                                    SkeletonColumn(name: nil, width: model.columnWidth,
+                                                   rowHeight: model.fontSize + 8)
                                 }
                             }
                         }
+                        .padding(12)
+                        // Oben-links bündig: minHeight füllt das Fenster (kein Zentrieren), aber 20px Reserve
+                        // lassen Platz für den horizontalen Scrollbalken → er löst keinen vertikalen aus (kein Teufelskreis).
+                        .frame(minWidth: geo.size.width,
+                               minHeight: max(0, geo.size.height - 20),
+                               alignment: .topLeading)
+                        .onChange(of: model.selectedID) { id in
+                            if let id { withAnimation(.easeOut(duration: 0.15)) { proxy.scrollTo(id) } }
+                        }
                     }
-                    .padding(12)
-                    // Oben-links bündig: minHeight füllt das Fenster (kein Zentrieren), aber 20px Reserve
-                    // lassen Platz für den horizontalen Scrollbalken → er löst keinen vertikalen aus (kein Teufelskreis).
-                    .frame(minWidth: geo.size.width,
-                           minHeight: max(0, geo.size.height - 20),
-                           alignment: .topLeading)
                 }
                 .scrollIndicators(.hidden, axes: .vertical)   // kein vertikaler Balken → löst keinen Teufelskreis aus; vertikal scrollen geht weiter per Trackpad
+                .animation(.easeOut(duration: 0.18), value: model.collapsed)
+                .animation(.easeOut(duration: 0.2), value: model.pendingMenus)
             }
         }
     }
@@ -686,6 +816,13 @@ struct BrowseView: View {
                     row(item, idx).padding(.leading, 10)   // alle Einträge gleich eingerückt; Überschriften sitzen weiter links
                 }
             }
+
+            if model.truncatedMenus.contains(cat) {
+                Text(Strings.browseCapped(FullMenuScanner.maxItemsPerMenu)
+                        .trimmingCharacters(in: .whitespaces))
+                    .font(.system(size: 10)).italic().foregroundStyle(.tertiary)
+                    .padding(.top, 3).padding(.leading, 10)
+            }
         }
         .frame(width: model.columnWidth, alignment: .leading)
         .padding(.horizontal, 9)
@@ -766,11 +903,52 @@ struct BrowseView: View {
                              onToggleHidden: { model.toggleHidden(item) })
     }
 
-    private func info(_ text: String) -> some View {
-        Text(text)
-            .foregroundStyle(.secondary)
-            .multilineTextAlignment(.center)
-            .padding()
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+    /// Freundlicher Leer-/Fehlerzustand: Symbol, Titel, optional Hinweis und Aktions-Knopf.
+    private func emptyState(icon: String, title: String, hint: String? = nil,
+                            button: (String, () -> Void)? = nil) -> some View {
+        VStack(spacing: 10) {
+            Image(systemName: icon).font(.system(size: 36)).foregroundStyle(.tertiary)
+            Text(title).font(.headline).foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+            if let hint {
+                Text(hint).font(.callout).foregroundStyle(.tertiary)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: 380)
+            }
+            if let button {
+                Button(button.0, action: button.1).padding(.top, 6)
+            }
+        }
+        .padding(40)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+}
+
+/// Platzhalter-Spalte für ein Menü, dessen Scan noch läuft: Titel + pulsierende Balken.
+struct SkeletonColumn: View {
+    let name: String?
+    let width: Double
+    let rowHeight: Double
+    @State private var pulse = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 5) {
+            HStack(spacing: 5) {
+                ProgressView().controlSize(.small).scaleEffect(0.55).frame(width: 12, height: 12)
+                Text(name ?? "…").font(.system(size: 12, weight: .bold)).foregroundStyle(.secondary)
+            }
+            .padding(.bottom, 3)
+            ForEach(0..<5, id: \.self) { i in
+                RoundedRectangle(cornerRadius: 5)
+                    .fill(Color.secondary.opacity(0.12))
+                    .frame(width: max(60, width * (i % 2 == 0 ? 0.85 : 0.6)), height: rowHeight)
+            }
+        }
+        .frame(width: width, alignment: .leading)
+        .padding(.horizontal, 9)
+        .opacity(pulse ? 0.45 : 1)
+        .onAppear {
+            withAnimation(.easeInOut(duration: 0.7).repeatForever(autoreverses: true)) { pulse = true }
+        }
     }
 }
