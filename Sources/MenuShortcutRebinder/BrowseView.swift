@@ -541,6 +541,11 @@ struct BrowseView: View {
 
             if model.searchActive {
                 searchField
+                if !model.query.isEmpty {
+                    Text(Strings.browseCount(hits: filtered.count, total: model.items.count))
+                        .font(.caption).foregroundStyle(.secondary)
+                        .lineLimit(1).fixedSize()
+                }
             } else {
                 navIcon("magnifyingglass", active: false, tip: Strings.browseSearchPlaceholder) {
                     model.activateSearch()
