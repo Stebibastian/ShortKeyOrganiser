@@ -1,11 +1,46 @@
 import SwiftUI
 import AppKit
 
+/// Live-Anzeige für das Auslöser-Test-Feld: leuchtet auf, wenn eine Geste erkannt wurde,
+/// solange das Einstellungs-Fenster im Vordergrund ist (dann öffnet sich kein Overlay).
+final class TriggerTestModel: ObservableObject {
+    enum Event { case peek, fix, release }
+
+    @Published var peekActive = false    // Kurzblick wird gerade gehalten
+    @Published var lastFired: String?    // zuletzt erkannte Geste (verblasst nach kurzer Zeit)
+    private var clearTask: DispatchWorkItem?
+
+    func flash(_ event: Event) {
+        switch event {
+        case .peek:
+            peekActive = true
+            show(Strings.setTestPeek)
+        case .release:
+            peekActive = false
+        case .fix:
+            show(Strings.setTestFix)
+        }
+    }
+
+    private func show(_ text: String) {
+        lastFired = text
+        clearTask?.cancel()
+        let task = DispatchWorkItem { [weak self] in self?.lastFired = nil }
+        clearTask = task
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.2, execute: task)
+    }
+}
+
 /// Zentrales Einstellungs-Fenster: feste Seitenleiste links (kein Ein-/Ausblenden), Inhalt rechts.
 struct SettingsView: View {
+    @ObservedObject var test: TriggerTestModel
     @State var rebindKeyCode: Int
     @State var rebindHoldMs: Double
     @State var peekEnabled: Bool
+    @State var peekPressCount: Int
+    @State var fixEnabled: Bool
+    @State var fixPressCount: Int
+    @State var fixHold: Bool
     @State var peekModifierIndex: Int
     @State var peekHoldMs: Double
     @State var screenPercent: Double
@@ -33,6 +68,7 @@ struct SettingsView: View {
     let onCheckUpdate: () -> Void
     let onLanguageChange: (String) -> Void
     let onLiveView: () -> Void   // leichte Live-Aktualisierung der Ansicht (ohne Detektor-Neustart)
+    let onReset: () -> Void      // „Auf Standard zurücksetzen" (fragt nach, setzt um, baut das Fenster neu auf)
 
     @State private var selection: Section = .keyboard
 
@@ -104,12 +140,16 @@ struct SettingsView: View {
 
     // MARK: Tastenkürzel (zwei klar getrennte Funktionen)
 
+    /// Konflikt: beide Gesten wären identisch (gleiche Druckzahl UND beide mit Halten).
+    private var triggerConflict: Bool {
+        peekEnabled && fixEnabled && fixHold && peekPressCount == fixPressCount
+    }
+
     private var keyboardSection: some View {
         VStack(alignment: .leading, spacing: 22) {
             Text(Strings.setSecKeyboard).font(.title2.bold())
 
             featureBlock(Strings.setFeatureOverlay, Strings.setFeatureOverlayDesc) {
-                toggleRow(Strings.setPeekEnable, $peekEnabled)
                 row(Strings.setPeekTrigger) {
                     Picker("", selection: $peekModifierIndex) {
                         Text(Strings.bsModCommand).tag(0)
@@ -117,9 +157,40 @@ struct SettingsView: View {
                         Text(Strings.bsModControl).tag(2)
                     }
                     .labelsHidden().frame(width: 150)
-                    .onChange(of: peekModifierIndex) { _ in commit() }.disabled(!peekEnabled)
+                    .onChange(of: peekModifierIndex) { _ in commit() }
                 }
-                slider(Strings.setHold, $peekHoldMs, 50...500, 10, "ms", disabled: !peekEnabled)
+
+                Divider()
+
+                toggleRow(Strings.setPeekEnable, $peekEnabled)
+                Group {
+                    row(Strings.setPressCount) {
+                        pressCountPicker($peekPressCount, holdSuffix: true)
+                    }
+                    slider(Strings.setHold, $peekHoldMs, 50...500, 10, "ms", disabled: !peekEnabled)
+                }
+                .disabled(!peekEnabled)
+
+                Divider()
+
+                toggleRow(Strings.setFixEnable, $fixEnabled)
+                Group {
+                    row(Strings.setPressCount) {
+                        pressCountPicker($fixPressCount, holdSuffix: fixHold)
+                    }
+                    toggleRow(Strings.setFixHold, $fixHold)
+                }
+                .disabled(!fixEnabled)
+
+                if triggerConflict {
+                    Label(Strings.setTriggerConflict, systemImage: "exclamationmark.triangle.fill")
+                        .font(.callout)
+                        .foregroundStyle(.orange)
+                }
+
+                Divider()
+
+                testField
             }
 
             featureBlock(Strings.setFeatureRebind, Strings.setFeatureRebindDesc) {
@@ -133,6 +204,45 @@ struct SettingsView: View {
                 slider(Strings.setHold, $rebindHoldMs, 300...1500, 50, "ms")
             }
         }
+    }
+
+    /// Auswahl „2× … 5×"; mit `holdSuffix` steht „+ halten" dahinter.
+    private func pressCountPicker(_ value: Binding<Int>, holdSuffix: Bool) -> some View {
+        HStack(spacing: 8) {
+            Picker("", selection: value) {
+                ForEach(2...5, id: \.self) { n in
+                    Text("\(n)×").tag(n)
+                }
+            }
+            .labelsHidden().frame(width: 70)
+            .onChange(of: value.wrappedValue) { _ in commit() }
+            Text(holdSuffix ? Strings.setPlusHold : " ")
+                .font(.callout).foregroundStyle(.secondary)
+                .frame(width: 80, alignment: .leading)
+        }
+    }
+
+    /// Live-Test: Geste ausführen, solange dieses Fenster vorne ist → hier leuchtet das Ergebnis auf.
+    private var testField: some View {
+        let active = test.peekActive || test.lastFired != nil
+        return HStack(spacing: 10) {
+            Image(systemName: test.peekActive ? "eye.fill" : (test.lastFired != nil ? "checkmark.circle.fill" : "hand.tap"))
+                .font(.system(size: 17))
+                .foregroundStyle(active ? Color.green : Color.secondary)
+                .frame(width: 24)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(Strings.setTestTitle).font(.callout.weight(.medium))
+                Text(test.lastFired ?? Strings.setTestHint)
+                    .font(.caption)
+                    .foregroundStyle(active ? Color.green : Color.secondary)
+            }
+            Spacer()
+        }
+        .padding(10)
+        .background(RoundedRectangle(cornerRadius: 8)
+            .fill(active ? Color.green.opacity(0.13) : Color.secondary.opacity(0.07)))
+        .animation(.easeOut(duration: 0.18), value: test.peekActive)
+        .animation(.easeOut(duration: 0.18), value: test.lastFired)
     }
 
     // MARK: Ansicht
@@ -220,6 +330,14 @@ struct SettingsView: View {
                 .padding(8).frame(maxWidth: .infinity, alignment: .leading)
             }
 
+            GroupBox(Strings.reset) {
+                VStack(alignment: .leading, spacing: 8) {
+                    Button(Strings.setReset) { onReset() }
+                    Text(Strings.setResetNote).font(.caption).foregroundStyle(.secondary)
+                }
+                .padding(8).frame(maxWidth: .infinity, alignment: .leading)
+            }
+
             Text(Strings.aboutCopyright).font(.caption).foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity, alignment: .center)
         }
@@ -299,6 +417,10 @@ struct SettingsView: View {
         Settings.triggerKeyCode = rebindKeyCode
         Settings.holdDuration = rebindHoldMs / 1000.0
         Settings.peekEnabled = peekEnabled
+        Settings.peekPressCount = peekPressCount
+        Settings.fixOpenEnabled = fixEnabled
+        Settings.fixPressCount = fixPressCount
+        Settings.fixHoldAtEnd = fixHold
         Settings.peekModifierIndex = peekModifierIndex
         Settings.peekHoldDuration = peekHoldMs / 1000.0
         if sizeLinked { heightPercent = screenPercent }
@@ -323,7 +445,17 @@ struct SettingsView: View {
 final class SettingsWindow: NSObject {
     static let shared = SettingsWindow()
     private var window: NSWindow?
+    let testModel = TriggerTestModel()
     var onChange: (() -> Void)?
+    var onReset: (() -> Void)?
+
+    /// Solange das Einstellungs-Fenster vorne ist, landen erkannte Auslöser-Gesten
+    /// im Test-Feld statt das Overlay zu öffnen.
+    var isTestingTriggers: Bool { window?.isKeyWindow == true }
+
+    func flashTest(_ event: TriggerTestModel.Event) {
+        DispatchQueue.main.async { self.testModel.flash(event) }
+    }
     var onToggleLogin: ((Bool) -> Void)?
     var onManage: (() -> Void)?
     var onDiagnose: (() -> Void)?
@@ -336,9 +468,14 @@ final class SettingsWindow: NSObject {
     func present() {
         window?.orderOut(nil)
         let view = SettingsView(
+            test: testModel,
             rebindKeyCode: Settings.triggerKeyCode,
             rebindHoldMs: Settings.holdDuration * 1000,
             peekEnabled: Settings.peekEnabled,
+            peekPressCount: Settings.peekPressCount,
+            fixEnabled: Settings.fixOpenEnabled,
+            fixPressCount: Settings.fixPressCount,
+            fixHold: Settings.fixHoldAtEnd,
             peekModifierIndex: Settings.peekModifierIndex,
             peekHoldMs: Settings.peekHoldDuration * 1000,
             screenPercent: Settings.browseScreenPercent,
@@ -364,7 +501,8 @@ final class SettingsWindow: NSObject {
             onHelp: { [weak self] in self?.onHelp?() },
             onCheckUpdate: { [weak self] in self?.onCheckUpdate?() },
             onLanguageChange: { [weak self] l in self?.onLanguageChange?(l) },
-            onLiveView: { [weak self] in self?.onLiveView?() })
+            onLiveView: { [weak self] in self?.onLiveView?() },
+            onReset: { [weak self] in self?.onReset?() })
         let controller = NSHostingController(rootView: view)
         controller.sizingOptions = [.preferredContentSize]   // Fenster passt sich je Tab an
         let win = NSWindow(contentViewController: controller)

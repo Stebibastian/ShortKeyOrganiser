@@ -89,6 +89,59 @@ enum Settings {
         set { UserDefaults.standard.set(newValue, forKey: peekEnabledKey) }
     }
 
+    private static let peekPressCountKey = "peekPressCount"
+    /// Drücke für den Kurzblick (2-5; beim letzten wird gehalten).
+    static var peekPressCount: Int {
+        get {
+            let v = UserDefaults.standard.object(forKey: peekPressCountKey) as? Int ?? 2
+            return min(5, max(2, v))
+        }
+        set { UserDefaults.standard.set(min(5, max(2, newValue)), forKey: peekPressCountKey) }
+    }
+
+    private static let fixEnabledKey = "fixOpenEnabled"
+    /// Geste „Fenster fix öffnen" aktiv?
+    static var fixOpenEnabled: Bool {
+        get { UserDefaults.standard.object(forKey: fixEnabledKey) as? Bool ?? true }
+        set { UserDefaults.standard.set(newValue, forKey: fixEnabledKey) }
+    }
+
+    private static let fixPressCountKey = "fixPressCount"
+    /// Drücke für „Fenster fix öffnen" (2-5).
+    static var fixPressCount: Int {
+        get {
+            let v = UserDefaults.standard.object(forKey: fixPressCountKey) as? Int ?? 3
+            return min(5, max(2, v))
+        }
+        set { UserDefaults.standard.set(min(5, max(2, newValue)), forKey: fixPressCountKey) }
+    }
+
+    private static let fixHoldKey = "fixHoldAtEnd"
+    /// true = auch „fix öffnen" feuert erst beim Halten am Ende (statt sofort beim letzten Druck).
+    static var fixHoldAtEnd: Bool {
+        get { UserDefaults.standard.bool(forKey: fixHoldKey) }   // Standard: aus
+        set { UserDefaults.standard.set(newValue, forKey: fixHoldKey) }
+    }
+
+    /// Symbol der gewählten Auslöser-Taste fürs Overlay/Onboarding (⌘/⌥/⌃).
+    static var peekModifierSymbol: String {
+        ["⌘", "⌥", "⌃"][min(2, max(0, peekModifierIndex))]
+    }
+
+    /// Setzt alle EINSTELLUNGEN auf die Werkseinstellung zurück. Nutzerdaten bleiben:
+    /// Favoriten, Verlauf, ausgeblendete Befehle, Onboarding-Status und Sprache.
+    static func resetAll() {
+        let keys = [triggerKeyCodeKey, holdDurationKey,
+                    peekModifierKey, peekHoldKey, peekEnabledKey, peekPressCountKey,
+                    fixEnabledKey, fixPressCountKey, fixHoldKey,
+                    browseScreenPercentKey, browseHeightPercentKey, browseSizeLinkedKey,
+                    browseAnchorKey, browseColumnWidthKey, browseZebraKey, browseHighlightKey,
+                    browseFontSizeKey, browseTransparencyKey, browseBackgroundStyleKey,
+                    browseCompactKey, browseKeyLeftKey, browseOpaqueRowsKey, browseShowRecentsKey,
+                    autoUpdateKey]
+        for key in keys { UserDefaults.standard.removeObject(forKey: key) }
+    }
+
     private static let browseZebraKey = "browseZebra"
     static var browseZebra: Bool {
         get { UserDefaults.standard.object(forKey: browseZebraKey) as? Bool ?? false }

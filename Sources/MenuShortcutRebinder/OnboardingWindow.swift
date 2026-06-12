@@ -73,8 +73,13 @@ struct OnboardingView: View {
         VStack(spacing: 0) {
             switch model.step {
             case 0: intro
-            case 1: gesture(Strings.obTripleTitle, Strings.obTripleDesc, icon: "command")
-            case 2: gesture(Strings.obPeekTitle, Strings.obPeekDesc, icon: "command")
+            case 1: gesture(Strings.obTripleTitle,
+                            Strings.obFixDesc(Settings.peekModifierSymbol,
+                                              Settings.fixPressCount, hold: Settings.fixHoldAtEnd),
+                            icon: "command")
+            case 2: gesture(Strings.obPeekTitle,
+                            Strings.obPeekDesc(Settings.peekModifierSymbol, Settings.peekPressCount),
+                            icon: "command")
             case 3: gesture(Strings.obRebindTitle, Strings.obRebindDesc(trigger), icon: "cursorarrow.rays")
             default: done
             }
@@ -83,6 +88,14 @@ struct OnboardingView: View {
         .padding(30)
         .animation(.easeInOut(duration: 0.25), value: model.step)
         .animation(.easeInOut(duration: 0.2), value: model.justSucceeded)
+        .onAppear { skipDisabledSteps() }
+        .onChange(of: model.step) { _ in skipDisabledSteps() }
+    }
+
+    /// Abgeschaltete Gesten im Tutorial überspringen (sie könnten nie erkannt werden).
+    private func skipDisabledSteps() {
+        if model.step == 1 && !Settings.fixOpenEnabled { model.step = 2 }
+        if model.step == 2 && !Settings.peekEnabled { model.step = 3 }
     }
 
     private var intro: some View {

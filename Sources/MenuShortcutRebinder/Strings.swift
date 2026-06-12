@@ -55,13 +55,30 @@ enum Strings {
     static var setWinTitle: String { s("Einstellungen", "Settings") }
     static var setRebindTrigger: String { s("Auslöser (über Menüpunkt halten)", "Trigger (hold over a menu item)", fr: "Déclencheur (maintenir sur un élément de menu)", es: "Disparador (mantener sobre un elemento de menú)", it: "Attivatore (tieni premuto su una voce di menu)") }
     static var setHold: String { s("Haltedauer", "Hold duration", fr: "Durée de maintien", es: "Duración de pulsación", it: "Durata pressione") }
-    static var setPeekEnable: String { s("Per Mehrfachdruck öffnen", "Open by multi-press", fr: "Ouvrir par appuis multiples", es: "Abrir con pulsaciones múltiples", it: "Apri con pressioni multiple") }
+    static var setPeekEnable: String { s("Kurzblick (Overlay, solange Du hältst)", "Quick peek (overlay while you hold)", fr: "Aperçu rapide (visible tant que tu maintiens)", es: "Vistazo rápido (visible mientras mantienes)", it: "Sguardo rapido (visibile finché tieni premuto)") }
+    static var setFixEnable: String { s("Fix öffnen (Fenster bleibt offen)", "Pinned open (window stays open)", fr: "Ouverture fixe (la fenêtre reste ouverte)", es: "Apertura fija (la ventana queda abierta)", it: "Apertura fissa (la finestra resta aperta)") }
+    static var setPressCount: String { s("Anzahl Drücke", "Number of presses", fr: "Nombre d'appuis", es: "Número de pulsaciones", it: "Numero di pressioni") }
+    static var setPlusHold: String { s("+ halten", "+ hold", fr: "+ maintenir", es: "+ mantener", it: "+ tenere") }
+    static var setFixHold: String { s("Beim letzten Druck halten", "Hold on the last press", fr: "Maintenir au dernier appui", es: "Mantener en la última pulsación", it: "Tenere premuto all'ultima pressione") }
+    static var setTriggerConflict: String { s("Gleiche Geste wie der Kurzblick - bitte Anzahl Drücke oder Halten anpassen.", "Same gesture as the quick peek - please change the press count or the hold option.", fr: "Même geste que l'aperçu rapide - change le nombre d'appuis ou l'option maintenir.", es: "Es el mismo gesto que el vistazo rápido: cambia el número de pulsaciones o la opción de mantener.", it: "Stesso gesto dello sguardo rapido: cambia il numero di pressioni o l'opzione di tenuta.") }
+    static var setTestTitle: String { s("Auslöser testen", "Test the trigger", fr: "Tester le déclencheur", es: "Probar el disparador", it: "Prova l'attivatore") }
+    static var setTestHint: String { s("Führ die Geste jetzt aus, solange dieses Fenster vorne ist - hier leuchtet auf, was erkannt wurde.", "Perform the gesture now while this window is in front - whatever gets detected lights up here.", fr: "Fais le geste maintenant, tant que cette fenêtre est devant - ce qui est détecté s'allume ici.", es: "Haz el gesto ahora, mientras esta ventana esté delante: aquí se ilumina lo que se detecte.", it: "Esegui il gesto adesso, finché questa finestra è in primo piano: qui si illumina ciò che viene rilevato.") }
+    static var setTestPeek: String { s("Kurzblick erkannt ✓", "Quick peek detected ✓", fr: "Aperçu rapide détecté ✓", es: "Vistazo rápido detectado ✓", it: "Sguardo rapido rilevato ✓") }
+    static var setTestFix: String { s("Fix öffnen erkannt ✓", "Pinned open detected ✓", fr: "Ouverture fixe détectée ✓", es: "Apertura fija detectada ✓", it: "Apertura fissa rilevata ✓") }
+    static var setReset: String { s("Auf Standard zurücksetzen …", "Reset to defaults …", fr: "Réinitialiser aux valeurs par défaut …", es: "Restablecer valores predeterminados …", it: "Ripristina i valori predefiniti …") }
+    static var setResetNote: String { s("Favoriten, Verlauf und ausgeblendete Befehle bleiben erhalten.", "Favourites, history and hidden commands are kept.", fr: "Les favoris, l'historique et les commandes masquées sont conservés.", es: "Los favoritos, el historial y los comandos ocultos se conservan.", it: "Preferiti, cronologia e comandi nascosti vengono mantenuti.") }
+    static var setResetTitle: String { s("Einstellungen zurücksetzen?", "Reset settings?", fr: "Réinitialiser les réglages ?", es: "¿Restablecer los ajustes?", it: "Ripristinare le impostazioni?") }
+    static var setResetBody: String { s("Alle Einstellungen werden auf die Werkseinstellung zurückgesetzt. Favoriten, Verlauf und ausgeblendete Befehle bleiben erhalten.", "All settings will be reset to their defaults. Favourites, history and hidden commands are kept.", fr: "Tous les réglages seront réinitialisés. Les favoris, l'historique et les commandes masquées sont conservés.", es: "Todos los ajustes se restablecerán a sus valores predeterminados. Los favoritos, el historial y los comandos ocultos se conservan.", it: "Tutte le impostazioni torneranno ai valori predefiniti. Preferiti, cronologia e comandi nascosti vengono mantenuti.") }
+    static var setResetDone: String { s("Einstellungen zurückgesetzt.", "Settings reset.", fr: "Réglages réinitialisés.", es: "Ajustes restablecidos.", it: "Impostazioni ripristinate.") }
     static var setPeekTrigger: String { s("Auslöser-Taste", "Trigger key", fr: "Touche de déclenchement", es: "Tecla disparador", it: "Tasto attivatore") }
     static var setSecKeyboard: String { s("Tastenkürzel", "Shortcuts", fr: "Raccourcis", es: "Atajos", it: "Scorciatoie") }
     static var setFeatureOverlay: String { s("Befehls-Overlay (Hauptfunktion)", "Command overlay (main feature)") }
     static var setFeatureOverlayDesc: String {
-        s("Auslöser-Taste zweimal drücken und beim zweiten Mal gedrückt halten → Overlay mit allen Kürzeln der aktiven App. Dreimal drücken → das Fenster bleibt offen und ist durchsuchbar.",
-          "Press the trigger key twice and hold on the second press → an overlay with every shortcut of the front app. Press three times → the window stays open and searchable.")
+        s("Die Auslöser-Taste mehrmals kurz drücken: Der Kurzblick zeigt das Overlay, solange Du am Ende hältst; Fix öffnen lässt es offen und durchsuchbar. Anzahl Drücke und Halten stellst Du hier ein.",
+          "Press the trigger key several times in a row: the quick peek shows the overlay while you hold at the end; pinned open keeps it open and searchable. Configure press count and hold here.",
+          fr: "Appuie plusieurs fois de suite sur la touche : l'aperçu rapide montre l'overlay tant que tu maintiens à la fin ; l'ouverture fixe le garde ouvert et consultable. Configure ici le nombre d'appuis et le maintien.",
+          es: "Pulsa la tecla varias veces seguidas: el vistazo rápido muestra el overlay mientras mantienes al final; la apertura fija lo deja abierto y permite buscar. Configura aquí las pulsaciones y el mantener.",
+          it: "Premi il tasto più volte di seguito: lo sguardo rapido mostra l'overlay finché tieni premuto alla fine; l'apertura fissa lo lascia aperto e consultabile. Configura qui pressioni e tenuta.")
     }
     static var setFeatureRebind: String { s("Menü-Kürzel umbelegen", "Rebind menu shortcuts") }
     static var setFeatureRebindDesc: String {
@@ -231,9 +248,15 @@ enum Strings {
     static var obSkip: String { s("Überspringen", "Skip", fr: "Passer", es: "Omitir", it: "Salta") }
     static var obStepLabel: String { s("Probier es jetzt:", "Try it now:", fr: "Essaie maintenant :", es: "Pruébalo ahora:", it: "Provalo ora:") }
     static var obTripleTitle: String { s("Befehls-Overlay öffnen", "Open the command overlay", fr: "Ouvrir la liste des commandes", es: "Abrir la lista de comandos", it: "Apri la panoramica comandi") }
-    static var obTripleDesc: String { s("Drück die Command-Taste ⌘ dreimal kurz hintereinander.", "Press the Command key ⌘ three times in a row.", fr: "Appuie trois fois de suite sur la touche Commande ⌘.", es: "Pulsa la tecla Comando ⌘ tres veces seguidas.", it: "Premi il tasto Comando ⌘ tre volte di seguito.") }
+    static func obFixDesc(_ mod: String, _ n: Int, hold: Bool) -> String {
+        hold
+            ? s("Drück die \(mod)-Taste \(n)-mal kurz hintereinander und halt beim letzten Mal gedrückt.", "Press the \(mod) key \(n) times in a row and hold on the last press.", fr: "Appuie \(n) fois de suite sur la touche \(mod) et maintiens la dernière fois.", es: "Pulsa la tecla \(mod) \(n) veces seguidas y mantén la última vez.", it: "Premi il tasto \(mod) \(n) volte di seguito e tieni premuto l'ultima volta.")
+            : s("Drück die \(mod)-Taste \(n)-mal kurz hintereinander.", "Press the \(mod) key \(n) times in a row.", fr: "Appuie \(n) fois de suite sur la touche \(mod).", es: "Pulsa la tecla \(mod) \(n) veces seguidas.", it: "Premi il tasto \(mod) \(n) volte di seguito.")
+    }
     static var obPeekTitle: String { s("Kurzer Blick (Peek)", "Quick peek", fr: "Aperçu rapide", es: "Vistazo rápido", it: "Sguardo rapido") }
-    static var obPeekDesc: String { s("Drück ⌘ zweimal und halt beim zweiten Mal gedrückt.", "Press ⌘ twice and hold on the second press.", fr: "Appuie deux fois sur ⌘ et maintiens la seconde fois.", es: "Pulsa ⌘ dos veces y mantén la segunda vez.", it: "Premi ⌘ due volte e tieni premuto la seconda volta.") }
+    static func obPeekDesc(_ mod: String, _ n: Int) -> String {
+        s("Drück \(mod) \(n)-mal und halt beim letzten Mal gedrückt.", "Press \(mod) \(n) times and hold on the last press.", fr: "Appuie \(n) fois sur \(mod) et maintiens la dernière fois.", es: "Pulsa \(mod) \(n) veces y mantén la última vez.", it: "Premi \(mod) \(n) volte e tieni premuto l'ultima volta.")
+    }
     static var obRebindTitle: String { s("Kürzel umbelegen", "Rebind a shortcut", fr: "Réattribuer un raccourci", es: "Reasignar un atajo", it: "Riassegna una scorciatoia") }
     static func obRebindDesc(_ t: String) -> String { s("Öffne irgendwo ein Menü, fahr über einen Eintrag und halt \(t) gedrückt.", "Open any menu, hover an item and hold \(t).", fr: "Ouvre un menu, survole un élément et maintiens \(t).", es: "Abre un menú, pasa sobre un elemento y mantén \(t).", it: "Apri un menu, passa su una voce e tieni premuto \(t).") }
     static var obSuccess: String { s("Geschafft!", "Nice!", fr: "Bravo !", es: "¡Bien!", it: "Fatto!") }

@@ -35,13 +35,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         detector.onTrigger = { [weak self] in self?.handleTrigger() }
 
         configurePeek()
+        // Reihenfolge der Umleitungen: Onboarding → Test-Feld in den Einstellungen → Overlay.
         peekDetector.onPeek = { [weak self] in
             if OnboardingWindow.shared.isActive { OnboardingWindow.shared.register(trigger: 2) }
+            else if SettingsWindow.shared.isTestingTriggers { SettingsWindow.shared.flashTest(.peek) }
             else { BrowseWindow.shared.presentPeek(initialApp: self?.lastFrontApp) }
         }
-        peekDetector.onRelease = { BrowseWindow.shared.peekReleased() }
+        peekDetector.onRelease = {
+            if SettingsWindow.shared.isTestingTriggers { SettingsWindow.shared.flashTest(.release) }
+            BrowseWindow.shared.peekReleased()   // harmlos, wenn kein Peek offen ist
+        }
         peekDetector.onFixOpen = { [weak self] in
             if OnboardingWindow.shared.isActive { OnboardingWindow.shared.register(trigger: 1) }
+            else if SettingsWindow.shared.isTestingTriggers { SettingsWindow.shared.flashTest(.fix) }
             else { BrowseWindow.shared.present(initialApp: self?.lastFrontApp) }
         }
         configureSettingsWindow()
@@ -51,7 +57,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         promptAccessibility()   // System-Prompt + Eintrag in der Rechte-Liste anlegen
         trustedAtLaunch = AXIsProcessTrusted()
         detector.start()
-        if Settings.peekEnabled { peekDetector.start() }
+        if Settings.peekEnabled || Settings.fixOpenEnabled { peekDetector.start() }
 
         // Auf Änderungen der Bedienungshilfen-Freigabe lauschen und die App dann
         // automatisch neu starten. Ein frischer Prozess erhält den Tastatur-Tap
@@ -183,7 +189,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             self.detector.holdDuration = Settings.holdDuration
             self.configurePeek()
             self.peekDetector.stop()
-            if Settings.peekEnabled { self.peekDetector.start() }
+            if Settings.peekEnabled || Settings.fixOpenEnabled { self.peekDetector.start() }
             BrowseWindow.shared.applySettings()
         }
         SettingsWindow.shared.onToggleLogin = { [weak self] on in self?.setLogin(on) }
@@ -196,7 +202,29 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             self?.relaunchSelf()   // Neustart, damit alle Texte/Menüs in der neuen Sprache neu aufgebaut werden
         }
         SettingsWindow.shared.onLiveView = { BrowseWindow.shared.applySettings() }
+        SettingsWindow.shared.onReset = { [weak self] in self?.resetSettings() }
         SettingsWindow.shared.loginEnabled = { SMAppService.mainApp.status == .enabled }
+    }
+
+    /// „Auf Standard zurücksetzen": Rückfrage, dann Werkseinstellungen anwenden und
+    /// Detektoren/Fenster mit den frischen Werten neu aufsetzen.
+    private func resetSettings() {
+        let alert = NSAlert()
+        alert.messageText = Strings.setResetTitle
+        alert.informativeText = Strings.setResetBody
+        alert.addButton(withTitle: Strings.reset)
+        alert.addButton(withTitle: Strings.cancel)
+        NSApp.activate(ignoringOtherApps: true)
+        guard alert.runModal() == .alertFirstButtonReturn else { return }
+        Settings.resetAll()
+        detector.triggerKeyCode = Int64(Settings.triggerKeyCode)
+        detector.holdDuration = Settings.holdDuration
+        configurePeek()
+        peekDetector.stop()
+        if Settings.peekEnabled || Settings.fixOpenEnabled { peekDetector.start() }
+        BrowseWindow.shared.applySettings()
+        SettingsWindow.shared.present()   // Fenster mit den Standardwerten neu aufbauen
+        HUD.show(Strings.setResetDone)
     }
 
     @objc private func openSettings() { SettingsWindow.shared.present() }
@@ -223,6 +251,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private func configurePeek() {
         peekDetector.modifierIndex = Settings.peekModifierIndex
         peekDetector.holdDuration = Settings.peekHoldDuration
+        peekDetector.peekEnabled = Settings.peekEnabled
+        peekDetector.peekCount = Settings.peekPressCount
+        peekDetector.fixEnabled = Settings.fixOpenEnabled
+        peekDetector.fixCount = Settings.fixPressCount
+        peekDetector.fixHold = Settings.fixHoldAtEnd
     }
 
     // MARK: - Updates
