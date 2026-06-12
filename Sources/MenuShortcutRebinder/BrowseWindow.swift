@@ -185,17 +185,16 @@ final class BrowseWindow: NSObject, NSWindowDelegate {
             flagsMonitors.append(m)
         }
 
-        // Tastatur: Esc schließt; bei aktiver Suche ↑/↓ wählt, Enter führt aus.
+        // Tastatur: Esc schließt; ↑/↓ wählt (auch ohne Suche), Enter führt den gewählten Befehl aus.
         if let m = NSEvent.addLocalMonitorForEvents(matching: .keyDown, handler: { [weak self] event in
             guard let self, self.window?.isKeyWindow == true else { return event }
             if event.keyCode == 53 { self.closeBrowse(); return nil }   // Esc
-            if !self.model.query.isEmpty {
-                switch event.keyCode {
-                case 126: self.model.moveSelection(-1); return nil      // ↑
-                case 125: self.model.moveSelection(1); return nil       // ↓
-                case 36, 76: self.model.performSelected(); return nil   // Return/Enter
-                default: break
-                }
+            switch event.keyCode {
+            case 126: self.model.moveSelection(-1); return nil      // ↑
+            case 125: self.model.moveSelection(1); return nil       // ↓
+            case 36, 76:                                            // Return/Enter
+                if self.model.selectedID != nil { self.model.performSelected(); return nil }
+            default: break
             }
             // ⌘-Kürzel direkt ausführen (außer Text-Bearbeitung im Suchfeld).
             if event.modifierFlags.contains(.command), let item = self.matchingItem(for: event) {

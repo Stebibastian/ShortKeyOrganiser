@@ -26,7 +26,7 @@ final class BrowseModel: ObservableObject {
     @Published var apps: [AppChoice] = []
     @Published var selectedPid: pid_t = 0
     @Published var items: [BrowseItem] = []
-    @Published var query: String = "" { didSet { selectedID = filteredItems.first?.id } }
+    @Published var query: String = "" { didSet { selectedID = query.isEmpty ? nil : filteredItems.first?.id } }
     @Published var selectedID: UUID?
     @Published var loading = false
     @Published var pendingMenus: [String] = []   // Menüs, deren Scan noch läuft (Skeleton-Spalten)
@@ -248,8 +248,12 @@ final class BrowseModel: ObservableObject {
     func moveSelection(_ delta: Int) {
         let list = filteredItems
         guard !list.isEmpty else { selectedID = nil; return }
-        let cur = list.firstIndex { $0.id == selectedID } ?? 0
-        selectedID = list[min(list.count - 1, max(0, cur + delta))].id
+        if let cur = list.firstIndex(where: { $0.id == selectedID }) {
+            selectedID = list[min(list.count - 1, max(0, cur + delta))].id
+        } else {
+            // Noch keine Auswahl: ↓ beginnt oben, ↑ unten.
+            selectedID = delta >= 0 ? list.first?.id : list.last?.id
+        }
     }
     func performSelected() {
         guard let id = selectedID, let item = filteredItems.first(where: { $0.id == id }) else { return }
@@ -885,7 +889,7 @@ struct BrowseView: View {
     private func row(_ item: BrowseItem, _ idx: Int) -> some View {
         let held = model.highlightEnabled ? model.heldMods : []
         let keyHighlight = !held.isEmpty && !item.baseKey.isEmpty && item.modifiers == held
-        let selected = !model.query.isEmpty && item.id == model.selectedID
+        let selected = item.id == model.selectedID   // Pfeiltasten-Auswahl (mit und ohne Suche)
         return BrowseRowView(item: item,
                              isCustom: model.isCustom(item),
                              isFavorite: model.isFavorite(item),
