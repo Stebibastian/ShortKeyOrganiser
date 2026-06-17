@@ -58,6 +58,13 @@ enum Strings {
     static var setPeekEnable: String { s("Kurzblick (Overlay, solange Du hältst)", "Quick peek (overlay while you hold)", fr: "Aperçu rapide (visible tant que tu maintiens)", es: "Vistazo rápido (visible mientras mantienes)", it: "Sguardo rapido (visibile finché tieni premuto)") }
     static var setFixEnable: String { s("Fix öffnen (Fenster bleibt offen)", "Pinned open (window stays open)", fr: "Ouverture fixe (la fenêtre reste ouverte)", es: "Apertura fija (la ventana queda abierta)", it: "Apertura fissa (la finestra resta aperta)") }
     static var setPressCount: String { s("Anzahl Drücke", "Number of presses", fr: "Nombre d'appuis", es: "Número de pulsaciones", it: "Numero di pressioni") }
+    static var setTriggerMode: String { s("Modus", "Mode", fr: "Mode", es: "Modo", it: "Modalità") }
+    static var setModeOff: String { s("Aus", "Off", fr: "Désactivé", es: "Desactivado", it: "Disattivato") }
+    static var setModeHold: String { s("Nur Halten", "Hold only", fr: "Maintien seul", es: "Solo mantener", it: "Solo tenere premuto") }
+    static var setModeTap: String { s("Tippen", "Tap", fr: "Appui", es: "Pulsar", it: "Tocco") }
+    static var setModeTapHold: String { s("Tippen + Halten", "Tap + hold", fr: "Appui + maintien", es: "Pulsar + mantener", it: "Tocco + tenere premuto") }
+    static var setGesturePeek: String { s("Kurzblick (Loslassen schließt)", "Quick peek (release closes)", fr: "Aperçu rapide (relâcher ferme)", es: "Vistazo rápido (soltar cierra)", it: "Sguardo rapido (rilasciando si chiude)") }
+    static var setGestureFix: String { s("Fix öffnen (bleibt offen)", "Pinned open (stays open)", fr: "Ouverture fixe (reste ouvert)", es: "Apertura fija (queda abierto)", it: "Apertura fissa (resta aperto)") }
     static var setPlusHold: String { s("+ halten", "+ hold", fr: "+ maintenir", es: "+ mantener", it: "+ tenere") }
     static var setFixHold: String { s("Beim letzten Druck halten", "Hold on the last press", fr: "Maintenir au dernier appui", es: "Mantener en la última pulsación", it: "Tenere premuto all'ultima pressione") }
     static var setFeatureFavorites: String { s("Favoriten-Popup", "Favourites popup", fr: "Popup des favoris", es: "Ventana de favoritos", it: "Popup preferiti") }

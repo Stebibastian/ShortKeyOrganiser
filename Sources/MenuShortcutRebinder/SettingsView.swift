@@ -153,67 +153,30 @@ struct SettingsView: View {
         VStack(alignment: .leading, spacing: 22) {
             Text(Strings.setSecKeyboard).font(.title2.bold())
 
+            // Overlay: eine gemeinsame Taste, zwei Gesten (Kurzblick + fix öffnen).
             featureBlock(Strings.setFeatureOverlay, Strings.setFeatureOverlayDesc) {
-                row(Strings.setPeekTrigger) {
-                    Picker("", selection: $peekModifierIndex) {
-                        Text(Strings.bsModCommand).tag(0)
-                        Text(Strings.bsModOption).tag(1)
-                        Text(Strings.bsModControl).tag(2)
-                    }
-                    .labelsHidden().frame(width: 150)
-                    .onChange(of: peekModifierIndex) { _ in commit() }
-                }
-
+                row(Strings.setPeekTrigger) { modifierPicker($peekModifierIndex) }
                 Divider()
-
-                toggleRow(Strings.setPeekEnable, $peekEnabled)
-                Group {
-                    row(Strings.setPressCount) {
-                        pressCountPicker($peekPressCount, holdSuffix: true)
-                    }
-                    slider(Strings.setHold, $peekHoldMs, 50...500, 10, "ms", disabled: !peekEnabled)
-                }
-                .disabled(!peekEnabled)
-
+                Text(Strings.setGesturePeek).font(.callout.weight(.semibold))
+                triggerControls(mode: peekModeBinding, count: $peekPressCount, allowTapOnly: false)
+                slider(Strings.setHold, $peekHoldMs, 50...500, 10, "ms", disabled: peekModeBinding.wrappedValue == 0)
                 Divider()
-
-                toggleRow(Strings.setFixEnable, $fixEnabled)
-                Group {
-                    row(Strings.setPressCount) {
-                        pressCountPicker($fixPressCount, holdSuffix: fixHold)
-                    }
-                    toggleRow(Strings.setFixHold, $fixHold)
-                }
-                .disabled(!fixEnabled)
-
+                Text(Strings.setGestureFix).font(.callout.weight(.semibold))
+                triggerControls(mode: modeBinding($fixEnabled, $fixHold, $fixPressCount),
+                                count: $fixPressCount, allowTapOnly: true)
                 if triggerConflict {
                     Label(Strings.setTriggerConflict, systemImage: "exclamationmark.triangle.fill")
-                        .font(.callout)
-                        .foregroundStyle(.orange)
+                        .font(.callout).foregroundStyle(.orange)
                 }
-
                 Divider()
-
                 testField
             }
 
             featureBlock(Strings.setFeatureFavorites, Strings.setFeatureFavoritesDesc) {
-                row(Strings.setFavTrigger) {
-                    Picker("", selection: $favModifierIndex) {
-                        Text(Strings.bsModCommand).tag(0)
-                        Text(Strings.bsModOption).tag(1)
-                        Text(Strings.bsModControl).tag(2)
-                    }
-                    .labelsHidden().frame(width: 150)
-                    .onChange(of: favModifierIndex) { _ in commit() }
-                }
+                row(Strings.setFavTrigger) { modifierPicker($favModifierIndex) }
                 Divider()
-                toggleRow(Strings.setFavEnable, $favEnabled)
-                Group {
-                    row(Strings.setPressCount) { pressCountPicker($favPressCount, holdSuffix: favHold) }
-                    toggleRow(Strings.setFavHold, $favHold)
-                }
-                .disabled(!favEnabled)
+                triggerControls(mode: modeBinding($favEnabled, $favHold, $favPressCount),
+                                count: $favPressCount, allowTapOnly: true)
             }
 
             featureBlock(Strings.setFeatureRebind, Strings.setFeatureRebindDesc) {
@@ -225,6 +188,72 @@ struct SettingsView: View {
                     .onChange(of: rebindKeyCode) { _ in commit() }
                 }
                 slider(Strings.setHold, $rebindHoldMs, 300...1500, 50, "ms")
+            }
+        }
+    }
+
+    private func modifierPicker(_ sel: Binding<Int>) -> some View {
+        Picker("", selection: sel) {
+            Text(Strings.bsModCommand).tag(0)
+            Text(Strings.bsModOption).tag(1)
+            Text(Strings.bsModControl).tag(2)
+        }
+        .labelsHidden().frame(width: 150)
+        .onChange(of: sel.wrappedValue) { _ in commit() }
+    }
+
+    /// Modus 0=aus, 1=nur halten, 2=tippen, 3=tippen+halten – kapselt enabled/hold/count einer Geste.
+    private func modeBinding(_ enabled: Binding<Bool>, _ hold: Binding<Bool>, _ count: Binding<Int>) -> Binding<Int> {
+        Binding(
+            get: {
+                if !enabled.wrappedValue { return 0 }
+                if hold.wrappedValue && count.wrappedValue <= 1 { return 1 }
+                return hold.wrappedValue ? 3 : 2
+            },
+            set: { m in
+                switch m {
+                case 1: enabled.wrappedValue = true; hold.wrappedValue = true; count.wrappedValue = 1
+                case 2: enabled.wrappedValue = true; hold.wrappedValue = false; if count.wrappedValue < 2 { count.wrappedValue = 2 }
+                case 3: enabled.wrappedValue = true; hold.wrappedValue = true; if count.wrappedValue < 2 { count.wrappedValue = 2 }
+                default: enabled.wrappedValue = false
+                }
+                commit()
+            })
+    }
+
+    /// Kurzblick ist immer mit Halten (kein „nur Tippen"): 0=aus, 1=nur halten, 3=N×+halten.
+    private var peekModeBinding: Binding<Int> {
+        Binding(
+            get: { !peekEnabled ? 0 : (peekPressCount <= 1 ? 1 : 3) },
+            set: { m in
+                switch m {
+                case 1: peekEnabled = true; peekPressCount = 1
+                case 3: peekEnabled = true; if peekPressCount < 2 { peekPressCount = 2 }
+                default: peekEnabled = false
+                }
+                commit()
+            })
+    }
+
+    /// Modus-Picker + (bei den Tippen-Modi) Anzahl. Die Taste steht separat im Block.
+    @ViewBuilder
+    private func triggerControls(mode: Binding<Int>, count: Binding<Int>, allowTapOnly: Bool) -> some View {
+        row(Strings.setTriggerMode) {
+            Picker("", selection: mode) {
+                Text(Strings.setModeOff).tag(0)
+                Text(Strings.setModeHold).tag(1)
+                if allowTapOnly { Text(Strings.setModeTap).tag(2) }
+                Text(Strings.setModeTapHold).tag(3)
+            }
+            .labelsHidden().frame(width: 200)
+        }
+        if mode.wrappedValue >= 2 {
+            row(Strings.setPressCount) {
+                Picker("", selection: count) {
+                    ForEach(2...5, id: \.self) { Text("\($0)×").tag($0) }
+                }
+                .labelsHidden().frame(width: 70)
+                .onChange(of: count.wrappedValue) { _ in commit() }
             }
         }
     }

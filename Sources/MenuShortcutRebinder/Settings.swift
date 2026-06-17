@@ -94,9 +94,9 @@ enum Settings {
     static var peekPressCount: Int {
         get {
             let v = UserDefaults.standard.object(forKey: peekPressCountKey) as? Int ?? 2
-            return min(5, max(2, v))
+            return min(5, max(1, v))
         }
-        set { UserDefaults.standard.set(min(5, max(2, newValue)), forKey: peekPressCountKey) }
+        set { UserDefaults.standard.set(min(5, max(1, newValue)), forKey: peekPressCountKey) }
     }
 
     private static let fixEnabledKey = "fixOpenEnabled"
@@ -111,9 +111,9 @@ enum Settings {
     static var fixPressCount: Int {
         get {
             let v = UserDefaults.standard.object(forKey: fixPressCountKey) as? Int ?? 3
-            return min(5, max(2, v))
+            return min(5, max(1, v))
         }
-        set { UserDefaults.standard.set(min(5, max(2, newValue)), forKey: fixPressCountKey) }
+        set { UserDefaults.standard.set(min(5, max(1, newValue)), forKey: fixPressCountKey) }
     }
 
     private static let fixHoldKey = "fixHoldAtEnd"
@@ -142,8 +142,8 @@ enum Settings {
     }
     private static let favPressCountKey = "favPressCount"
     static var favPressCount: Int {
-        get { let v = UserDefaults.standard.object(forKey: favPressCountKey) as? Int ?? 2; return min(5, max(2, v)) }
-        set { UserDefaults.standard.set(min(5, max(2, newValue)), forKey: favPressCountKey) }
+        get { let v = UserDefaults.standard.object(forKey: favPressCountKey) as? Int ?? 2; return min(5, max(1, v)) }
+        set { UserDefaults.standard.set(min(5, max(1, newValue)), forKey: favPressCountKey) }
     }
     private static let favHoldKey = "favHoldAtEnd"
     static var favHoldAtEnd: Bool {
