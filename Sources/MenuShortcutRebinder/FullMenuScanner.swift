@@ -12,9 +12,13 @@ struct BrowseItem: Identifiable {
     let baseKey: String            // Basistaste (leer = kein Kürzel)
     let enabled: Bool              // aktuell auswählbar? (sonst grau)
     let element: AXUIElement?      // Referenz auf den Menüpunkt – zum Ausführen (AXPress)
+    var submenuCount: Int = 0      // >0 = zusammengeklapptes grosses Untermenü (nicht expandiert)
 
     /// Untermenü-Pfad ohne das oberste Menü, z. B. ["Automatisch ausfüllen"].
     var subPath: [String] { menuPath.count > 1 ? Array(menuPath.dropFirst()) : [] }
+
+    /// true = nur ein Platzhalter für ein grosses dynamisches Untermenü (kein echter Befehl).
+    var isCollapsedSubmenu: Bool { submenuCount > 0 }
 }
 
 /// Ergebnis eines Einzelmenü-Scans (mit Hinweis, falls die Sicherheitsgrenze griff).
@@ -53,19 +57,34 @@ enum FullMenuScanner {
     }
 
     /// Scannt EIN Top-Menü komplett (inkl. Untermenüs, gebündelte Attribut-Abfragen).
-    static func scanMenu(_ menu: AXUIElement, named name: String, maxDepth: Int = 8) -> MenuScanResult {
+    /// `collapseThreshold` > 0: Untermenüs mit mehr Einträgen werden NICHT expandiert,
+    /// sondern als ein zusammengeklappter Platzhalter geführt (z. B. FileMakers „Gehe zu Layout").
+    static func scanMenu(_ menu: AXUIElement, named name: String, maxDepth: Int = 8,
+                         collapseThreshold: Int = 0) -> MenuScanResult {
         var items: [BrowseItem] = []
-        walk(menu, path: [name], depth: 0, maxDepth: maxDepth, into: &items)
+        walk(menu, path: [name], depth: 0, maxDepth: maxDepth,
+             collapseThreshold: collapseThreshold, into: &items)
         return MenuScanResult(name: name, items: items, truncated: items.count >= maxItemsPerMenu)
     }
 
     /// Kompletter Scan in einem Rutsch (Mess-Modus und einfache Aufrufer).
-    static func scan(pid: pid_t, maxDepth: Int = 8) -> [BrowseItem] {
-        topMenus(pid: pid).flatMap { scanMenu($0.menu, named: $0.name, maxDepth: maxDepth).items }
+    static func scan(pid: pid_t, maxDepth: Int = 8, collapseThreshold: Int = 0) -> [BrowseItem] {
+        topMenus(pid: pid).flatMap {
+            scanMenu($0.menu, named: $0.name, maxDepth: maxDepth, collapseThreshold: collapseThreshold).items
+        }
     }
 
-    private static func walk(_ menu: AXUIElement, path: [String],
-                             depth: Int, maxDepth: Int, into out: inout [BrowseItem]) {
+    /// Klappt EIN zuvor zusammengeklapptes Untermenü on-demand auf (Klick im Overlay).
+    /// `parentItem` ist der Menüeintrag, dessen Untermenü voll gescannt werden soll.
+    static func expandSubmenu(of parentItem: AXUIElement, path: [String], maxDepth: Int = 8) -> [BrowseItem] {
+        guard let submenu = children(parentItem).first else { return [] }
+        var out: [BrowseItem] = []
+        walk(submenu, path: path, depth: 0, maxDepth: maxDepth, collapseThreshold: 0, into: &out)
+        return out
+    }
+
+    private static func walk(_ menu: AXUIElement, path: [String], depth: Int, maxDepth: Int,
+                             collapseThreshold: Int, into out: inout [BrowseItem]) {
         if depth > maxDepth || out.count >= maxItemsPerMenu { return }
         for it in children(menu) {
             if out.count >= maxItemsPerMenu { return }
@@ -73,7 +92,20 @@ enum FullMenuScanner {
             let v = itemAttributes(it)
             guard let t = v.title, !t.isEmpty else { continue }   // Trenner
             if let submenu = v.children.first {
-                walk(submenu, path: path + [t], depth: depth + 1, maxDepth: maxDepth, into: &out)
+                // Sehr grosse dynamische Untermenüs (z. B. FileMakers Layout-Liste) nicht
+                // expandieren – das hängt den Scan auf und überflutet die Liste.
+                if collapseThreshold > 0 {
+                    let count = children(submenu).count
+                    if count > collapseThreshold {
+                        out.append(BrowseItem(title: t, menuPath: path,
+                                              pathDisplay: (path + [t]).joined(separator: " ▸ "),
+                                              shortcut: "", modifiers: [], baseKey: "",
+                                              enabled: true, element: it, submenuCount: count))
+                        continue
+                    }
+                }
+                walk(submenu, path: path + [t], depth: depth + 1, maxDepth: maxDepth,
+                     collapseThreshold: collapseThreshold, into: &out)
             } else {
                 let sc = shortcut(char: v.cmdChar, virtualKey: v.cmdVirtualKey, rawModifiers: v.cmdModifiers)
                 out.append(BrowseItem(title: t, menuPath: path,

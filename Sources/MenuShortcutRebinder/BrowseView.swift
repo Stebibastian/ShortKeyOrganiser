@@ -76,6 +76,10 @@ final class BrowseModel: ObservableObject {
     }
     private static var cache: [String: CacheEntry] = [:]
 
+    /// Untermenüs mit mehr Einträgen werden im Overlay zugeklappt (nicht expandiert).
+    /// Hält die Liste übersichtlich und den Scan schnell (z. B. FileMakers Layout-Liste).
+    static let collapseThreshold = 40
+
     var currentApp: AppChoice? { apps.first { $0.pid == selectedPid } }
 
     /// Schlüssel-Präfix für Favoriten/Verlauf/Cache der aktuellen Quelle.
@@ -148,7 +152,8 @@ final class BrowseModel: ObservableObject {
             var truncated: Set<String> = []
             for m in menus {
                 guard token == self.scanToken.current else { return }   // veralteter Scan
-                let result = FullMenuScanner.scanMenu(m.menu, named: m.name)
+                let result = FullMenuScanner.scanMenu(m.menu, named: m.name,
+                                                      collapseThreshold: Self.collapseThreshold)
                 all += result.items
                 if result.truncated { truncated.insert(m.name) }
                 if incremental {
@@ -237,10 +242,26 @@ final class BrowseModel: ObservableObject {
     func edit(_ item: BrowseItem) { if !kmMode, let app = currentApp { onEdit?(item, app) } }
     func requestDelete(_ item: BrowseItem) { if !kmMode, let app = currentApp { onDelete?(item, app) } }
     func perform(_ item: BrowseItem) {
+        if item.isCollapsedSubmenu { expandSubmenu(item); return }   // grosses Untermenü aufklappen
         BrowsePrefs.addRecent(item.pathDisplay, for: appKey)
         recents = BrowsePrefs.recents(for: appKey)
         if kmMode { KeyboardMaestro.run(item.title); return }
         if let app = currentApp { onPerform?(item, app) }
+    }
+
+    /// Klappt einen zusammengeklappten grossen Untermenü-Platzhalter on-demand auf und
+    /// ersetzt ihn durch die echten Einträge – damit man sie sehen und favorisieren kann.
+    private func expandSubmenu(_ item: BrowseItem) {
+        guard let el = item.element else { return }
+        let path = item.menuPath + [item.title]
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            let expanded = FullMenuScanner.expandSubmenu(of: el, path: path)
+            DispatchQueue.main.async {
+                guard let self, let idx = self.items.firstIndex(where: { $0.id == item.id }) else { return }
+                self.items.remove(at: idx)
+                self.items.insert(contentsOf: expanded, at: idx)
+            }
+        }
     }
     func activateSearch() { onActivateSearch?(); searchActive = true }
     func openSettings() { onOpenSettings?() }
@@ -327,8 +348,13 @@ struct BrowseRowView: View {
     }
 
     private var titleText: Text {
+        // Zusammengeklapptes grosses Untermenü: Titel + Anzahl, klar als Platzhalter erkennbar.
+        if item.isCollapsedSubmenu {
+            return Text(item.title).foregroundColor(.secondary)
+                + Text("  ▸ \(item.submenuCount)").foregroundColor(.secondary)
+        }
         // Der Submenü-Pfad steht jetzt als Gruppen-Überschrift in der Spalte, nicht mehr als Präfix.
-        Text(item.title).foregroundColor(item.enabled ? .primary : .secondary)
+        return Text(item.title).foregroundColor(item.enabled ? .primary : .secondary)
     }
 
     var body: some View {

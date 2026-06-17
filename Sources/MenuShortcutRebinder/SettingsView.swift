@@ -44,6 +44,8 @@ struct SettingsView: View {
     @State var fixUseHotkey: Bool
     @State var fixHotkeyCode: Int
     @State var fixHotkeyMods: Int
+    @State var fixModifierIndex: Int
+    @State var fixHoldMs: Double
     @State var peekModifierIndex: Int
     @State var peekHoldMs: Double
     @State var favEnabled: Bool
@@ -53,6 +55,7 @@ struct SettingsView: View {
     @State var favUseHotkey: Bool
     @State var favHotkeyCode: Int
     @State var favHotkeyMods: Int
+    @State var favHoldMs: Double
     @State var screenPercent: Double
     @State var heightPercent: Double
     @State var sizeLinked: Bool
@@ -150,36 +153,33 @@ struct SettingsView: View {
 
     // MARK: Tastenkürzel (zwei klar getrennte Funktionen)
 
-    /// Konflikt: beide Gesten wären identisch (gleiche Druckzahl UND beide mit Halten).
+    /// Konflikt: beide Overlay-Gesten lägen auf derselben Taste mit identischer Geste.
     private var triggerConflict: Bool {
-        peekEnabled && fixEnabled && fixHold && peekPressCount == fixPressCount
+        peekEnabled && fixEnabled && !fixUseHotkey
+            && peekModifierIndex == fixModifierIndex
+            && fixHold && peekPressCount == fixPressCount
     }
 
     private var keyboardSection: some View {
         VStack(alignment: .leading, spacing: 22) {
             Text(Strings.setSecKeyboard).font(.title2.bold())
 
-            // Befehls-Overlay: gemeinsame Modifier-Taste, zwei Gesten (Kurzblick + Fix öffnen).
+            // Befehls-Overlay: Kurzblick und Fix öffnen – je eigener Auslöser (eigene Taste).
             featureBlock(Strings.setFeatureOverlay, Strings.setFeatureOverlayDesc) {
-                // Taste nur zeigen, wenn mindestens eine der Gesten eine Modifier-Geste ist.
-                if peekEnabled || (fixEnabled && !fixUseHotkey) {
-                    row(Strings.setPeekTrigger) { modifierPicker($peekModifierIndex) }
-                    Divider()
-                }
                 gestureEditor(title: Strings.setGesturePeek, mode: peekModeBinding,
                               count: $peekPressCount, allowTapOnly: false, allowHotkey: false,
-                              code: .constant(-1), mods: .constant(0), holdSlider: $peekHoldMs)
+                              code: .constant(-1), mods: .constant(0),
+                              modifier: $peekModifierIndex, holdSlider: $peekHoldMs)
                 Divider()
                 gestureEditor(title: Strings.setGestureFix,
                               mode: modeBinding($fixEnabled, $fixHold, $fixPressCount, $fixUseHotkey),
                               count: $fixPressCount, allowTapOnly: true, allowHotkey: true,
-                              code: $fixHotkeyCode, mods: $fixHotkeyMods)
+                              code: $fixHotkeyCode, mods: $fixHotkeyMods,
+                              modifier: $fixModifierIndex, holdSlider: $fixHoldMs)
                 if triggerConflict {
                     Label(Strings.setTriggerConflict, systemImage: "exclamationmark.triangle.fill")
                         .font(.callout).foregroundStyle(.orange)
                 }
-                Divider()
-                testField
             }
 
             // Favoriten-Popup: eigener Auslöser, Modifier-Geste ODER Tastenkürzel.
@@ -187,7 +187,8 @@ struct SettingsView: View {
                 gestureEditor(title: Strings.setTriggerMode,
                               mode: modeBinding($favEnabled, $favHold, $favPressCount, $favUseHotkey),
                               count: $favPressCount, allowTapOnly: true, allowHotkey: true,
-                              code: $favHotkeyCode, mods: $favHotkeyMods, modifier: $favModifierIndex)
+                              code: $favHotkeyCode, mods: $favHotkeyMods,
+                              modifier: $favModifierIndex, holdSlider: $favHoldMs)
             }
 
             featureBlock(Strings.setFeatureRebind, Strings.setFeatureRebindDesc) {
@@ -200,6 +201,9 @@ struct SettingsView: View {
                 }
                 slider(Strings.setHold, $rebindHoldMs, 300...1500, 50, "ms")
             }
+
+            // Auslöser-Tester ganz unten – gilt für alle Gesten oben.
+            testField
         }
     }
 
@@ -288,7 +292,7 @@ struct SettingsView: View {
                     .onChange(of: count.wrappedValue) { _ in commit() }
                 }
             }
-            if let holdSlider {
+            if let holdSlider, mode.wrappedValue != 2 {   // „nur Tippen" hat kein Halten
                 slider(Strings.setHold, holdSlider, 50...500, 10, "ms")
             }
         }
@@ -496,6 +500,8 @@ struct SettingsView: View {
         Settings.fixUseHotkey = fixUseHotkey
         Settings.fixHotkeyKeyCode = fixHotkeyCode
         Settings.fixHotkeyModifiers = fixHotkeyMods
+        Settings.fixModifierIndex = fixModifierIndex
+        Settings.fixHoldDuration = fixHoldMs / 1000.0
         Settings.peekModifierIndex = peekModifierIndex
         Settings.favEnabled = favEnabled
         Settings.favModifierIndex = favModifierIndex
@@ -504,6 +510,7 @@ struct SettingsView: View {
         Settings.favUseHotkey = favUseHotkey
         Settings.favHotkeyKeyCode = favHotkeyCode
         Settings.favHotkeyModifiers = favHotkeyMods
+        Settings.favHoldDuration = favHoldMs / 1000.0
         Settings.peekHoldDuration = peekHoldMs / 1000.0
         if sizeLinked { heightPercent = screenPercent }
         Settings.browseScreenPercent = screenPercent
@@ -617,6 +624,8 @@ final class SettingsWindow: NSObject {
             fixUseHotkey: Settings.fixUseHotkey,
             fixHotkeyCode: Settings.fixHotkeyKeyCode,
             fixHotkeyMods: Settings.fixHotkeyModifiers,
+            fixModifierIndex: Settings.fixModifierIndex,
+            fixHoldMs: Settings.fixHoldDuration * 1000,
             peekModifierIndex: Settings.peekModifierIndex,
             peekHoldMs: Settings.peekHoldDuration * 1000,
             favEnabled: Settings.favEnabled,
@@ -626,6 +635,7 @@ final class SettingsWindow: NSObject {
             favUseHotkey: Settings.favUseHotkey,
             favHotkeyCode: Settings.favHotkeyKeyCode,
             favHotkeyMods: Settings.favHotkeyModifiers,
+            favHoldMs: Settings.favHoldDuration * 1000,
             screenPercent: Settings.browseScreenPercent,
             heightPercent: Settings.browseHeightPercent,
             sizeLinked: Settings.browseSizeLinked,

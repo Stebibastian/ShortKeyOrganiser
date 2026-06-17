@@ -12,9 +12,11 @@ final class FavoritesPopupModel: ObservableObject {
     @Published var appName = ""
     @Published var items: [BrowseItem] = []
     @Published var loading = true
+    private var targetPID: pid_t = 0
 
     func load(app: NSRunningApplication) {
         appName = app.localizedName ?? "?"
+        targetPID = app.processIdentifier
         items = []
         let pid = app.processIdentifier
         let bundleID = app.bundleIdentifier ?? ""
@@ -44,8 +46,13 @@ final class FavoritesPopupModel: ObservableObject {
 
     func perform(_ item: BrowseItem) {
         guard let el = item.element else { return }
-        AXUIElementPerformAction(el, kAXPressAction as CFString)
-        HUD.show(Strings.ranCommand(item.title))
+        // Ziel-App in den Vordergrund holen – sonst ignorieren viele Apps (z. B. FileMaker)
+        // den Menübefehl, und nichts passiert. Gleicher Ablauf wie der Overlay-Pfad.
+        NSRunningApplication(processIdentifier: targetPID)?.activate()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.06) {
+            let err = AXUIElementPerformAction(el, kAXPressAction as CFString)
+            HUD.show(err == .success ? Strings.ranCommand(item.title) : Strings.cmdUnavailable(item.title))
+        }
     }
 }
 

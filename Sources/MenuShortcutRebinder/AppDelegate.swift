@@ -6,8 +6,9 @@ import ServiceManagement
 final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var statusItem: NSStatusItem!
     private let detector = LongPressDetector()
-    private let peekDetector = PeekTriggerDetector()
-    private let favDetector = PeekTriggerDetector()   // separater Auslöser fürs Favoriten-Popup
+    private let peekDetector = PeekTriggerDetector()   // nur Kurzblick
+    private let fixDetector = PeekTriggerDetector()    // nur „Fix öffnen" (eigene Taste)
+    private let favDetector = PeekTriggerDetector()    // separater Auslöser fürs Favoriten-Popup
     private var trustTimer: Timer?
     private var didForceRelaunch = false
     private var trustedAtLaunch = false
@@ -46,7 +47,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             if SettingsWindow.shared.isTestingTriggers { SettingsWindow.shared.flashTest(.release) }
             BrowseWindow.shared.peekReleased()   // harmlos, wenn kein Peek offen ist
         }
-        peekDetector.onFixOpen = { [weak self] in self?.triggerFixOpen() }
+        configureFix()
+        fixDetector.onFixOpen = { [weak self] in self?.triggerFixOpen() }
         configureFav()
         favDetector.onFixOpen = { [weak self] in
             FavoritesPopupWindow.shared.present(app: self?.lastFrontApp)
@@ -58,7 +60,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         promptAccessibility()   // System-Prompt + Eintrag in der Rechte-Liste anlegen
         trustedAtLaunch = AXIsProcessTrusted()
         detector.start()
-        if Settings.peekEnabled || (Settings.fixOpenEnabled && !Settings.fixUseHotkey) { peekDetector.start() }
+        if Settings.peekEnabled { peekDetector.start() }
+        if Settings.fixOpenEnabled && !Settings.fixUseHotkey { fixDetector.start() }
         if Settings.favEnabled && !Settings.favUseHotkey { favDetector.start() }
         configureHotkeys()   // Carbon-Tastenkürzel brauchen keine Bedienungshilfen-Freigabe
 
@@ -252,15 +255,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         peekDetector.holdDuration = Settings.peekHoldDuration
         peekDetector.peekEnabled = Settings.peekEnabled
         peekDetector.peekCount = Settings.peekPressCount
-        // „Fix öffnen" als Modifier-Geste nur, wenn nicht auf echtes Tastenkürzel gestellt.
-        peekDetector.fixEnabled = Settings.fixOpenEnabled && !Settings.fixUseHotkey
-        peekDetector.fixCount = Settings.fixPressCount
-        peekDetector.fixHold = Settings.fixHoldAtEnd
+        peekDetector.fixEnabled = false   // „Fix öffnen" läuft über den eigenen fixDetector
+    }
+
+    private func configureFix() {
+        fixDetector.modifierIndex = Settings.fixModifierIndex
+        fixDetector.holdDuration = Settings.fixHoldDuration
+        fixDetector.peekEnabled = false
+        // Modifier-Geste nur, wenn nicht auf echtes Tastenkürzel gestellt.
+        fixDetector.fixEnabled = Settings.fixOpenEnabled && !Settings.fixUseHotkey
+        fixDetector.fixCount = Settings.fixPressCount
+        fixDetector.fixHold = Settings.fixHoldAtEnd
     }
 
     private func configureFav() {
         favDetector.modifierIndex = Settings.favModifierIndex
-        favDetector.holdDuration = Settings.peekHoldDuration
+        favDetector.holdDuration = Settings.favHoldDuration
         favDetector.peekEnabled = false
         favDetector.fixEnabled = true
         favDetector.fixCount = Settings.favPressCount
@@ -297,9 +307,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     /// Detektoren und Tastenkürzel nach Einstellungsänderung neu konfigurieren und (de)aktivieren.
     private func restartTriggerDetectors() {
-        configurePeek(); configureFav()
+        configurePeek(); configureFix(); configureFav()
         peekDetector.stop()
-        if Settings.peekEnabled || (Settings.fixOpenEnabled && !Settings.fixUseHotkey) { peekDetector.start() }
+        if Settings.peekEnabled { peekDetector.start() }
+        fixDetector.stop()
+        if Settings.fixOpenEnabled && !Settings.fixUseHotkey { fixDetector.start() }
         favDetector.stop()
         if Settings.favEnabled && !Settings.favUseHotkey { favDetector.start() }
         configureHotkeys()

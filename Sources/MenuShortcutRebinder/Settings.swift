@@ -123,6 +123,23 @@ enum Settings {
         set { UserDefaults.standard.set(newValue, forKey: fixHoldKey) }
     }
 
+    // Eigene Auslöser-Taste für „Fix öffnen" (getrennt vom Kurzblick). 0=⌘, 1=⌥, 2=⌃.
+    private static let fixModifierKey = "fixModifierIndex"
+    static var fixModifierIndex: Int {
+        get { UserDefaults.standard.object(forKey: fixModifierKey) as? Int ?? defaultPeekModifier }
+        set { UserDefaults.standard.set(newValue, forKey: fixModifierKey) }
+    }
+    private static let fixHoldDurationKey = "fixHoldDuration"
+    /// Sekunden, die beim „Fix öffnen" am Ende gehalten werden muss (0.05-1.0).
+    static var fixHoldDuration: Double {
+        get {
+            let v = UserDefaults.standard.object(forKey: fixHoldDurationKey) as? Double ?? defaultPeekHold
+            return min(1.0, max(0.05, v))
+        }
+        set { UserDefaults.standard.set(min(1.0, max(0.05, newValue)), forKey: fixHoldDurationKey) }
+    }
+    static var fixModifierSymbol: String { ["⌘", "⌥", "⌃"][min(2, max(0, fixModifierIndex))] }
+
     // „Fix öffnen" alternativ per echtem Tastenkürzel (statt Modifier-Geste).
     private static let fixUseHotkeyKey = "fixUseHotkey"
     static var fixUseHotkey: Bool {
@@ -168,6 +185,15 @@ enum Settings {
         set { UserDefaults.standard.set(newValue, forKey: favHoldKey) }
     }
     static var favModifierSymbol: String { ["⌘", "⌥", "⌃"][min(2, max(0, favModifierIndex))] }
+    private static let favHoldDurationKey = "favHoldDuration"
+    /// Sekunden, die beim Favoriten-Auslöser am Ende gehalten werden muss (0.05-1.0).
+    static var favHoldDuration: Double {
+        get {
+            let v = UserDefaults.standard.object(forKey: favHoldDurationKey) as? Double ?? defaultPeekHold
+            return min(1.0, max(0.05, v))
+        }
+        set { UserDefaults.standard.set(min(1.0, max(0.05, newValue)), forKey: favHoldDurationKey) }
+    }
 
     // Favoriten-Popup alternativ per echtem Tastenkürzel (statt Modifier-Geste).
     private static let favUseHotkeyKey = "favUseHotkey"
@@ -192,8 +218,9 @@ enum Settings {
         let keys = [triggerKeyCodeKey, holdDurationKey,
                     peekModifierKey, peekHoldKey, peekEnabledKey, peekPressCountKey,
                     fixEnabledKey, fixPressCountKey, fixHoldKey,
+                    fixModifierKey, fixHoldDurationKey,
                     fixUseHotkeyKey, fixHotkeyCodeKey, fixHotkeyModsKey,
-                    favEnabledKey, favModifierKey, favPressCountKey, favHoldKey,
+                    favEnabledKey, favModifierKey, favPressCountKey, favHoldKey, favHoldDurationKey,
                     favUseHotkeyKey, favHotkeyCodeKey, favHotkeyModsKey,
                     browseScreenPercentKey, browseHeightPercentKey, browseSizeLinkedKey,
                     browseAnchorKey, browseColumnWidthKey, browseZebraKey, browseHighlightKey,
