@@ -128,12 +128,37 @@ enum Settings {
         ["⌘", "⌥", "⌃"][min(2, max(0, peekModifierIndex))]
     }
 
+    // MARK: Favoriten-Popup (eigener Auslöser, zeigt nur die Favoriten der aktiven App neben der Maus)
+    private static let favEnabledKey = "favEnabled"
+    static var favEnabled: Bool {
+        get { UserDefaults.standard.bool(forKey: favEnabledKey) }   // Standard: aus (opt-in)
+        set { UserDefaults.standard.set(newValue, forKey: favEnabledKey) }
+    }
+    private static let favModifierKey = "favModifierIndex"
+    /// 0=⌘, 1=⌥, 2=⌃. Standard ⌥, damit es sich vom Overlay-Auslöser (⌘) unterscheidet.
+    static var favModifierIndex: Int {
+        get { UserDefaults.standard.object(forKey: favModifierKey) as? Int ?? 1 }
+        set { UserDefaults.standard.set(newValue, forKey: favModifierKey) }
+    }
+    private static let favPressCountKey = "favPressCount"
+    static var favPressCount: Int {
+        get { let v = UserDefaults.standard.object(forKey: favPressCountKey) as? Int ?? 2; return min(5, max(2, v)) }
+        set { UserDefaults.standard.set(min(5, max(2, newValue)), forKey: favPressCountKey) }
+    }
+    private static let favHoldKey = "favHoldAtEnd"
+    static var favHoldAtEnd: Bool {
+        get { UserDefaults.standard.object(forKey: favHoldKey) as? Bool ?? true }   // Standard: halten (tap-tap-hold)
+        set { UserDefaults.standard.set(newValue, forKey: favHoldKey) }
+    }
+    static var favModifierSymbol: String { ["⌘", "⌥", "⌃"][min(2, max(0, favModifierIndex))] }
+
     /// Setzt alle EINSTELLUNGEN auf die Werkseinstellung zurück. Nutzerdaten bleiben:
     /// Favoriten, Verlauf, ausgeblendete Befehle, Onboarding-Status und Sprache.
     static func resetAll() {
         let keys = [triggerKeyCodeKey, holdDurationKey,
                     peekModifierKey, peekHoldKey, peekEnabledKey, peekPressCountKey,
                     fixEnabledKey, fixPressCountKey, fixHoldKey,
+                    favEnabledKey, favModifierKey, favPressCountKey, favHoldKey,
                     browseScreenPercentKey, browseHeightPercentKey, browseSizeLinkedKey,
                     browseAnchorKey, browseColumnWidthKey, browseZebraKey, browseHighlightKey,
                     browseFontSizeKey, browseTransparencyKey, browseBackgroundStyleKey,

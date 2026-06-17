@@ -43,6 +43,10 @@ struct SettingsView: View {
     @State var fixHold: Bool
     @State var peekModifierIndex: Int
     @State var peekHoldMs: Double
+    @State var favEnabled: Bool
+    @State var favModifierIndex: Int
+    @State var favPressCount: Int
+    @State var favHold: Bool
     @State var screenPercent: Double
     @State var heightPercent: Double
     @State var sizeLinked: Bool
@@ -191,6 +195,25 @@ struct SettingsView: View {
                 Divider()
 
                 testField
+            }
+
+            featureBlock(Strings.setFeatureFavorites, Strings.setFeatureFavoritesDesc) {
+                row(Strings.setFavTrigger) {
+                    Picker("", selection: $favModifierIndex) {
+                        Text(Strings.bsModCommand).tag(0)
+                        Text(Strings.bsModOption).tag(1)
+                        Text(Strings.bsModControl).tag(2)
+                    }
+                    .labelsHidden().frame(width: 150)
+                    .onChange(of: favModifierIndex) { _ in commit() }
+                }
+                Divider()
+                toggleRow(Strings.setFavEnable, $favEnabled)
+                Group {
+                    row(Strings.setPressCount) { pressCountPicker($favPressCount, holdSuffix: favHold) }
+                    toggleRow(Strings.setFavHold, $favHold)
+                }
+                .disabled(!favEnabled)
             }
 
             featureBlock(Strings.setFeatureRebind, Strings.setFeatureRebindDesc) {
@@ -422,6 +445,10 @@ struct SettingsView: View {
         Settings.fixPressCount = fixPressCount
         Settings.fixHoldAtEnd = fixHold
         Settings.peekModifierIndex = peekModifierIndex
+        Settings.favEnabled = favEnabled
+        Settings.favModifierIndex = favModifierIndex
+        Settings.favPressCount = favPressCount
+        Settings.favHoldAtEnd = favHold
         Settings.peekHoldDuration = peekHoldMs / 1000.0
         if sizeLinked { heightPercent = screenPercent }
         Settings.browseScreenPercent = screenPercent
@@ -478,6 +505,10 @@ final class SettingsWindow: NSObject {
             fixHold: Settings.fixHoldAtEnd,
             peekModifierIndex: Settings.peekModifierIndex,
             peekHoldMs: Settings.peekHoldDuration * 1000,
+            favEnabled: Settings.favEnabled,
+            favModifierIndex: Settings.favModifierIndex,
+            favPressCount: Settings.favPressCount,
+            favHold: Settings.favHoldAtEnd,
             screenPercent: Settings.browseScreenPercent,
             heightPercent: Settings.browseHeightPercent,
             sizeLinked: Settings.browseSizeLinked,

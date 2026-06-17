@@ -7,6 +7,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var statusItem: NSStatusItem!
     private let detector = LongPressDetector()
     private let peekDetector = PeekTriggerDetector()
+    private let favDetector = PeekTriggerDetector()   // separater Auslöser fürs Favoriten-Popup
     private var trustTimer: Timer?
     private var didForceRelaunch = false
     private var trustedAtLaunch = false
@@ -50,6 +51,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             else if SettingsWindow.shared.isTestingTriggers { SettingsWindow.shared.flashTest(.fix) }
             else { BrowseWindow.shared.present(initialApp: self?.lastFrontApp) }
         }
+        configureFav()
+        favDetector.onFixOpen = { [weak self] in
+            FavoritesPopupWindow.shared.present(app: self?.lastFrontApp)
+        }
         configureSettingsWindow()
         if offerMoveToApplications() { return }   // verschiebt nach /Applications + startet neu → Rest überspringen
         autoCheckForUpdates()
@@ -58,6 +63,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         trustedAtLaunch = AXIsProcessTrusted()
         detector.start()
         if Settings.peekEnabled || Settings.fixOpenEnabled { peekDetector.start() }
+        if Settings.favEnabled { favDetector.start() }
 
         // Auf Änderungen der Bedienungshilfen-Freigabe lauschen und die App dann
         // automatisch neu starten. Ein frischer Prozess erhält den Tastatur-Tap
@@ -187,9 +193,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             guard let self else { return }
             self.detector.triggerKeyCode = Int64(Settings.triggerKeyCode)
             self.detector.holdDuration = Settings.holdDuration
-            self.configurePeek()
-            self.peekDetector.stop()
-            if Settings.peekEnabled || Settings.fixOpenEnabled { self.peekDetector.start() }
+            self.restartTriggerDetectors()
             BrowseWindow.shared.applySettings()
         }
         SettingsWindow.shared.onToggleLogin = { [weak self] on in self?.setLogin(on) }
@@ -219,9 +223,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         Settings.resetAll()
         detector.triggerKeyCode = Int64(Settings.triggerKeyCode)
         detector.holdDuration = Settings.holdDuration
-        configurePeek()
-        peekDetector.stop()
-        if Settings.peekEnabled || Settings.fixOpenEnabled { peekDetector.start() }
+        restartTriggerDetectors()
         BrowseWindow.shared.applySettings()
         SettingsWindow.shared.present()   // Fenster mit den Standardwerten neu aufbauen
         HUD.show(Strings.setResetDone)
@@ -256,6 +258,24 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         peekDetector.fixEnabled = Settings.fixOpenEnabled
         peekDetector.fixCount = Settings.fixPressCount
         peekDetector.fixHold = Settings.fixHoldAtEnd
+    }
+
+    private func configureFav() {
+        favDetector.modifierIndex = Settings.favModifierIndex
+        favDetector.holdDuration = Settings.peekHoldDuration
+        favDetector.peekEnabled = false
+        favDetector.fixEnabled = true
+        favDetector.fixCount = Settings.favPressCount
+        favDetector.fixHold = Settings.favHoldAtEnd
+    }
+
+    /// Detektoren nach Einstellungsänderung neu konfigurieren und (de)aktivieren.
+    private func restartTriggerDetectors() {
+        configurePeek(); configureFav()
+        peekDetector.stop()
+        if Settings.peekEnabled || Settings.fixOpenEnabled { peekDetector.start() }
+        favDetector.stop()
+        if Settings.favEnabled { favDetector.start() }
     }
 
     // MARK: - Updates
