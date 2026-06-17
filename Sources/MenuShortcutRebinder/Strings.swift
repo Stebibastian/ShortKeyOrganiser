@@ -65,6 +65,12 @@ enum Strings {
     static var setModeTapHold: String { s("Tippen + Halten", "Tap + hold", fr: "Appui + maintien", es: "Pulsar + mantener", it: "Tocco + tenere premuto") }
     static var setGesturePeek: String { s("Kurzblick (Loslassen schließt)", "Quick peek (release closes)", fr: "Aperçu rapide (relâcher ferme)", es: "Vistazo rápido (soltar cierra)", it: "Sguardo rapido (rilasciando si chiude)") }
     static var setGestureFix: String { s("Fix öffnen (bleibt offen)", "Pinned open (stays open)", fr: "Ouverture fixe (reste ouvert)", es: "Apertura fija (queda abierto)", it: "Apertura fissa (resta aperto)") }
+    static var setModeHotkey: String { s("Tastenkürzel", "Keyboard shortcut", fr: "Raccourci clavier", es: "Atajo de teclado", it: "Scorciatoia da tastiera") }
+    static var setShortcut: String { s("Kürzel", "Shortcut", fr: "Raccourci", es: "Atajo", it: "Scorciatoia") }
+    static var setRecordPrompt: String { s("Klicken, dann Kombi drücken", "Click, then press combo", fr: "Cliquer, puis presser la combinaison", es: "Haz clic y pulsa la combinación", it: "Clicca, poi premi la combinazione") }
+    static var setRecording: String { s("Jetzt drücken … (⎋ bricht ab)", "Press now … (⎋ to cancel)", fr: "Presse maintenant … (⎋ pour annuler)", es: "Pulsa ahora … (⎋ para cancelar)", it: "Premi ora … (⎋ per annullare)") }
+    static var setHotkeyHint: String { s("Funktioniert systemweit - z. B. ⌘⇧T oder ein Hyperkey wie ⌃⌥⇧⌘8.", "Works system-wide - e.g. ⌘⇧T or a hyper key like ⌃⌥⇧⌘8.", fr: "Fonctionne sur tout le système - p. ex. ⌘⇧T ou une hyper-touche comme ⌃⌥⇧⌘8.", es: "Funciona en todo el sistema: p. ej. ⌘⇧T o una hyper key como ⌃⌥⇧⌘8.", it: "Funziona a livello di sistema - es. ⌘⇧T o un hyper key come ⌃⌥⇧⌘8.") }
+    static var setTestHotkey: String { s("Tastenkürzel erkannt ✓", "Keyboard shortcut detected ✓", fr: "Raccourci clavier détecté ✓", es: "Atajo de teclado detectado ✓", it: "Scorciatoia da tastiera rilevata ✓") }
     static var setPlusHold: String { s("+ halten", "+ hold", fr: "+ maintenir", es: "+ mantener", it: "+ tenere") }
     static var setFixHold: String { s("Beim letzten Druck halten", "Hold on the last press", fr: "Maintenir au dernier appui", es: "Mantener en la última pulsación", it: "Tenere premuto all'ultima pressione") }
     static var setFeatureFavorites: String { s("Favoriten-Popup", "Favourites popup", fr: "Popup des favoris", es: "Ventana de favoritos", it: "Popup preferiti") }

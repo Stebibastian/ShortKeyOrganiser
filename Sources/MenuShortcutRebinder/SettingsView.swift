@@ -41,12 +41,18 @@ struct SettingsView: View {
     @State var fixEnabled: Bool
     @State var fixPressCount: Int
     @State var fixHold: Bool
+    @State var fixUseHotkey: Bool
+    @State var fixHotkeyCode: Int
+    @State var fixHotkeyMods: Int
     @State var peekModifierIndex: Int
     @State var peekHoldMs: Double
     @State var favEnabled: Bool
     @State var favModifierIndex: Int
     @State var favPressCount: Int
     @State var favHold: Bool
+    @State var favUseHotkey: Bool
+    @State var favHotkeyCode: Int
+    @State var favHotkeyMods: Int
     @State var screenPercent: Double
     @State var heightPercent: Double
     @State var sizeLinked: Bool
@@ -153,17 +159,21 @@ struct SettingsView: View {
         VStack(alignment: .leading, spacing: 22) {
             Text(Strings.setSecKeyboard).font(.title2.bold())
 
-            // Overlay: eine gemeinsame Taste, zwei Gesten (Kurzblick + fix öffnen).
+            // Befehls-Overlay: gemeinsame Modifier-Taste, zwei Gesten (Kurzblick + Fix öffnen).
             featureBlock(Strings.setFeatureOverlay, Strings.setFeatureOverlayDesc) {
-                row(Strings.setPeekTrigger) { modifierPicker($peekModifierIndex) }
+                // Taste nur zeigen, wenn mindestens eine der Gesten eine Modifier-Geste ist.
+                if peekEnabled || (fixEnabled && !fixUseHotkey) {
+                    row(Strings.setPeekTrigger) { modifierPicker($peekModifierIndex) }
+                    Divider()
+                }
+                gestureEditor(title: Strings.setGesturePeek, mode: peekModeBinding,
+                              count: $peekPressCount, allowTapOnly: false, allowHotkey: false,
+                              code: .constant(-1), mods: .constant(0), holdSlider: $peekHoldMs)
                 Divider()
-                Text(Strings.setGesturePeek).font(.callout.weight(.semibold))
-                triggerControls(mode: peekModeBinding, count: $peekPressCount, allowTapOnly: false)
-                slider(Strings.setHold, $peekHoldMs, 50...500, 10, "ms", disabled: peekModeBinding.wrappedValue == 0)
-                Divider()
-                Text(Strings.setGestureFix).font(.callout.weight(.semibold))
-                triggerControls(mode: modeBinding($fixEnabled, $fixHold, $fixPressCount),
-                                count: $fixPressCount, allowTapOnly: true)
+                gestureEditor(title: Strings.setGestureFix,
+                              mode: modeBinding($fixEnabled, $fixHold, $fixPressCount, $fixUseHotkey),
+                              count: $fixPressCount, allowTapOnly: true, allowHotkey: true,
+                              code: $fixHotkeyCode, mods: $fixHotkeyMods)
                 if triggerConflict {
                     Label(Strings.setTriggerConflict, systemImage: "exclamationmark.triangle.fill")
                         .font(.callout).foregroundStyle(.orange)
@@ -172,11 +182,12 @@ struct SettingsView: View {
                 testField
             }
 
+            // Favoriten-Popup: eigener Auslöser, Modifier-Geste ODER Tastenkürzel.
             featureBlock(Strings.setFeatureFavorites, Strings.setFeatureFavoritesDesc) {
-                row(Strings.setFavTrigger) { modifierPicker($favModifierIndex) }
-                Divider()
-                triggerControls(mode: modeBinding($favEnabled, $favHold, $favPressCount),
-                                count: $favPressCount, allowTapOnly: true)
+                gestureEditor(title: Strings.setTriggerMode,
+                              mode: modeBinding($favEnabled, $favHold, $favPressCount, $favUseHotkey),
+                              count: $favPressCount, allowTapOnly: true, allowHotkey: true,
+                              code: $favHotkeyCode, mods: $favHotkeyMods, modifier: $favModifierIndex)
             }
 
             featureBlock(Strings.setFeatureRebind, Strings.setFeatureRebindDesc) {
@@ -202,19 +213,23 @@ struct SettingsView: View {
         .onChange(of: sel.wrappedValue) { _ in commit() }
     }
 
-    /// Modus 0=aus, 1=nur halten, 2=tippen, 3=tippen+halten – kapselt enabled/hold/count einer Geste.
-    private func modeBinding(_ enabled: Binding<Bool>, _ hold: Binding<Bool>, _ count: Binding<Int>) -> Binding<Int> {
+    /// Modus 0=aus, 1=nur halten, 2=tippen, 3=tippen+halten, 4=Tastenkürzel –
+    /// kapselt enabled/hold/count/useHotkey einer Geste in einem Picker-Wert.
+    private func modeBinding(_ enabled: Binding<Bool>, _ hold: Binding<Bool>,
+                             _ count: Binding<Int>, _ useHotkey: Binding<Bool>) -> Binding<Int> {
         Binding(
             get: {
                 if !enabled.wrappedValue { return 0 }
+                if useHotkey.wrappedValue { return 4 }
                 if hold.wrappedValue && count.wrappedValue <= 1 { return 1 }
                 return hold.wrappedValue ? 3 : 2
             },
             set: { m in
                 switch m {
-                case 1: enabled.wrappedValue = true; hold.wrappedValue = true; count.wrappedValue = 1
-                case 2: enabled.wrappedValue = true; hold.wrappedValue = false; if count.wrappedValue < 2 { count.wrappedValue = 2 }
-                case 3: enabled.wrappedValue = true; hold.wrappedValue = true; if count.wrappedValue < 2 { count.wrappedValue = 2 }
+                case 1: enabled.wrappedValue = true; useHotkey.wrappedValue = false; hold.wrappedValue = true; count.wrappedValue = 1
+                case 2: enabled.wrappedValue = true; useHotkey.wrappedValue = false; hold.wrappedValue = false; if count.wrappedValue < 2 { count.wrappedValue = 2 }
+                case 3: enabled.wrappedValue = true; useHotkey.wrappedValue = false; hold.wrappedValue = true; if count.wrappedValue < 2 { count.wrappedValue = 2 }
+                case 4: enabled.wrappedValue = true; useHotkey.wrappedValue = true
                 default: enabled.wrappedValue = false
                 }
                 commit()
@@ -235,42 +250,47 @@ struct SettingsView: View {
             })
     }
 
-    /// Modus-Picker + (bei den Tippen-Modi) Anzahl. Die Taste steht separat im Block.
+    /// Einheitlicher Auslöser-Editor für eine Geste: Titel + Modus links/rechts in einer Zeile,
+    /// darunter nur das jeweils Relevante (Tastenkürzel-Aufnahme, Anzahl, eigene Taste, Halten).
+    /// `modifier` ≠ nil → eigene Taste im Editor (Favoriten); nil → Taste extern geteilt (Overlay).
     @ViewBuilder
-    private func triggerControls(mode: Binding<Int>, count: Binding<Int>, allowTapOnly: Bool) -> some View {
-        row(Strings.setTriggerMode) {
+    private func gestureEditor(title: String, mode: Binding<Int>, count: Binding<Int>,
+                               allowTapOnly: Bool, allowHotkey: Bool,
+                               code: Binding<Int>, mods: Binding<Int>,
+                               modifier: Binding<Int>? = nil,
+                               holdSlider: Binding<Double>? = nil) -> some View {
+        row(title) {
             Picker("", selection: mode) {
                 Text(Strings.setModeOff).tag(0)
                 Text(Strings.setModeHold).tag(1)
                 if allowTapOnly { Text(Strings.setModeTap).tag(2) }
                 Text(Strings.setModeTapHold).tag(3)
+                if allowHotkey { Text(Strings.setModeHotkey).tag(4) }
             }
-            .labelsHidden().frame(width: 200)
+            .labelsHidden().frame(width: 175)
         }
-        if mode.wrappedValue >= 2 {
-            row(Strings.setPressCount) {
-                Picker("", selection: count) {
-                    ForEach(2...5, id: \.self) { Text("\($0)×").tag($0) }
-                }
-                .labelsHidden().frame(width: 70)
-                .onChange(of: count.wrappedValue) { _ in commit() }
+        if mode.wrappedValue == 4 {                       // Tastenkürzel (echte Kombi)
+            row(Strings.setShortcut) {
+                KeyRecorderField(keyCode: code, modifiers: mods, onChange: { commit() })
             }
-        }
-    }
-
-    /// Auswahl „2× … 5×"; mit `holdSuffix` steht „+ halten" dahinter.
-    private func pressCountPicker(_ value: Binding<Int>, holdSuffix: Bool) -> some View {
-        HStack(spacing: 8) {
-            Picker("", selection: value) {
-                ForEach(2...5, id: \.self) { n in
-                    Text("\(n)×").tag(n)
+            Text(Strings.setHotkeyHint).font(.caption).foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        } else if mode.wrappedValue >= 1 {                // Modifier-Geste
+            if let modifier {
+                row(Strings.setFavTrigger) { modifierPicker(modifier) }
+            }
+            if mode.wrappedValue >= 2 {
+                row(Strings.setPressCount) {
+                    Picker("", selection: count) {
+                        ForEach(2...5, id: \.self) { Text("\($0)×").tag($0) }
+                    }
+                    .labelsHidden().frame(width: 70)
+                    .onChange(of: count.wrappedValue) { _ in commit() }
                 }
             }
-            .labelsHidden().frame(width: 70)
-            .onChange(of: value.wrappedValue) { _ in commit() }
-            Text(holdSuffix ? Strings.setPlusHold : " ")
-                .font(.callout).foregroundStyle(.secondary)
-                .frame(width: 80, alignment: .leading)
+            if let holdSlider {
+                slider(Strings.setHold, holdSlider, 50...500, 10, "ms")
+            }
         }
     }
 
@@ -473,11 +493,17 @@ struct SettingsView: View {
         Settings.fixOpenEnabled = fixEnabled
         Settings.fixPressCount = fixPressCount
         Settings.fixHoldAtEnd = fixHold
+        Settings.fixUseHotkey = fixUseHotkey
+        Settings.fixHotkeyKeyCode = fixHotkeyCode
+        Settings.fixHotkeyModifiers = fixHotkeyMods
         Settings.peekModifierIndex = peekModifierIndex
         Settings.favEnabled = favEnabled
         Settings.favModifierIndex = favModifierIndex
         Settings.favPressCount = favPressCount
         Settings.favHoldAtEnd = favHold
+        Settings.favUseHotkey = favUseHotkey
+        Settings.favHotkeyKeyCode = favHotkeyCode
+        Settings.favHotkeyModifiers = favHotkeyMods
         Settings.peekHoldDuration = peekHoldMs / 1000.0
         if sizeLinked { heightPercent = screenPercent }
         Settings.browseScreenPercent = screenPercent
@@ -495,6 +521,62 @@ struct SettingsView: View {
         Settings.browseOpaqueRows = opaqueRows
         Settings.autoUpdate = autoUpdate
         if live { onLiveView() } else { onChange() }
+    }
+}
+
+/// Aufnahme-Feld für ein echtes Tastenkürzel: Klick startet die Aufnahme, die nächste
+/// Tastenkombination wird übernommen (⎋ bricht ab). Speichert KeyCode + Modifier-Rohwert.
+struct KeyRecorderField: View {
+    @Binding var keyCode: Int      // -1 = noch nichts aufgenommen
+    @Binding var modifiers: Int    // NSEvent.ModifierFlags.rawValue (nur ⌘⌥⌃⇧)
+    let onChange: () -> Void
+    @State private var recording = false
+    @State private var monitor: Any?
+
+    var body: some View {
+        Button(action: toggle) {
+            Text(label)
+                .font(.system(size: 13, weight: .medium))
+                .frame(minWidth: 150)
+                .padding(.vertical, 5).padding(.horizontal, 12)
+                .background(RoundedRectangle(cornerRadius: 6)
+                    .fill(recording ? Color.accentColor.opacity(0.16) : Color.secondary.opacity(0.10)))
+                .overlay(RoundedRectangle(cornerRadius: 6)
+                    .strokeBorder(recording ? Color.accentColor : Color.secondary.opacity(0.3),
+                                  lineWidth: recording ? 1.5 : 0.5))
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .onDisappear(perform: stop)
+    }
+
+    private var label: String {
+        if recording { return Strings.setRecording }
+        if keyCode < 0 { return Strings.setRecordPrompt }
+        return HotKeyFormat.describe(keyCode: keyCode,
+                                     modifiers: NSEvent.ModifierFlags(rawValue: UInt(modifiers)))
+    }
+
+    private func toggle() { recording ? stop() : start() }
+
+    private func start() {
+        recording = true
+        monitor = NSEvent.addLocalMonitorForEvents(matching: [.keyDown]) { ev in
+            if ev.keyCode == 53 { stop(); return nil }   // ⎋ bricht ab
+            let mods = ev.modifierFlags
+                .intersection(.deviceIndependentFlagsMask)
+                .intersection([.command, .option, .control, .shift])
+            keyCode = Int(ev.keyCode)
+            modifiers = Int(mods.rawValue)
+            stop()
+            onChange()
+            return nil   // schlucken, damit das Zeichen nicht zusätzlich eingefügt wird
+        }
+    }
+
+    private func stop() {
+        recording = false
+        if let m = monitor { NSEvent.removeMonitor(m); monitor = nil }
     }
 }
 
@@ -532,12 +614,18 @@ final class SettingsWindow: NSObject {
             fixEnabled: Settings.fixOpenEnabled,
             fixPressCount: Settings.fixPressCount,
             fixHold: Settings.fixHoldAtEnd,
+            fixUseHotkey: Settings.fixUseHotkey,
+            fixHotkeyCode: Settings.fixHotkeyKeyCode,
+            fixHotkeyMods: Settings.fixHotkeyModifiers,
             peekModifierIndex: Settings.peekModifierIndex,
             peekHoldMs: Settings.peekHoldDuration * 1000,
             favEnabled: Settings.favEnabled,
             favModifierIndex: Settings.favModifierIndex,
             favPressCount: Settings.favPressCount,
             favHold: Settings.favHoldAtEnd,
+            favUseHotkey: Settings.favUseHotkey,
+            favHotkeyCode: Settings.favHotkeyKeyCode,
+            favHotkeyMods: Settings.favHotkeyModifiers,
             screenPercent: Settings.browseScreenPercent,
             heightPercent: Settings.browseHeightPercent,
             sizeLinked: Settings.browseSizeLinked,

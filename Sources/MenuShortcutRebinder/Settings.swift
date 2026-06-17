@@ -123,6 +123,23 @@ enum Settings {
         set { UserDefaults.standard.set(newValue, forKey: fixHoldKey) }
     }
 
+    // „Fix öffnen" alternativ per echtem Tastenkürzel (statt Modifier-Geste).
+    private static let fixUseHotkeyKey = "fixUseHotkey"
+    static var fixUseHotkey: Bool {
+        get { UserDefaults.standard.bool(forKey: fixUseHotkeyKey) }   // Standard: aus (Modifier-Geste)
+        set { UserDefaults.standard.set(newValue, forKey: fixUseHotkeyKey) }
+    }
+    private static let fixHotkeyCodeKey = "fixHotkeyKeyCode"
+    static var fixHotkeyKeyCode: Int {
+        get { UserDefaults.standard.object(forKey: fixHotkeyCodeKey) as? Int ?? -1 }   // -1 = noch keins
+        set { UserDefaults.standard.set(newValue, forKey: fixHotkeyCodeKey) }
+    }
+    private static let fixHotkeyModsKey = "fixHotkeyModifiers"
+    static var fixHotkeyModifiers: Int {
+        get { UserDefaults.standard.object(forKey: fixHotkeyModsKey) as? Int ?? 0 }
+        set { UserDefaults.standard.set(newValue, forKey: fixHotkeyModsKey) }
+    }
+
     /// Symbol der gewählten Auslöser-Taste fürs Overlay/Onboarding (⌘/⌥/⌃).
     static var peekModifierSymbol: String {
         ["⌘", "⌥", "⌃"][min(2, max(0, peekModifierIndex))]
@@ -152,13 +169,32 @@ enum Settings {
     }
     static var favModifierSymbol: String { ["⌘", "⌥", "⌃"][min(2, max(0, favModifierIndex))] }
 
+    // Favoriten-Popup alternativ per echtem Tastenkürzel (statt Modifier-Geste).
+    private static let favUseHotkeyKey = "favUseHotkey"
+    static var favUseHotkey: Bool {
+        get { UserDefaults.standard.bool(forKey: favUseHotkeyKey) }   // Standard: aus
+        set { UserDefaults.standard.set(newValue, forKey: favUseHotkeyKey) }
+    }
+    private static let favHotkeyCodeKey = "favHotkeyKeyCode"
+    static var favHotkeyKeyCode: Int {
+        get { UserDefaults.standard.object(forKey: favHotkeyCodeKey) as? Int ?? -1 }
+        set { UserDefaults.standard.set(newValue, forKey: favHotkeyCodeKey) }
+    }
+    private static let favHotkeyModsKey = "favHotkeyModifiers"
+    static var favHotkeyModifiers: Int {
+        get { UserDefaults.standard.object(forKey: favHotkeyModsKey) as? Int ?? 0 }
+        set { UserDefaults.standard.set(newValue, forKey: favHotkeyModsKey) }
+    }
+
     /// Setzt alle EINSTELLUNGEN auf die Werkseinstellung zurück. Nutzerdaten bleiben:
     /// Favoriten, Verlauf, ausgeblendete Befehle, Onboarding-Status und Sprache.
     static func resetAll() {
         let keys = [triggerKeyCodeKey, holdDurationKey,
                     peekModifierKey, peekHoldKey, peekEnabledKey, peekPressCountKey,
                     fixEnabledKey, fixPressCountKey, fixHoldKey,
+                    fixUseHotkeyKey, fixHotkeyCodeKey, fixHotkeyModsKey,
                     favEnabledKey, favModifierKey, favPressCountKey, favHoldKey,
+                    favUseHotkeyKey, favHotkeyCodeKey, favHotkeyModsKey,
                     browseScreenPercentKey, browseHeightPercentKey, browseSizeLinkedKey,
                     browseAnchorKey, browseColumnWidthKey, browseZebraKey, browseHighlightKey,
                     browseFontSizeKey, browseTransparencyKey, browseBackgroundStyleKey,

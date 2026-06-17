@@ -46,11 +46,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             if SettingsWindow.shared.isTestingTriggers { SettingsWindow.shared.flashTest(.release) }
             BrowseWindow.shared.peekReleased()   // harmlos, wenn kein Peek offen ist
         }
-        peekDetector.onFixOpen = { [weak self] in
-            if OnboardingWindow.shared.isActive { OnboardingWindow.shared.register(trigger: 1) }
-            else if SettingsWindow.shared.isTestingTriggers { SettingsWindow.shared.flashTest(.fix) }
-            else { BrowseWindow.shared.present(initialApp: self?.lastFrontApp) }
-        }
+        peekDetector.onFixOpen = { [weak self] in self?.triggerFixOpen() }
         configureFav()
         favDetector.onFixOpen = { [weak self] in
             FavoritesPopupWindow.shared.present(app: self?.lastFrontApp)
@@ -62,8 +58,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         promptAccessibility()   // System-Prompt + Eintrag in der Rechte-Liste anlegen
         trustedAtLaunch = AXIsProcessTrusted()
         detector.start()
-        if Settings.peekEnabled || Settings.fixOpenEnabled { peekDetector.start() }
-        if Settings.favEnabled { favDetector.start() }
+        if Settings.peekEnabled || (Settings.fixOpenEnabled && !Settings.fixUseHotkey) { peekDetector.start() }
+        if Settings.favEnabled && !Settings.favUseHotkey { favDetector.start() }
+        configureHotkeys()   // Carbon-Tastenkürzel brauchen keine Bedienungshilfen-Freigabe
 
         // Auf Änderungen der Bedienungshilfen-Freigabe lauschen und die App dann
         // automatisch neu starten. Ein frischer Prozess erhält den Tastatur-Tap
@@ -255,7 +252,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         peekDetector.holdDuration = Settings.peekHoldDuration
         peekDetector.peekEnabled = Settings.peekEnabled
         peekDetector.peekCount = Settings.peekPressCount
-        peekDetector.fixEnabled = Settings.fixOpenEnabled
+        // „Fix öffnen" als Modifier-Geste nur, wenn nicht auf echtes Tastenkürzel gestellt.
+        peekDetector.fixEnabled = Settings.fixOpenEnabled && !Settings.fixUseHotkey
         peekDetector.fixCount = Settings.fixPressCount
         peekDetector.fixHold = Settings.fixHoldAtEnd
     }
@@ -269,13 +267,42 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         favDetector.fixHold = Settings.favHoldAtEnd
     }
 
-    /// Detektoren nach Einstellungsänderung neu konfigurieren und (de)aktivieren.
+    /// Aktion „Overlay fix öffnen" (geteilt von Modifier-Geste und Tastenkürzel).
+    private func triggerFixOpen() {
+        if OnboardingWindow.shared.isActive { OnboardingWindow.shared.register(trigger: 1) }
+        else if SettingsWindow.shared.isTestingTriggers { SettingsWindow.shared.flashTest(.fix) }
+        else { BrowseWindow.shared.present(initialApp: lastFrontApp) }
+    }
+
+    /// Echte Tastenkürzel (Carbon) für die Funktionen, die auf „Tastenkürzel" stehen.
+    /// Braucht – anders als die Modifier-Gesten – keine Bedienungshilfen-Freigabe.
+    private func configureHotkeys() {
+        HotKeyManager.shared.unregisterAll()
+        if Settings.fixOpenEnabled && Settings.fixUseHotkey {
+            HotKeyManager.shared.register(
+                keyCode: Settings.fixHotkeyKeyCode,
+                modifiers: NSEvent.ModifierFlags(rawValue: UInt(Settings.fixHotkeyModifiers))
+            ) { [weak self] in self?.triggerFixOpen() }
+        }
+        if Settings.favEnabled && Settings.favUseHotkey {
+            HotKeyManager.shared.register(
+                keyCode: Settings.favHotkeyKeyCode,
+                modifiers: NSEvent.ModifierFlags(rawValue: UInt(Settings.favHotkeyModifiers))
+            ) { [weak self] in
+                if SettingsWindow.shared.isTestingTriggers { SettingsWindow.shared.flashTest(.fix) }
+                else { FavoritesPopupWindow.shared.present(app: self?.lastFrontApp) }
+            }
+        }
+    }
+
+    /// Detektoren und Tastenkürzel nach Einstellungsänderung neu konfigurieren und (de)aktivieren.
     private func restartTriggerDetectors() {
         configurePeek(); configureFav()
         peekDetector.stop()
-        if Settings.peekEnabled || Settings.fixOpenEnabled { peekDetector.start() }
+        if Settings.peekEnabled || (Settings.fixOpenEnabled && !Settings.fixUseHotkey) { peekDetector.start() }
         favDetector.stop()
-        if Settings.favEnabled { favDetector.start() }
+        if Settings.favEnabled && !Settings.favUseHotkey { favDetector.start() }
+        configureHotkeys()
     }
 
     // MARK: - Updates
