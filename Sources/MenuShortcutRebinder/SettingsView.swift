@@ -164,14 +164,17 @@ struct SettingsView: View {
         VStack(alignment: .leading, spacing: 22) {
             Text(Strings.setSecKeyboard).font(.title2.bold())
 
-            // Befehls-Overlay: Kurzblick und Fix öffnen – je eigener Auslöser (eigene Taste).
-            featureBlock(Strings.setFeatureOverlay, Strings.setFeatureOverlayDesc) {
-                gestureEditor(title: Strings.setGesturePeek, mode: peekModeBinding,
+            // Kurzblick – eigener Block, eigene Taste.
+            featureBlock(Strings.setGesturePeek, Strings.setGesturePeekDesc) {
+                gestureEditor(title: Strings.setTriggerMode, mode: peekModeBinding,
                               count: $peekPressCount, allowTapOnly: false, allowHotkey: false,
                               code: .constant(-1), mods: .constant(0),
                               modifier: $peekModifierIndex, holdSlider: $peekHoldMs)
-                Divider()
-                gestureEditor(title: Strings.setGestureFix,
+            }
+
+            // Fix öffnen – eigener Block, eigene Taste oder Tastenkürzel.
+            featureBlock(Strings.setGestureFix, Strings.setGestureFixDesc) {
+                gestureEditor(title: Strings.setTriggerMode,
                               mode: modeBinding($fixEnabled, $fixHold, $fixPressCount, $fixUseHotkey),
                               count: $fixPressCount, allowTapOnly: true, allowHotkey: true,
                               code: $fixHotkeyCode, mods: $fixHotkeyMods,
@@ -207,13 +210,16 @@ struct SettingsView: View {
         }
     }
 
+    /// Einheitliche Breite aller Auswahlfelder, damit sie rechts auf einer Flucht enden.
+    private static let ctlW: CGFloat = 180
+
     private func modifierPicker(_ sel: Binding<Int>) -> some View {
         Picker("", selection: sel) {
             Text(Strings.bsModCommand).tag(0)
             Text(Strings.bsModOption).tag(1)
             Text(Strings.bsModControl).tag(2)
         }
-        .labelsHidden().frame(width: 150)
+        .labelsHidden().frame(width: Self.ctlW)
         .onChange(of: sel.wrappedValue) { _ in commit() }
     }
 
@@ -271,11 +277,12 @@ struct SettingsView: View {
                 Text(Strings.setModeTapHold).tag(3)
                 if allowHotkey { Text(Strings.setModeHotkey).tag(4) }
             }
-            .labelsHidden().frame(width: 175)
+            .labelsHidden().frame(width: Self.ctlW)
         }
         if mode.wrappedValue == 4 {                       // Tastenkürzel (echte Kombi)
             row(Strings.setShortcut) {
                 KeyRecorderField(keyCode: code, modifiers: mods, onChange: { commit() })
+                    .frame(width: Self.ctlW)
             }
             Text(Strings.setHotkeyHint).font(.caption).foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -288,7 +295,7 @@ struct SettingsView: View {
                     Picker("", selection: count) {
                         ForEach(2...5, id: \.self) { Text("\($0)×").tag($0) }
                     }
-                    .labelsHidden().frame(width: 70)
+                    .labelsHidden().frame(width: Self.ctlW)
                     .onChange(of: count.wrappedValue) { _ in commit() }
                 }
             }

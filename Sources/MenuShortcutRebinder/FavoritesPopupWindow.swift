@@ -3,8 +3,10 @@ import SwiftUI
 import ApplicationServices
 
 /// Lädt die als Favorit markierten Befehle der aktiven App und führt sie per AXPress aus.
-/// Randloses Fenster, das Key werden darf – sonst greifen Esc und das Resign-Schliessen nicht.
-private final class KeyablePanel: NSWindow {
+/// NICHT-aktivierendes Panel: Es darf Key werden (für Esc/Klicks), aktiviert aber die eigene
+/// App NICHT – so bleibt die Ziel-App (z. B. FileMaker) im Vordergrund und aktiv. Damit gibt
+/// es keinen sichtbaren Fensterwechsel, und die Menübefehle bleiben im richtigen Kontext gültig.
+private final class NonActivatingPanel: NSPanel {
     override var canBecomeKey: Bool { true }
 }
 
@@ -12,11 +14,9 @@ final class FavoritesPopupModel: ObservableObject {
     @Published var appName = ""
     @Published var items: [BrowseItem] = []
     @Published var loading = true
-    private var targetPID: pid_t = 0
 
     func load(app: NSRunningApplication) {
         appName = app.localizedName ?? "?"
-        targetPID = app.processIdentifier
         items = []
         let pid = app.processIdentifier
         let bundleID = app.bundleIdentifier ?? ""
@@ -46,13 +46,11 @@ final class FavoritesPopupModel: ObservableObject {
 
     func perform(_ item: BrowseItem) {
         guard let el = item.element else { return }
-        // Ziel-App in den Vordergrund holen – sonst ignorieren viele Apps (z. B. FileMaker)
-        // den Menübefehl, und nichts passiert. Gleicher Ablauf wie der Overlay-Pfad.
-        NSRunningApplication(processIdentifier: targetPID)?.activate()
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.06) {
-            let err = AXUIElementPerformAction(el, kAXPressAction as CFString)
-            HUD.show(err == .success ? Strings.ranCommand(item.title) : Strings.cmdUnavailable(item.title))
-        }
+        // KEIN App-Wechsel: Das Popup ist ein nicht-aktivierendes Panel, die Ziel-App bleibt
+        // vorne und aktiv. Darum direkt drücken – ohne sie zu aktivieren. Das vermeidet den
+        // sichtbaren Fensterwechsel und hält die Menübefehle im richtigen Kontext gültig.
+        let err = AXUIElementPerformAction(el, kAXPressAction as CFString)
+        HUD.show(err == .success ? Strings.ranCommand(item.title) : Strings.cmdUnavailable(item.title))
     }
 }
 
@@ -70,7 +68,7 @@ final class FavoritesPopupWindow: NSObject, NSWindowDelegate {
         model.load(app: app)
         if window == nil { build() }
         positionAtMouse()
-        NSApp.activate(ignoringOtherApps: true)
+        // Kein NSApp.activate: nicht-aktivierendes Panel zeigen, ohne die Ziel-App zu verdrängen.
         window?.makeKeyAndOrderFront(nil)
         DispatchQueue.main.async { self.positionAtMouse() }
         // Backup zum Resign-/Esc-Schliessen: jeder Klick ausserhalb (andere App) schliesst.
@@ -90,8 +88,10 @@ final class FavoritesPopupWindow: NSObject, NSWindowDelegate {
         let host = NSHostingController(rootView:
             FavoritesPopupView(model: model, onClose: { [weak self] in self?.close() }))
         host.sizingOptions = [.preferredContentSize]
-        let win = KeyablePanel(contentViewController: host)
-        win.styleMask = [.borderless]
+        let win = NonActivatingPanel(contentViewController: host)
+        win.styleMask = [.nonactivatingPanel, .borderless]
+        win.isFloatingPanel = true
+        win.hidesOnDeactivate = false
         win.level = .floating
         win.isReleasedWhenClosed = false
         win.backgroundColor = .clear
