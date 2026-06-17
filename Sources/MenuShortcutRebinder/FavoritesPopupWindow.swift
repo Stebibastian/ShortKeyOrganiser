@@ -33,6 +33,7 @@ final class FavoritesPopupModel: ObservableObject {
     func perform(_ item: BrowseItem) {
         guard let el = item.element else { return }
         AXUIElementPerformAction(el, kAXPressAction as CFString)
+        HUD.show(Strings.ranCommand(item.title))
     }
 }
 

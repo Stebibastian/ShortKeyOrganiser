@@ -306,6 +306,7 @@ final class BrowseWindow: NSObject, NSWindowDelegate {
         NSRunningApplication(processIdentifier: app.pid)?.activate()
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
             AXUIElementPerformAction(el, kAXPressAction as CFString)
+            HUD.show(Strings.ranCommand(item.title))
         }
     }
 

@@ -275,6 +275,7 @@ enum Strings {
     static var browseKmTip: String { s("Keyboard-Maestro-Makros anzeigen", "Show Keyboard Maestro macros", fr: "Afficher les macros Keyboard Maestro", es: "Mostrar macros de Keyboard Maestro", it: "Mostra macro di Keyboard Maestro") }
     static var browseCompactTip: String { s("Spalten kombinieren / entgruppieren", "Combine / ungroup columns", fr: "Combiner / dégrouper les colonnes", es: "Combinar / desagrupar columnas", it: "Combina / separa colonne") }
     static var browseCloseTip: String { s("Schließen (Esc)", "Close (Esc)", fr: "Fermer (Échap)", es: "Cerrar (Esc)", it: "Chiudi (Esc)") }
+    static func ranCommand(_ title: String) -> String { s("Ausgeführt: \(title)", "Ran: \(title)", fr: "Exécuté : \(title)", es: "Ejecutado: \(title)", it: "Eseguito: \(title)") }
     static var pdfScopeTitle: String { s("Was exportieren?", "Export what?", fr: "Exporter quoi ?", es: "¿Qué exportar?", it: "Cosa esportare?") }
     static var pdfScopeAll: String { s("Alle Befehle", "All commands", fr: "Toutes les commandes", es: "Todos los comandos", it: "Tutti i comandi") }
     static var pdfScopeFavorites: String { s("Nur Favoriten", "Favourites only", fr: "Favoris uniquement", es: "Solo favoritos", it: "Solo preferiti") }
