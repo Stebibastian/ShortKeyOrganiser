@@ -3,6 +3,11 @@ import SwiftUI
 import ApplicationServices
 
 /// Lädt die als Favorit markierten Befehle der aktiven App und führt sie per AXPress aus.
+/// Randloses Fenster, das Key werden darf – sonst greifen Esc und das Resign-Schliessen nicht.
+private final class KeyablePanel: NSWindow {
+    override var canBecomeKey: Bool { true }
+}
+
 final class FavoritesPopupModel: ObservableObject {
     @Published var appName = ""
     @Published var items: [BrowseItem] = []
@@ -38,24 +43,34 @@ final class FavoritesPopupWindow: NSObject, NSWindowDelegate {
     private var window: NSWindow?
     private let model = FavoritesPopupModel()
 
+    private var clickMonitor: Any?
+
     func present(app: NSRunningApplication?) {
         guard let app else { return }
         model.load(app: app)
         if window == nil { build() }
-        // Nach kurzer Verzögerung positionieren, sobald SwiftUI die Grösse kennt.
         positionAtMouse()
         NSApp.activate(ignoringOtherApps: true)
         window?.makeKeyAndOrderFront(nil)
         DispatchQueue.main.async { self.positionAtMouse() }
+        // Backup zum Resign-/Esc-Schliessen: jeder Klick ausserhalb (andere App) schliesst.
+        if clickMonitor == nil {
+            clickMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { [weak self] _ in
+                self?.close()
+            }
+        }
     }
 
-    func close() { window?.orderOut(nil) }
+    func close() {
+        window?.orderOut(nil)
+        if let m = clickMonitor { NSEvent.removeMonitor(m); clickMonitor = nil }
+    }
 
     private func build() {
         let host = NSHostingController(rootView:
             FavoritesPopupView(model: model, onClose: { [weak self] in self?.close() }))
         host.sizingOptions = [.preferredContentSize]
-        let win = NSWindow(contentViewController: host)
+        let win = KeyablePanel(contentViewController: host)
         win.styleMask = [.borderless]
         win.level = .floating
         win.isReleasedWhenClosed = false
