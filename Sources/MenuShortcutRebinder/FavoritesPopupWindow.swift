@@ -16,13 +16,25 @@ final class FavoritesPopupModel: ObservableObject {
     func load(app: NSRunningApplication) {
         appName = app.localizedName ?? "?"
         items = []
-        loading = true
         let pid = app.processIdentifier
         let bundleID = app.bundleIdentifier ?? ""
+        // Favoriten-Pfade dieser App (ohne "bundleID|"-Präfix).
+        let prefix = bundleID + "|"
+        let favPaths = BrowsePrefs.favorites
+            .filter { $0.hasPrefix(prefix) }
+            .map { String($0.dropFirst(prefix.count)) }
+        guard !favPaths.isEmpty else {          // keine Favoriten → sofort, gar kein Scan
+            items = []; loading = false; return
+        }
+        loading = true
+        // Nur die Top-Menüs scannen, in denen Favoriten liegen (erster Pfad-Teil vor " ▸ ").
+        // Spart bei grossen Apps wie FileMaker den Scan riesiger Menüs (z. B. "Skripte").
+        let favTopNames = Set(favPaths.compactMap { $0.components(separatedBy: " ▸ ").first })
+        let favPathSet = Set(favPaths)
         DispatchQueue.global(qos: .userInitiated).async {
-            let scanned = FullMenuScanner.scan(pid: pid)
-            let favs = BrowsePrefs.favorites
-            let favItems = scanned.filter { favs.contains(bundleID + "|" + $0.pathDisplay) }
+            let menus = FullMenuScanner.topMenus(pid: pid).filter { favTopNames.contains($0.name) }
+            let scanned = menus.flatMap { FullMenuScanner.scanMenu($0.menu, named: $0.name).items }
+            let favItems = scanned.filter { favPathSet.contains($0.pathDisplay) }
             DispatchQueue.main.async {
                 self.items = favItems
                 self.loading = false
