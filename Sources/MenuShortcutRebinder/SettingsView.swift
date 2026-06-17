@@ -199,7 +199,7 @@ struct SettingsView: View {
                     Picker("", selection: $rebindKeyCode) {
                         ForEach(triggerKeys, id: \.0) { Text($0.1).tag($0.0) }
                     }
-                    .labelsHidden().frame(maxWidth: .infinity).frame(width: Self.ctlW)
+                    .labelsHidden().frame(width: Self.ctlW, alignment: .trailing)
                     .onChange(of: rebindKeyCode) { _ in commit() }
                 }
                 slider(Strings.setHold, $rebindHoldMs, 300...1500, 50, "ms")
@@ -219,7 +219,7 @@ struct SettingsView: View {
             Text(Strings.bsModOption).tag(1)
             Text(Strings.bsModControl).tag(2)
         }
-        .labelsHidden().frame(maxWidth: .infinity).frame(width: Self.ctlW)
+        .labelsHidden().frame(width: Self.ctlW, alignment: .trailing)
         .onChange(of: sel.wrappedValue) { _ in commit() }
     }
 
@@ -277,7 +277,7 @@ struct SettingsView: View {
                 Text(Strings.setModeTapHold).tag(3)
                 if allowHotkey { Text(Strings.setModeHotkey).tag(4) }
             }
-            .labelsHidden().frame(maxWidth: .infinity).frame(width: Self.ctlW)
+            .labelsHidden().frame(width: Self.ctlW, alignment: .trailing)
         }
         if mode.wrappedValue == 4 {                       // Tastenkürzel (echte Kombi)
             row(Strings.setShortcut) {
@@ -295,7 +295,7 @@ struct SettingsView: View {
                     Picker("", selection: count) {
                         ForEach(2...5, id: \.self) { Text("\($0)×").tag($0) }
                     }
-                    .labelsHidden().frame(maxWidth: .infinity).frame(width: Self.ctlW)
+                    .labelsHidden().frame(width: Self.ctlW, alignment: .trailing)
                     .onChange(of: count.wrappedValue) { _ in commit() }
                 }
             }
