@@ -95,7 +95,16 @@ final class PeekTriggerDetector {
         case .tapDisabledByTimeout, .tapDisabledByUserInput:
             if let tap = eventTap { CGEvent.tapEnable(tap: tap, enable: true) }
         case .keyDown:
-            if phase != .peeking { reset() }   // normale Taste bricht die Geste ab
+            if phase == .peeking {
+                // Im offenen Kurzblick schliesst jede Taste (z. B. ⌘Z) das Overlay, statt es
+                // störend offen zu lassen – und unterdrückt es, bis der Auslöser losgelassen wird.
+                reset()
+                suppressed = true
+                triggerWasAlone = false
+                DispatchQueue.main.async { self.onRelease?() }
+            } else {
+                reset()   // normale Taste bricht eine laufende Geste ab
+            }
         case .leftMouseDown, .rightMouseDown, .otherMouseDown:
             handleMouseDown()
         case .flagsChanged:
