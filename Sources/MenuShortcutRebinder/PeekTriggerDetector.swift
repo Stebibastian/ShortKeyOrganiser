@@ -37,6 +37,7 @@ final class PeekTriggerDetector {
     private var triggerWasAlone = false
     private var lastReleaseTime: CFTimeInterval = 0
     private var holdToken = 0           // entwertet armierte Hold-/Verzögerungs-Timer
+    private var suppressed = false      // nach Mausklick: Geste aus, bis der Auslöser ganz losgelassen wird
 
     private var mask: CGEventFlags {
         switch modifierIndex {
@@ -50,6 +51,8 @@ final class PeekTriggerDetector {
     func start() {
         let evMask: CGEventMask =
             (1 << CGEventType.keyDown.rawValue) | (1 << CGEventType.flagsChanged.rawValue)
+            | (1 << CGEventType.leftMouseDown.rawValue) | (1 << CGEventType.rightMouseDown.rawValue)
+            | (1 << CGEventType.otherMouseDown.rawValue)
         let callback: CGEventTapCallBack = { _, type, event, refcon in
             guard let refcon else { return Unmanaged.passUnretained(event) }
             let me = Unmanaged<PeekTriggerDetector>.fromOpaque(refcon).takeUnretainedValue()
@@ -76,6 +79,7 @@ final class PeekTriggerDetector {
         if let source = runLoopSource { CFRunLoopRemoveSource(CFRunLoopGetMain(), source, .commonModes) }
         if let tap = eventTap { CGEvent.tapEnable(tap: tap, enable: false) }
         eventTap = nil; runLoopSource = nil; isActive = false
+        suppressed = false
         reset()
     }
 
@@ -92,6 +96,8 @@ final class PeekTriggerDetector {
             if let tap = eventTap { CGEvent.tapEnable(tap: tap, enable: true) }
         case .keyDown:
             if phase != .peeking { reset() }   // normale Taste bricht die Geste ab
+        case .leftMouseDown, .rightMouseDown, .otherMouseDown:
+            handleMouseDown()
         case .flagsChanged:
             handleFlags(active: event.flags.intersection(majorModifiers), now: CACurrentMediaTime())
         default:
@@ -99,8 +105,27 @@ final class PeekTriggerDetector {
         }
     }
 
+    /// Mausklick während des Auslöser-Haltens (vor dem Öffnen): Geste abbrechen und bis zum
+    /// Loslassen des Auslösers unterdrücken – sonst poppt das Overlay auf, wenn man bei
+    /// gehaltenem ⌘ klickt oder etwas markiert. Im bereits offenen Kurzblick bleibt der Klick
+    /// unberührt (dort wählt er einen Befehl).
+    private func handleMouseDown() {
+        guard phase != .peeking else { return }
+        if phase != .idle || triggerWasAlone {
+            reset()
+            suppressed = true
+        }
+    }
+
     private func handleFlags(active: CGEventFlags, now: CFTimeInterval) {
         let triggerDown = active.contains(mask)
+
+        if suppressed {
+            // Nach einem Mausklick unterdrückt, bis der Auslöser ganz losgelassen wird.
+            if !triggerDown { suppressed = false }
+            triggerWasAlone = (active == mask)
+            return
+        }
 
         if phase == .peeking {
             // Im Peek beendet nur das Loslassen des Auslösers (andere Modifier = Highlight, egal).
