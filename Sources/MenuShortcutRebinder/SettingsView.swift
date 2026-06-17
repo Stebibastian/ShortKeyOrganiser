@@ -300,7 +300,7 @@ struct SettingsView: View {
                 }
             }
             if let holdSlider, mode.wrappedValue != 2 {   // „nur Tippen" hat kein Halten
-                slider(Strings.setHold, holdSlider, 50...500, 10, "ms")
+                slider(Strings.setHold, holdSlider, 50...1000, 10, "ms")
             }
         }
     }

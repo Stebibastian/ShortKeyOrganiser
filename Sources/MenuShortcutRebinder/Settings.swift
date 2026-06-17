@@ -5,8 +5,8 @@ enum Settings {
     private static let triggerKeyCodeKey = "triggerKeyCode"
     private static let holdDurationKey = "holdDuration"
 
-    static let defaultTriggerKeyCode = 54   // rechte ⌘ (Command)
-    static let defaultHoldDuration = 0.6
+    static let defaultTriggerKeyCode = 59   // linke ⌃ (Control)
+    static let defaultHoldDuration = 0.5
 
     static var triggerKeyCode: Int {
         get { UserDefaults.standard.object(forKey: triggerKeyCodeKey) as? Int ?? defaultTriggerKeyCode }
@@ -73,7 +73,7 @@ enum Settings {
     }
 
     private static let peekHoldKey = "peekHoldDuration"
-    static let defaultPeekHold = 0.15
+    static let defaultPeekHold = 0.5
     /// Sekunden, die der zweite Druck gehalten werden muss (0.05-1.0).
     static var peekHoldDuration: Double {
         get {
@@ -90,10 +90,10 @@ enum Settings {
     }
 
     private static let peekPressCountKey = "peekPressCount"
-    /// Drücke für den Kurzblick (2-5; beim letzten wird gehalten).
+    /// Drücke für den Kurzblick (1-5; 1 = nur halten, sonst beim letzten halten).
     static var peekPressCount: Int {
         get {
-            let v = UserDefaults.standard.object(forKey: peekPressCountKey) as? Int ?? 2
+            let v = UserDefaults.standard.object(forKey: peekPressCountKey) as? Int ?? 1
             return min(5, max(1, v))
         }
         set { UserDefaults.standard.set(min(5, max(1, newValue)), forKey: peekPressCountKey) }
@@ -110,7 +110,7 @@ enum Settings {
     /// Drücke für „Fenster fix öffnen" (2-5).
     static var fixPressCount: Int {
         get {
-            let v = UserDefaults.standard.object(forKey: fixPressCountKey) as? Int ?? 3
+            let v = UserDefaults.standard.object(forKey: fixPressCountKey) as? Int ?? 2
             return min(5, max(1, v))
         }
         set { UserDefaults.standard.set(min(5, max(1, newValue)), forKey: fixPressCountKey) }
@@ -165,7 +165,7 @@ enum Settings {
     // MARK: Favoriten-Popup (eigener Auslöser, zeigt nur die Favoriten der aktiven App neben der Maus)
     private static let favEnabledKey = "favEnabled"
     static var favEnabled: Bool {
-        get { UserDefaults.standard.bool(forKey: favEnabledKey) }   // Standard: aus (opt-in)
+        get { UserDefaults.standard.object(forKey: favEnabledKey) as? Bool ?? true }   // Standard: an
         set { UserDefaults.standard.set(newValue, forKey: favEnabledKey) }
     }
     private static let favModifierKey = "favModifierIndex"
@@ -181,7 +181,7 @@ enum Settings {
     }
     private static let favHoldKey = "favHoldAtEnd"
     static var favHoldAtEnd: Bool {
-        get { UserDefaults.standard.object(forKey: favHoldKey) as? Bool ?? true }   // Standard: halten (tap-tap-hold)
+        get { UserDefaults.standard.object(forKey: favHoldKey) as? Bool ?? false }   // Standard: nur tippen (kein Halten)
         set { UserDefaults.standard.set(newValue, forKey: favHoldKey) }
     }
     static var favModifierSymbol: String { ["⌘", "⌥", "⌃"][min(2, max(0, favModifierIndex))] }
