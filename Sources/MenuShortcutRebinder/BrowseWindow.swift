@@ -70,6 +70,7 @@ final class BrowseWindow: NSObject, NSWindowDelegate {
         model.onDelete = { [weak self] item, app in self?.delete(item, app) }
         model.onPerform = { [weak self] item, app in self?.perform(item, app) }
         model.onActivateSearch = { [weak self] in self?.pinForSearch() }
+        model.onClose = { [weak self] in self?.closeBrowse() }
         model.onOpenSettings = { SettingsWindow.shared.present() }
         model.onManage = { ShortcutsWindow.shared.present() }
         model.query = ""

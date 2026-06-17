@@ -60,6 +60,7 @@ final class BrowseModel: ObservableObject {
     var onPerform: ((BrowseItem, AppChoice) -> Void)?
     var onActivateSearch: (() -> Void)?
     var onOpenSettings: (() -> Void)?
+    var onClose: (() -> Void)?
     var onManage: (() -> Void)?
 
     private let scanToken = ScanToken()
@@ -243,6 +244,7 @@ final class BrowseModel: ObservableObject {
     }
     func activateSearch() { onActivateSearch?(); searchActive = true }
     func openSettings() { onOpenSettings?() }
+    func close() { onClose?() }
     func manage() { onManage?() }
 
     func moveSelection(_ delta: Int) {
@@ -584,6 +586,7 @@ struct BrowseView: View {
             navIcon("gearshape", active: false, tip: Strings.browseSettingsTip) { model.openSettings() }
 
             Spacer()
+            navIcon("xmark", active: false, tip: Strings.browseCloseTip) { model.close() }
         }
         .frame(height: 34)
         .padding(.horizontal, 12)
