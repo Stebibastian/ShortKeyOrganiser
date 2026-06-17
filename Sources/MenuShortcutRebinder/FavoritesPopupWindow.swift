@@ -36,7 +36,12 @@ final class FavoritesPopupModel: ObservableObject {
         DispatchQueue.global(qos: .userInitiated).async {
             let menus = FullMenuScanner.topMenus(pid: pid).filter { favTopNames.contains($0.name) }
             let scanned = menus.flatMap { FullMenuScanner.scanMenu($0.menu, named: $0.name).items }
-            let favItems = scanned.filter { favPathSet.contains($0.pathDisplay) }
+            // Favoriten herausfiltern und Duplikate entfernen: derselbe Befehl ist oft an
+            // mehreren Menü-Orten zu finden – gleicher Name + Kürzel = gleiche Aktion, also nur einmal.
+            var seen = Set<String>()
+            let favItems = scanned
+                .filter { favPathSet.contains($0.pathDisplay) }
+                .filter { seen.insert($0.title.lowercased() + "\u{1}" + $0.shortcut).inserted }
             DispatchQueue.main.async {
                 self.items = favItems
                 self.loading = false
